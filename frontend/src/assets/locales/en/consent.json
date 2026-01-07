@@ -1,9 +1,5 @@
 {
   "title": "E-Consent",
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
-  },
   "headernames": {
     "studyTitle": "Study Title",
     "sponsor": "Sponsor",
@@ -80,7 +76,11 @@
   ],
   "checkboxLabel": "I have read the above information and voluntarily agree to participate in this study.",
   "buttonText": "Accept & Continue",
-  "uploadLabel": "Upload Scanned Consent (Image/PDF):",
-  "uploadPrompt": "Please upload a scanned copy of the physical consent form.",
-  "uploadingText": "Uploading..."
+  "uploadLabel": "Capture photo or upload image:",
+  "uploadPrompt": "Please capture or upload a copy of the physical consent form.",
+  "uploadingText": "Uploading...",
+  "useCamera": "Use Camera",
+  "uploadImage": "Upload Image",
+  "retake": "Retake",
+  "switchCamera": "Switch Camera"
 }

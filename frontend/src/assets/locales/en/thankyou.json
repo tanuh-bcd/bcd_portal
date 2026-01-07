@@ -37,6 +37,14 @@
       }
     ]
   },
+  "nextSteps": {
+    "title": "Next Steps",
+    "items": [
+      "Review your risk assessment with a healthcare provider.",
+      "Follow the recommended screening schedule based on your risk level.",
+      "Maintain a healthy lifestyle and perform regular breast self-exams."
+    ]
+  },
   "disclaimer": {
     "asterisk": "*",
     "title": "Disclaimer",
@@ -55,9 +63,6 @@
     "questionPrefix": "Q",
     "fileNamePrefix": "Risk-Summary",
     "unknownSession": "UnknownSession"
-  },
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
   }
+
 }

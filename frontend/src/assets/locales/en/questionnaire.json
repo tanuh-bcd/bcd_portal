@@ -1,9 +1,5 @@
 {
   "ui": {
-    "logos": {
-      "tanuhAlt": "TANUH Logo",
-      "iiscAlt": "IISC Logo"
-    },
     "header": {
       "title": "Breast Cancer Risk Questionnaire",
       "instructions": "Please answer the following questions to the best of your ability.",

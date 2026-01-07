@@ -1,9 +1,5 @@
 {
   "ui": {
-    "logos": {
-      "tanuhAlt": "TANUH Logo",
-      "iiscAlt": "IISC Logo"
-    },
     "header": {
       "title": "ସ୍ତନ କର୍କଟ ବିପଦ ପ୍ରଶ୍ନAIre",
       "instructions": "ଦୟାକରି ନିମ୍ନୋକ୍ତ ପ୍ରଶ୍ନଗୁଡିକର ସାମର୍ଥ୍ୟକୁ ଉତ୍ତର ଦିଅ |",

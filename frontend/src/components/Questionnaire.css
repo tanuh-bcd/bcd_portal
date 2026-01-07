@@ -41,17 +41,6 @@
   border-top: 6px solid #8B008B;
 }
 
-.questionnaire-logos {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.questionnaire-logos .logo {
-  height: 60px;
-  object-fit: contain;
-}
-
 .form-header {
   margin-bottom: 30px;
   text-align: center;

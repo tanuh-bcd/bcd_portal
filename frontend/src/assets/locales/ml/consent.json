@@ -1,9 +1,5 @@
 {
   "title": "ഇ-അംഗീകാരം (E-Consent)",
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
-  },
   "headernames": {
     "studyTitle": "അധ്യയന ശീർഷകം",
     "sponsor": "സ്പോൺസർ",
@@ -79,5 +75,9 @@
     }
   ],
   "checkboxLabel": "മുകളിലുള്ള വിവരങ്ങൾ ഞാൻ വായിക്കുകയും ഈ പഠനത്തിൽ സ്വമേധയാ പങ്കെടുക്കാൻ സമ്മതിക്കുകയും ചെയ്യുന്നു.",
-  "buttonText": "സ്വീകരിക്കുക & തുടരുക"
+  "buttonText": "സ്വീകരിക്കുക & തുടരുക",
+  "uploadLabel": "Capture photo or upload image:",
+  "uploadPrompt": "Please capture or upload a copy of the physical consent form.",
+  "uploadingText": "Uploading..."
+  ,"switchCamera": "Switch Camera"
 }

@@ -55,9 +55,6 @@
     "questionPrefix": "ప్ర",
     "fileNamePrefix": "ప్రమాద-సారాంశం",
     "unknownSession": "తెలియని సెషన్"
-  },
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
   }
+
 }

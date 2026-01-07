@@ -5,64 +5,76 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="610b7428-fa48-4977-aef0-8ff68c0faf14" name="Changes" comment="Updated code">
-      <change afterPath="$PROJECT_DIR$/docs/consent_storage.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/doctor_assessment.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/qa_saving.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backend/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/api/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/api/admin.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/api/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/api/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/api/patient.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/api/patient.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/core/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/core/config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/models/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/models/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/schemas/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/schemas/schemas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/consent_storage.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/consent_storage.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/.env" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/.eslintcache" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/.eslintcache" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/0.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/0.pack" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/1.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/1.pack" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/10.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/10.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/11.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/11.pack" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/2.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/2.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/3.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/3.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/4.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/4.pack" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/5.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/5.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/6.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/6.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/7.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/7.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/8.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/8.pack" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/9.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/9.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/index.pack" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/index.pack" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/index.pack.old" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/node_modules/.cache/default-development/index.pack.old" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/bengali/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/bengali/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/bengali/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/english/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/english/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/english/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/gujarati/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/gujarati/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/gujarati/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/hindi/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/hindi/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/hindi/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/kannada/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/kannada/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/kannada/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/malayalam/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/malayalam/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/malayalam/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/marathi/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/marathi/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/marathi/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/odia/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/odia/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/odia/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/punjabi/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/punjabi/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/punjabi/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/tamil/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/tamil/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/tamil/thankyou.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/telugu/consent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/telugu/questionnaire.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/telugu/thankyou.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/bn/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/bn/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/bn/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/bn/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/bn/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/bn/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/en/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/en/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/en/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/en/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/en/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/en/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/gu/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/gu/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/gu/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/gu/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/gu/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/gu/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/hi/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/hi/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/hi/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/hi/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/hi/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/hi/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/kn/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/kn/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/kn/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/kn/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/kn/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/kn/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/ml/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/ml/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/ml/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/ml/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/ml/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/ml/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/mr/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/mr/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/mr/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/mr/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/mr/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/mr/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/or/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/or/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/or/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/or/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/or/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/or/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/pa/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/pa/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/pa/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/pa/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/pa/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/pa/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/ta/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/ta/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/ta/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/ta/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/ta/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/ta/thankyou.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/te/consent.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/te/consent.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/te/questionnaire.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/te/questionnaire.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/assets/locales/te/thankyou.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/assets/locales/te/thankyou.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/components/Consent.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/Consent.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/components/Consent.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/Consent.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/LanguageSwitcher.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/LanguageSwitcher.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/Questionnaire.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/Questionnaire.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/components/Questionnaire.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/Questionnaire.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/i18n.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/i18n.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/ThankYou.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/ThankYou.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/ThankYou.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/ThankYou.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/pages/AdminPage.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/AdminPage.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/LoginPage.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/LoginPage.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +82,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="39" />
+    <option name="cachedIndexableFilesCount" value="149" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="Git.Settings">
@@ -138,7 +150,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1767608128972</updated>
-      <workItem from="1767608130002" duration="45034000" />
+      <workItem from="1767608130002" duration="49929000" />
+      <workItem from="1767761123708" duration="7231000" />
     </task>
     <task id="LOCAL-00001" summary="Updated code">
       <option name="closed" value="true" />

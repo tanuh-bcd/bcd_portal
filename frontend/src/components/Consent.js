@@ -1,15 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './Consent.css';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
-import tanuhLogo from '../assets/tanuh.png';
-import iiscLogo from '../assets/IISc_logo.png';
+import { Camera, Upload, X, RefreshCw } from 'lucide-react';
 
 function Consent({ onAccept }) {
   const [isChecked, setIsChecked] = useState(false);
   const [scannedFile, setScannedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [facingMode, setFacingMode] = useState('environment');
   const { t } = useTranslation('consent');
+  
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const startCamera = async (currentFacingMode = facingMode) => {
+    setCameraError(null);
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: currentFacingMode } 
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      setCameraError('Could not access camera. Please ensure permissions are granted or use the upload option.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const switchCamera = () => {
+    const newMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(newMode);
+    if (isCameraActive) {
+      startCamera(newMode);
+    }
+  };
+
+  const capturePhoto = () => {
+    console.log('Capture button clicked');
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      
+      console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        console.warn('Video dimensions are not yet available.');
+        // Retry once after a short delay if dimensions are 0
+        setTimeout(() => {
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            capturePhoto();
+          } else {
+            console.error('Video dimensions still 0 after retry');
+          }
+        }, 500);
+        return;
+      }
+
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      console.log('Canvas dimensions set to:', canvas.width, 'x', canvas.height);
+      
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      console.log('Image drawn to canvas');
+
+      try {
+        // Fallback approach: Use toDataURL if toBlob has issues, or just as a more immediate way to get the data
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        console.log('Data URL generated, length:', dataUrl.length);
+        
+        if (canvas.toBlob) {
+          canvas.toBlob((blob) => {
+            console.log('toBlob callback executed, blob:', blob);
+            if (blob) {
+              const file = new File([blob], `captured-consent-${Date.now()}.jpg`, { type: 'image/jpeg' });
+              console.log('File created from blob:', file.name, file.size, 'bytes');
+              setScannedFile(file);
+              // Small delay before stopping camera to ensure state update is processed
+              setTimeout(() => stopCamera(), 100);
+            } else {
+              console.error('Blob creation failed: blob is null. Using DataURL fallback.');
+              handleDataUrl(dataUrl);
+            }
+          }, 'image/jpeg', 0.9);
+        } else {
+          console.warn('canvas.toBlob not supported, using DataURL.');
+          handleDataUrl(dataUrl);
+        }
+      } catch (err) {
+        console.error('Error during capture process:', err);
+      }
+    } else {
+      console.error('videoRef or canvasRef is null', { video: !!videoRef.current, canvas: !!canvasRef.current });
+    }
+  };
+
+  const handleDataUrl = (dataUrl) => {
+    try {
+      // Convert dataURL to File object
+      const arr = dataUrl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const file = new File([u8arr], `captured-consent-${Date.now()}.jpg`, { type: mime });
+      console.log('File created from DataURL:', file.name, file.size, 'bytes');
+      setScannedFile(file);
+      setTimeout(() => stopCamera(), 100);
+    } catch (e) {
+      console.error('Error converting DataURL to File:', e);
+    }
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -19,7 +142,7 @@ function Consent({ onAccept }) {
 
   const handleAccept = async () => {
     if (!scannedFile) {
-      alert(t('uploadPrompt') || 'Please upload a scanned copy of the physical consent form.');
+      alert(t('uploadPrompt') || 'Please capture or upload a copy of the physical consent form.');
       return;
     }
 
@@ -56,12 +179,15 @@ function Consent({ onAccept }) {
 
   return (
     <div className="consent-container">
-      <div className="consent-logos">
-        <img src={tanuhLogo} alt={t('logos.tanuhAlt')} className="logo tanuh-logo" />
-        <img src={iiscLogo} alt={t('logos.iiscAlt')} className="logo iisc-logo" />
+      <div className="language-switch-container">
+        <LanguageSwitcher />
+        {isCameraActive && (
+          <button type="button" className="switch-camera-btn" onClick={switchCamera}>
+            <RefreshCw size={20} />
+            {t('switchCamera') || 'Switch Camera'}
+          </button>
+        )}
       </div>
-      
-      <LanguageSwitcher />
       
       <h2>{t('title')}</h2>
       
@@ -85,17 +211,64 @@ function Consent({ onAccept }) {
       ))}
 
       <div className="consent-upload">
-        <label htmlFor="consent-file">
-          <strong>{t('uploadLabel') || 'Upload Scanned Consent (Image/PDF):'}</strong>
+        <label>
+          <strong>{t('uploadLabel') || 'Capture photo or upload image:'}</strong>
         </label>
-        <input
-          type="file"
-          id="consent-file"
-          accept="image/*,application/pdf"
-          capture="environment"
-          onChange={handleFileChange}
-        />
-        {scannedFile && <p className="file-name">{scannedFile.name}</p>}
+        
+        {!isCameraActive && !scannedFile && (
+          <div className="upload-options">
+            <button type="button" className="action-button camera-btn" onClick={startCamera}>
+              <Camera size={20} />
+              {t('useCamera') || 'Use Camera'}
+            </button>
+            <div className="upload-wrapper">
+              <label htmlFor="consent-file" className="action-button upload-btn">
+                <Upload size={20} />
+                {t('uploadImage') || 'Upload Image'}
+              </label>
+              <input
+                type="file"
+                id="consent-file"
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {isCameraActive && (
+          <div className="camera-preview-container">
+            <video ref={videoRef} autoPlay playsInline className="camera-video" />
+            <div className="camera-controls">
+              <button type="button" className="action-button capture-btn" onClick={capturePhoto}>
+                <div className="capture-inner" />
+              </button>
+              <button type="button" className="action-button close-btn" onClick={stopCamera}>
+                <X size={24} />
+              </button>
+            </div>
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+          </div>
+        )}
+
+        {cameraError && <p className="camera-error">{cameraError}</p>}
+
+        {scannedFile && (
+          <div className="selected-file-container">
+            <p className="file-name">{scannedFile.name}</p>
+            <button type="button" className="retake-btn" onClick={() => {
+              setScannedFile(null);
+              startCamera();
+            }}>
+              <RefreshCw size={16} />
+              {t('retake') || 'Retake'}
+            </button>
+            <button type="button" className="remove-file-btn" onClick={() => setScannedFile(null)}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="consent-checkbox">

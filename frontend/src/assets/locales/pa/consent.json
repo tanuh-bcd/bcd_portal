@@ -1,9 +1,5 @@
 {
   "title": "ਈ-ਸਹਿਮਤੀ",
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
-  },
   "headernames": {
     "studyTitle": "ਅਧਿਐਨ ਸਿਰਲੇਖ",
     "sponsor": "ਸਪਾਂਸਰ",
@@ -79,5 +75,9 @@
     }
   ],
   "checkboxLabel": "ਮੈਂ ਉੱਪਰ ਦਿੱਤੀ ਜਾਣਕਾਰੀ ਪੜ੍ਹੀ ਹੈ ਅਤੇ ਮੈਂ ਸੁਚੇਤ ਤੌਰ 'ਤੇ ਇਸ ਅਧਿਐਨ ਵਿੱਚ ਭਾਗ ਲੈਣ ਲਈ ਸਹਿਮਤ ਹਾਂ।",
-  "buttonText": "ਸਵੀਕਾਰ ਕਰੋ ਅਤੇ ਅੱਗੇ ਵਧੋ"
+  "buttonText": "ਸਵੀਕਾਰ ਕਰੋ ਅਤੇ ਅੱਗੇ ਵਧੋ",
+  "uploadLabel": "Capture photo or upload image:",
+  "uploadPrompt": "Please capture or upload a copy of the physical consent form.",
+  "uploadingText": "Uploading..."
+  ,"switchCamera": "Switch Camera"
 }

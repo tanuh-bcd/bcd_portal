@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
-from .api import auth, languages, patient, admin
+from .api import auth, languages, patient, admin, doctor
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(languages.router, prefix="/api/v1/languages", tags=["languages"])
 app.include_router(patient.router, prefix="/api/v1/patient", tags=["patient"])
+app.include_router(doctor.router, prefix="/api/v1/doctor", tags=["doctor"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 
 @app.get("/")

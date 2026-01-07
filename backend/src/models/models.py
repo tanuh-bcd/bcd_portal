@@ -100,3 +100,53 @@ class PatientSession(Base):
     consent_timestamp = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     hospital = relationship("Hospital")
+    responses = relationship("PatientResponse", back_populates="session", cascade="all, delete-orphan")
+
+class PatientResponse(Base):
+    __tablename__ = "patient_responses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hospital_id = Column(Integer, ForeignKey("hospitals.id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("patient_sessions.id", ondelete="CASCADE"), nullable=False)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
+    hospital = relationship("Hospital")
+    session = relationship("PatientSession", back_populates="responses")
+
+class DoctorAssessment(Base):
+    __tablename__ = "doctor_assessments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_session_id = Column(Integer, ForeignKey("patient_sessions.id", ondelete="CASCADE"), nullable=False)
+    hospital_id = Column(Integer, ForeignKey("hospitals.id"), nullable=False)
+    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    questionnaire_feedback = Column(Text)
+    is_questionnaire_correct = Column(Boolean, default=False)
+    mammo_birads = Column(Enum('0', '1', '2', '3', '4', '5', '6'))
+    mammo_density = Column(Enum('A', 'B', 'C', 'D'))
+    us_biopsy_birads = Column(Enum('0', '1', '2', '3', '4', '5', '6'))
+    us_biopsy_density = Column(Enum('A', 'B', 'C', 'D'))
+    precision_diagnosis = Column(Enum('4A','4B','4C'))
+    datapoint_feedback = Column(Text)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    session = relationship("PatientSession")
+    hospital = relationship("Hospital")
+    doctor = relationship("User")
+    attachments = relationship("Attachment", back_populates="assessment", cascade="all, delete-orphan")
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    assessment_id = Column(Integer, ForeignKey("doctor_assessments.id", ondelete="CASCADE"), nullable=False)
+    file_type = Column(String(50), nullable=False)  # e.g., 'mammo_dicom', 'us_video'
+    file_name = Column(String(255), nullable=False)
+    storage_url = Column(Text, nullable=False)
+    mime_type = Column(String(100))
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    assessment = relationship("DoctorAssessment", back_populates="attachments")

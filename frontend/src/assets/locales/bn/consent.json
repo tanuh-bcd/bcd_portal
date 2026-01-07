@@ -1,9 +1,5 @@
 {
   "title": "ই-সম্মতি",
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
-  },
   "headernames": {
     "studyTitle": "গবেষণার শিরোনাম",
     "sponsor": "পৃষ্ঠপোষক",
@@ -79,5 +75,9 @@
     }
   ],
   "checkboxLabel": "আমি উপরের তথ্য পড়েছি এবং স্বেচ্ছায় এই গবেষণায় অংশগ্রহণ করতে সম্মত হচ্ছি।",
-  "buttonText": "স্বীকার করুন ও চালিয়ে যান"
+  "buttonText": "স্বীকার করুন ও চালিয়ে যান",
+  "uploadLabel": "Capture photo or upload image:",
+  "uploadPrompt": "Please capture or upload a copy of the physical consent form.",
+  "uploadingText": "Uploading..."
+  ,"switchCamera": "Switch Camera"
 }

@@ -1,9 +1,5 @@
 {
   "title": "ಇ-ಸಮ್ಮತಿ",
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
-  },
   "headernames": {
     "studyTitle": "ಅಧ್ಯಯನ ಶೀರ್ಷಿಕೆ",
     "sponsor": "ಪ್ರಾಯೋಜಕ",
@@ -79,5 +75,9 @@
     }
   ],
   "checkboxLabel": "ಮೇಲಿನ ಮಾಹಿತಿಯನ್ನು ನಾನು ಓದಿದ್ದೇನೆ ಮತ್ತು ಈ ಅಧ್ಯಯನದಲ್ಲಿ ಸ್ವಯಂಪ್ರೇರಿತವಾಗಿ ಭಾಗವಹಿಸಲು ಒಪ್ಪುತ್ತೇನೆ.",
-  "buttonText": "ಸ್ವೀಕರಿಸಿ ಮತ್ತು ಮುಂದುವರಿಯಿರಿ"
+  "buttonText": "ಸ್ವೀಕರಿಸಿ ಮತ್ತು ಮುಂದುವರಿಯಿರಿ",
+  "uploadLabel": "Capture photo or upload image:",
+  "uploadPrompt": "Please capture or upload a copy of the physical consent form.",
+  "uploadingText": "Uploading..."
+  ,"switchCamera": "Switch Camera"
 }

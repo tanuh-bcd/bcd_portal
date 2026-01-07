@@ -1,9 +1,5 @@
 {
   "title": "ई-सहमति",
-  "logos": {
-    "tanuhAlt": "TANUH Logo",
-    "iiscAlt": "IISC Logo"
-  },
   "headernames": {
     "studyTitle": "अध्ययनशीर्षक",
     "sponsor": "प्रायोजक",
@@ -79,5 +75,12 @@
     }
   ],
   "checkboxLabel": "मैंने ऊपर दी गई जानकारी पढ़ ली है और स्वेच्छा से इस अध्ययन में भाग लेने के लिए सहमत हूँ।",
-  "buttonText": "स्वीकार करें और आगे बढ़ें"
+  "buttonText": "स्वीकार करें और आगे बढ़ें",
+  "uploadLabel": "फोटो लें या इमेज अपलोड करें:",
+  "uploadPrompt": "कृपया भौतिक सहमति फॉर्म की एक प्रति लें या अपलोड करें।",
+  "uploadingText": "अपलोड हो रहा है...",
+  "useCamera": "कैमरा का उपयोग करें",
+  "uploadImage": "इमेज अपलोड करें",
+  "retake": "फिर से लें",
+  "switchCamera": "कैमरा बदलें"
 }

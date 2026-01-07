@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import './Questionnaire.css';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
-import tanuhLogo from '../assets/tanuh.png';
-import iiscLogo from '../assets/IISc_logo.png';
 
 function Questionnaire({ onSubmit, isSubmitting }) {
   const { t, i18n } = useTranslation('questionnaire');
@@ -89,7 +87,31 @@ function Questionnaire({ onSubmit, isSubmitting }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(formDataEn);
+      // Map formDataEn to a list of {question, answer}
+      const responses = [];
+      const extractResponses = (qs) => {
+        qs.forEach(qConfig => {
+          const { key, subQuestions, condition } = qConfig;
+          const questionDataEn = questionsEn[key];
+          
+          if (formDataEn[key] !== undefined) {
+             // Only include if it was shown (condition met or no condition)
+             const showSub = subQuestions && condition && formDataEn[condition.key] === condition.value;
+             
+             responses.push({
+               question: questionDataEn.question,
+               answer: String(formDataEn[key])
+             });
+
+             if (showSub) {
+               extractResponses(subQuestions);
+             }
+          }
+        });
+      };
+
+      formStructure.forEach(section => extractResponses(section.questions));
+      onSubmit(responses);
     } else {
       alert(t('ui.errors.validationAlert'));
     }
@@ -223,11 +245,6 @@ function Questionnaire({ onSubmit, isSubmitting }) {
       </div>
 
       <form className="questionnaire-container" onSubmit={handleSubmit}>
-        <div className="questionnaire-logos">
-          <img src={tanuhLogo} alt={t('ui.logos.tanuhAlt')} className="logo" />
-          <img src={iiscLogo} alt={t('ui.logos.iiscAlt')} className="logo" />
-        </div>
-        
         <LanguageSwitcher />
 
         <div className="form-header">

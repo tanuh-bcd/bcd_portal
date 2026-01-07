@@ -1,9 +1,5 @@
 {
   "ui": {
-    "logos": {
-      "tanuhAlt": "TANUH Logo",
-      "iiscAlt": "IISC Logo"
-    },
     "header": {
       "title": "സ്തനാർബുദ സാധ്യതാ ചോദ്യാവലി",
       "instructions": "ഇനിപ്പറയുന്ന ചോദ്യങ്ങൾക്ക് നിങ്ങളുടെ കഴിവിൻ്റെ പരമാവധി ഉത്തരം നൽകുക.",

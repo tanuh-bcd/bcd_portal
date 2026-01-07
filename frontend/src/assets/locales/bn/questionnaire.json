@@ -1,9 +1,5 @@
 {
   "ui": {
-    "logos": {
-      "tanuhAlt": "TANUH Logo",
-      "iiscAlt": "IISC Logo"
-    },
     "header": {
       "title": "স্তন ক্যান্সারের ঝুঁকি প্রশ্নাবলী",
       "instructions": "অনুগ্রহ করে আপনার সামর্থ্য অনুযায়ী নিম্নলিখিত প্রশ্নের উত্তর দিন।",

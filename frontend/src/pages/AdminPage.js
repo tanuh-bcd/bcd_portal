@@ -1,28 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import tanuhLogo from '../assets/tanuh.png';
-import iiscLogo from '../assets/IISc_logo.png';
-import Consent from '../components/Consent';
-import Questionnaire from '../components/Questionnaire';
-import ThankYou from '../components/ThankYou';
+import Layout from '../components/Layout';
+import PatientPage from './PatientPage';
+import DoctorPage from './DoctorPage';
 
 const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState('patient');
-  const [patientFlowStep, setPatientFlowStep] = useState('consent');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('admin');
   const navigate = useNavigate();
 
   const [userRole, setUserRole] = useState('');
+  const [hospitalName, setHospitalName] = useState('');
 
   useEffect(() => {
     const role = localStorage.getItem('role')?.toLowerCase();
     const token = localStorage.getItem('token');
+    const hospital = localStorage.getItem('hospitalName');
+    
     if (!token || !['admin', 'doctor', 'staff'].includes(role)) {
       navigate('/login');
     } else {
       setUserRole(role);
+      setHospitalName(hospital || '');
+      
+      // Redirect staff and doctor to their respective pages if they aren't admin
       if (role === 'staff') {
-        setActiveTab('patient');
+        navigate('/patient');
+      } else if (role === 'doctor') {
+        navigate('/doctor');
       }
     }
   }, [navigate]);
@@ -30,157 +34,66 @@ const AdminPage = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('hospitalName');
     navigate('/login');
   };
 
-  const handleQuestionnaireSubmit = async (data) => {
-    setIsSubmitting(true);
-    try {
-      // Mock API call
-      console.log('Submitting questionnaire data:', data);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setPatientFlowStep('thankyou');
-    } catch (error) {
-      console.error('Error submitting questionnaire:', error);
-      alert('An error occurred while submitting the questionnaire.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const allTabs = [
+  const tabs = [
     { id: 'patient', label: 'Patient View' },
     { id: 'doctor', label: 'Doctor View' },
     { id: 'admin', label: 'Admin' }
   ];
 
-  const tabs = allTabs.filter(tab => {
-    if (userRole === 'admin') return true;
-    if (userRole === 'doctor') return ['patient', 'doctor'].includes(tab.id);
-    if (userRole === 'staff') return tab.id === 'patient';
-    return false;
-  });
-
-  const renderPatientFlow = () => {
-    switch (patientFlowStep) {
-      case 'consent':
-        return <Consent onAccept={() => setPatientFlowStep('questionnaire')} />;
-      case 'questionnaire':
-        return (
-          <Questionnaire 
-            onSubmit={handleQuestionnaireSubmit} 
-            isSubmitting={isSubmitting} 
-          />
-        );
-      case 'thankyou':
-        return <ThankYou onReset={() => setPatientFlowStep('consent')} />;
-      default:
-        return <Consent onAccept={() => setPatientFlowStep('questionnaire')} />;
-    }
-  };
-
   const renderContent = () => {
-    // Force patient view for staff
-    const currentTab = userRole === 'staff' ? 'patient' : activeTab;
-    switch (currentTab) {
+    switch (activeTab) {
       case 'patient':
-        return <div style={contentStyle}>{renderPatientFlow()}</div>;
+        return <PatientPageContent />;
       case 'doctor':
-        return <div style={contentStyle}>Doctor View Content</div>;
+        return <DoctorPageContent />;
       case 'admin':
-        return <div style={contentStyle}><AdminContent /></div>;
+        return <div style={contentStyle}><AdminContent hospitalName={hospitalName} /></div>;
       default:
         return null;
     }
   };
 
+  if (userRole !== 'admin') {
+    return null; // or a loading spinner while redirecting
+  }
+
   return (
-    <div style={containerStyle}>
-      <header style={headerStyle}>
-        <div style={logoContainerStyle}>
-          <img src={tanuhLogo} alt="Tanuh Logo" style={logoStyle} />
-          <h1 style={titleStyle}>AI enabled Breast Cancer Screening Tool</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <button 
-              onClick={handleLogout}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#f8d7da',
-                color: '#721c24',
-                border: '1px solid #f5c6cb',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Logout
-            </button>
-            <img src={iiscLogo} alt="IISc Logo" style={logoStyle} />
-          </div>
-        </div>
-      </header>
+    <Layout userRole="admin" handleLogout={handleLogout}>
+      <div style={tabContainerStyle}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              ...tabButtonStyle,
+              borderBottom: activeTab === tab.id ? '3px solid #8B008B' : 'none',
+              color: activeTab === tab.id ? '#8B008B' : '#666',
+              fontWeight: activeTab === tab.id ? 'bold' : 'normal'
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {userRole !== 'staff' && (
-        <div style={tabContainerStyle}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                ...tabButtonStyle,
-                borderBottom: activeTab === tab.id ? '3px solid #8B008B' : 'none',
-                color: activeTab === tab.id ? '#8B008B' : '#666',
-                fontWeight: activeTab === tab.id ? 'bold' : 'normal'
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <main style={mainStyle}>
+      <div style={{ marginTop: '20px' }}>
         {renderContent()}
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 };
 
-const containerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  minHeight: '100vh',
-  backgroundColor: '#fff5f7',
-  fontFamily: '"Inter", sans-serif'
+// Simple wrappers for Admin to view other pages content
+const PatientPageContent = () => {
+  return <PatientPage isEmbedded={true} />;
 };
 
-const headerStyle = {
-  padding: '20px',
-  backgroundColor: 'white',
-  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-};
-
-const logoContainerStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  maxWidth: '1200px',
-  margin: '0 auto',
-  width: '100%',
-  gap: '20px'
-};
-
-const logoStyle = {
-  height: '64px',
-  width: '64px',
-  objectFit: 'contain'
-};
-
-const titleStyle = {
-  fontSize: '20px',
-  fontWeight: '600',
-  color: '#8B008B',
-  textAlign: 'center',
-  flex: '1'
+const DoctorPageContent = () => {
+  return <DoctorPage isEmbedded={true} />;
 };
 
 const tabContainerStyle = {
@@ -188,7 +101,8 @@ const tabContainerStyle = {
   justifyContent: 'center',
   backgroundColor: 'white',
   borderBottom: '1px solid #ddd',
-  padding: '0 20px'
+  padding: '0 20px',
+  borderRadius: '8px 8px 0 0'
 };
 
 const tabButtonStyle = {
@@ -200,14 +114,6 @@ const tabButtonStyle = {
   transition: 'all 0.3s ease'
 };
 
-const mainStyle = {
-  flex: 1,
-  padding: '20px',
-  maxWidth: '1200px',
-  margin: '0 auto',
-  width: '100%'
-};
-
 const contentStyle = {
   backgroundColor: 'white',
   padding: '40px',
@@ -217,7 +123,7 @@ const contentStyle = {
   color: '#666'
 };
 
-const AdminContent = () => {
+const AdminContent = ({ hospitalName }) => {
   const [expandedSection, setExpandedSection] = useState(null);
   const [hospitals, setHospitals] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -236,35 +142,68 @@ const AdminContent = () => {
 
   const fetchHospitals = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals`);
-      const data = await response.json();
-      setHospitals(data);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/auth/hospitals`);
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setHospitals(data);
+        } else {
+          console.error("Hospitals data is not an array:", data);
+          alert("Error: Received invalid data format for hospitals.");
+        }
+      } else {
+        const text = await response.text();
+        console.error("Failed to fetch hospitals, response not ok or non-JSON:", text);
+        alert(`Error: Failed to fetch hospitals list. Status: ${response.status}`);
+      }
     } catch (err) {
       console.error("Failed to fetch hospitals", err);
+      alert("Error: Network error while fetching hospitals.");
     }
   };
 
   const fetchRoles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/admin/roles`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/admin/roles`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
-      setRoles(data);
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setRoles(data);
+        } else {
+          console.error("Roles data is not an array:", data);
+          alert("Error: Received invalid data format for roles.");
+        }
+      } else {
+        const text = await response.text();
+        console.error("Failed to fetch roles, response not ok or non-JSON:", text);
+        alert(`Error: Failed to fetch roles list. Status: ${response.status}. This might happen if your session has expired or you don't have admin privileges.`);
+      }
     } catch (err) {
       console.error("Failed to fetch roles", err);
+      alert("Error: Network error while fetching roles.");
     }
   };
 
   const handleCreateUser = async (formData, roleName) => {
+    if (!Array.isArray(roles) || roles.length === 0) {
+      alert("Error: Roles list is empty or not available. Please refresh the page and try again.");
+      return;
+    }
     setLoading(true);
     try {
       const role = roles.find(r => r.name.toLowerCase() === roleName.toLowerCase());
-      if (!role) throw new Error(`Role ${roleName} not found`);
+      if (!role) {
+        const availableRoles = roles.map(r => r.name).join(', ');
+        throw new Error(`Role "${roleName}" not found in the available roles: ${availableRoles}`);
+      }
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/admin/users`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/admin/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -286,8 +225,15 @@ const AdminContent = () => {
         if (roleName === 'Staff') setStaffForm({ fullName: '', email: '', password: '', hospitalId: '' });
         if (roleName === 'Admin') setAdminForm({ fullName: '', email: '', password: '', hospitalId: '' });
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.detail || 'Failed to create account'}`);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const error = await response.json();
+          alert(`Error: ${error.detail || 'Failed to create account'}`);
+        } else {
+          const errorText = await response.text();
+          console.error("Non-JSON error response:", errorText);
+          alert(`Error: Received non-JSON response from server. Status: ${response.status}`);
+        }
       }
     } catch (err) {
       alert(`Error: ${err.message}`);
@@ -300,7 +246,7 @@ const AdminContent = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/admin/hospitals`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/admin/hospitals`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -319,8 +265,15 @@ const AdminContent = () => {
         setHospitalForm({ name: '', contactPerson: '', email: '', address: '' });
         fetchHospitals(); // Refresh hospital list
       } else {
-        const error = await response.json();
-        alert(`Error: ${error.detail || 'Failed to create hospital'}`);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const error = await response.json();
+          alert(`Error: ${error.detail || 'Failed to create hospital'}`);
+        } else {
+          const errorText = await response.text();
+          console.error("Non-JSON error response:", errorText);
+          alert(`Error: Received non-JSON response from server. Status: ${response.status}`);
+        }
       }
     } catch (err) {
       alert(`Error: ${err.message}`);
@@ -503,112 +456,116 @@ const AdminContent = () => {
       </div>
 
       {/* 3. Create another hospital account */}
-      <div style={accordionStyle}>
-        <div style={accordionHeaderStyle} onClick={() => toggleSection('hospital')}>
-          3. Create another hospital account
-          <span>{expandedSection === 'hospital' ? '−' : '+'}</span>
-        </div>
-        {expandedSection === 'hospital' && (
-          <div style={accordionContentStyle}>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Hospital Name</label>
-              <input 
-                style={inputStyle} 
-                value={hospitalForm.name}
-                onChange={(e) => setHospitalForm({...hospitalForm, name: e.target.value})}
-              />
-            </div>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Contact Person</label>
-              <input 
-                style={inputStyle} 
-                value={hospitalForm.contactPerson}
-                onChange={(e) => setHospitalForm({...hospitalForm, contactPerson: e.target.value})}
-              />
-            </div>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Email</label>
-              <input 
-                style={inputStyle} 
-                type="email" 
-                value={hospitalForm.email}
-                onChange={(e) => setHospitalForm({...hospitalForm, email: e.target.value})}
-              />
-            </div>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Address</label>
-              <textarea 
-                style={{...inputStyle, height: '80px'}} 
-                value={hospitalForm.address}
-                onChange={(e) => setHospitalForm({...hospitalForm, address: e.target.value})}
-              />
-            </div>
-            <button 
-              style={{...buttonStyle, opacity: loading ? 0.7 : 1}} 
-              disabled={loading}
-              onClick={handleCreateHospital}
-            >
-              {loading ? 'Creating...' : 'Create Hospital Account'}
-            </button>
+      {hospitalName === 'Test1' && (
+        <div style={accordionStyle}>
+          <div style={accordionHeaderStyle} onClick={() => toggleSection('hospital')}>
+            3. Create another hospital account
+            <span>{expandedSection === 'hospital' ? '−' : '+'}</span>
           </div>
-        )}
-      </div>
+          {expandedSection === 'hospital' && (
+            <div style={accordionContentStyle}>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Hospital Name</label>
+                <input 
+                  style={inputStyle} 
+                  value={hospitalForm.name}
+                  onChange={(e) => setHospitalForm({...hospitalForm, name: e.target.value})}
+                />
+              </div>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Contact Person</label>
+                <input 
+                  style={inputStyle} 
+                  value={hospitalForm.contactPerson}
+                  onChange={(e) => setHospitalForm({...hospitalForm, contactPerson: e.target.value})}
+                />
+              </div>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Email</label>
+                <input 
+                  style={inputStyle} 
+                  type="email" 
+                  value={hospitalForm.email}
+                  onChange={(e) => setHospitalForm({...hospitalForm, email: e.target.value})}
+                />
+              </div>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Address</label>
+                <textarea 
+                  style={{...inputStyle, height: '80px'}} 
+                  value={hospitalForm.address}
+                  onChange={(e) => setHospitalForm({...hospitalForm, address: e.target.value})}
+                />
+              </div>
+              <button 
+                style={{...buttonStyle, opacity: loading ? 0.7 : 1}} 
+                disabled={loading}
+                onClick={handleCreateHospital}
+              >
+                {loading ? 'Creating...' : 'Create Hospital Account'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4. Create admin account for another hospital */}
-      <div style={accordionStyle}>
-        <div style={accordionHeaderStyle} onClick={() => toggleSection('admin-user')}>
-          4. Create admin account for another hospital
-          <span>{expandedSection === 'admin-user' ? '−' : '+'}</span>
-        </div>
-        {expandedSection === 'admin-user' && (
-          <div style={accordionContentStyle}>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Full Name</label>
-              <input 
-                style={inputStyle} 
-                value={adminForm.fullName}
-                onChange={(e) => setAdminForm({...adminForm, fullName: e.target.value})}
-              />
-            </div>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Email</label>
-              <input 
-                style={inputStyle} 
-                type="email" 
-                value={adminForm.email}
-                onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
-              />
-            </div>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Password</label>
-              <input 
-                style={inputStyle} 
-                type="password" 
-                value={adminForm.password}
-                onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
-              />
-            </div>
-            <div style={formGroupStyle}>
-              <label style={labelStyle}>Hospital</label>
-              <select 
-                style={inputStyle} 
-                value={adminForm.hospitalId}
-                onChange={(e) => setAdminForm({...adminForm, hospitalId: e.target.value})}
-              >
-                <option value="">Select Hospital</option>
-                {hospitals.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-              </select>
-            </div>
-            <button 
-              style={{...buttonStyle, opacity: loading ? 0.7 : 1}} 
-              disabled={loading}
-              onClick={() => handleCreateUser(adminForm, 'Admin')}
-            >
-              {loading ? 'Creating...' : 'Create Admin Account'}
-            </button>
+      {hospitalName === 'Test1' && (
+        <div style={accordionStyle}>
+          <div style={accordionHeaderStyle} onClick={() => toggleSection('admin-user')}>
+            4. Create admin account for another hospital
+            <span>{expandedSection === 'admin-user' ? '−' : '+'}</span>
           </div>
-        )}
-      </div>
+          {expandedSection === 'admin-user' && (
+            <div style={accordionContentStyle}>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Full Name</label>
+                <input 
+                  style={inputStyle} 
+                  value={adminForm.fullName}
+                  onChange={(e) => setAdminForm({...adminForm, fullName: e.target.value})}
+                />
+              </div>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Email</label>
+                <input 
+                  style={inputStyle} 
+                  type="email" 
+                  value={adminForm.email}
+                  onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
+                />
+              </div>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Password</label>
+                <input 
+                  style={inputStyle} 
+                  type="password" 
+                  value={adminForm.password}
+                  onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                />
+              </div>
+              <div style={formGroupStyle}>
+                <label style={labelStyle}>Hospital</label>
+                <select 
+                  style={inputStyle} 
+                  value={adminForm.hospitalId}
+                  onChange={(e) => setAdminForm({...adminForm, hospitalId: e.target.value})}
+                >
+                  <option value="">Select Hospital</option>
+                  {hospitals.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                </select>
+              </div>
+              <button 
+                style={{...buttonStyle, opacity: loading ? 0.7 : 1}} 
+                disabled={loading}
+                onClick={() => handleCreateUser(adminForm, 'Admin')}
+              >
+                {loading ? 'Creating...' : 'Create Admin Account'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

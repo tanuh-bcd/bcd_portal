@@ -16,17 +16,6 @@
   border-top: 6px solid #8B008B;
 }
 
-.thank-you-logos {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 30px;
-}
-
-.thank-you-logos .logo {
-  height: 50px;
-  object-fit: contain;
-}
-
 .success-icon {
   margin-bottom: 20px;
 }

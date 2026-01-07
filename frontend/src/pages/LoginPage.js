@@ -57,9 +57,15 @@ const LoginPage = () => {
         // Here you would typically store the token and redirect
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('role', formData.role);
+        localStorage.setItem('hospitalName', formData.hospitalName);
         
-        if (['admin', 'doctor', 'staff'].includes(formData.role.toLowerCase())) {
+        const roleLower = formData.role.toLowerCase();
+        if (roleLower === 'admin') {
           navigate('/admin');
+        } else if (roleLower === 'doctor') {
+          navigate('/doctor');
+        } else if (roleLower === 'staff') {
+          navigate('/patient');
         } else {
           // Handle other roles when their pages are ready
           // navigate('/dashboard');

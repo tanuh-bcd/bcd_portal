@@ -1,9 +1,5 @@
 {
   "ui": {
-    "logos": {
-      "tanuhAlt": "TANUH Logo",
-      "iiscAlt": "IISC Logo"
-    },
     "header": {
       "title": "ಸ್ತನ ಕ್ಯಾನ್ಸರ್ ಅಪಾಯ ಪ್ರಶ್ನಾವಳಿ",
       "instructions": "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಾಮರ್ಥ್ಯಕ್ಕೆ ತಕ್ಕಂತೆ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ.",

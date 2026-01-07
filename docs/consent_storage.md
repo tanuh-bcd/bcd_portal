@@ -14,13 +14,16 @@ To track the file in your database, you should store the metadata and the refere
 You can add a `consent_records` table or update your `sessions` table (if you have one) to include a reference to the scanned file. Based on your current schema in `backend/src/models/models.py`, here is a recommended structure:
 
 ```sql
-CREATE TABLE patient_sessions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    hospital_id INT,
-    patient_identifier VARCHAR(255), -- Or link to a patients table
-    consent_scanned_url TEXT,         -- The GCS path or URL
-    consent_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
+CREATE TABLE `patient_sessions` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `hospital_id` INT NOT NULL,
+  `consent_scanned_url` TEXT NULL,
+  `consent_timestamp` TIMESTAMP NULL,
+  `snehita_brisk_score` FLOAT NULL,
+  `tryrer_risk` FLOAT NULL,
+  `gail_risk` FLOAT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `hospital_id` (`hospital_id`)
 );
 ```
 
