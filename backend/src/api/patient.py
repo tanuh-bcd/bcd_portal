@@ -33,6 +33,15 @@ FILE_TYPE_MAP = {
 def get_ist_now():
     return datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
 
+def generate_subject_id(db):
+    from sqlalchemy import func
+    result = db.query(func.max(PatientSession.id)).scalar()
+    if result and result.startswith("subject_"):
+        num = int(result.split("_")[1]) + 1
+    else:
+        num = 1
+    return f"subject_{num:05d}"
+
 def build_blob_path(clinic_id, subject_id, file_type, original_filename, ist_now, seq=None):
     doc_type = FILE_TYPE_MAP.get(file_type, file_type)
     extension = original_filename.rsplit('.', 1)[-1] if '.' in original_filename else 'bin'
@@ -122,13 +131,15 @@ async def upload_consent(
         gcs_url = None
         ist_now = get_ist_now()
 
+        subject_id = generate_subject_id(db)
+
         if file:
             content = await file.read()
-            temp_subject_id = f"new-{uuid.uuid4().hex[:8]}"
-            destination_blob_name = build_blob_path(hospital_id, temp_subject_id, "consent", file.filename, ist_now)
+            destination_blob_name = build_blob_path(hospital_id, subject_id, "consent", file.filename, ist_now)
             gcs_url = upload_to_gcs(content, destination_blob_name)
 
         new_session = PatientSession(
+            id=subject_id,
             hospital_id=hospital_id,
             consent_scanned_url=gcs_url,
             consent_timestamp=ist_now

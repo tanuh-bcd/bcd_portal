@@ -45,7 +45,16 @@ def create_hospital(
             status_code=400,
             detail="A hospital with this email already exists.",
         )
+    from sqlalchemy import func
+    max_id = db.query(func.max(Hospital.id)).scalar()
+    if max_id and max_id.startswith("clinic_"):
+        num = int(max_id.split("_")[1]) + 1
+    else:
+        num = 1
+    new_id = f"clinic_{num:05d}"
+
     db_hospital = Hospital(
+        id=new_id,
         name=hospital_in.name,
         contact_person=hospital_in.contact_person,
         email=hospital_in.email,

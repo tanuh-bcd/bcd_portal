@@ -11,7 +11,7 @@ class QuestionResponseType(str, enum.Enum):
 class Hospital(Base):
     __tablename__ = "hospitals"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(20), primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     contact_person = Column(String(50), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
@@ -32,7 +32,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    hospital_id = Column(Integer, ForeignKey("hospitals.id"))
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"))
     role_id = Column(Integer, ForeignKey("roles.id"))
     email = Column(String(255), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
@@ -100,8 +100,8 @@ class QuestionOptionTranslation(Base):
 class PatientSession(Base):
     __tablename__ = "patient_sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    hospital_id = Column(Integer, ForeignKey("hospitals.id"))
+    id = Column(String(20), primary_key=True, index=True)
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"))
     consent_scanned_url = Column(Text)
     consent_timestamp = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
@@ -113,8 +113,8 @@ class PatientResponse(Base):
     __tablename__ = "patient_responses"
 
     id = Column(Integer, primary_key=True, index=True)
-    hospital_id = Column(Integer, ForeignKey("hospitals.id"), nullable=False)
-    session_id = Column(Integer, ForeignKey("patient_sessions.id", ondelete="CASCADE"), nullable=False)
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"), nullable=False)
+    session_id = Column(String(20), ForeignKey("patient_sessions.id", ondelete="CASCADE"), nullable=False)
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
@@ -127,8 +127,8 @@ class DoctorAssessment(Base):
     __tablename__ = "doctor_assessments"
 
     id = Column(Integer, primary_key=True, index=True)
-    patient_session_id = Column(Integer, ForeignKey("patient_sessions.id", ondelete="CASCADE"), nullable=False)
-    hospital_id = Column(Integer, ForeignKey("hospitals.id"), nullable=False)
+    patient_session_id = Column(String(20), ForeignKey("patient_sessions.id", ondelete="CASCADE"), nullable=False)
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"), nullable=False)
     doctor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     questionnaire_feedback = Column(Text)
     is_questionnaire_correct = Column(Boolean, default=False)

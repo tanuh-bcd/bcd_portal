@@ -5,7 +5,7 @@ import datetime
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
-    hospital_id: int
+    hospital_id: str
     role_id: int
 
 class UserCreate(UserBase):
@@ -24,7 +24,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
-    hospital_id: Optional[int] = None
+    hospital_id: Optional[str] = None
     role: Optional[str] = None
 
 class LoginRequest(BaseModel):
@@ -43,7 +43,7 @@ class HospitalCreate(HospitalBase):
     pass
 
 class HospitalResponse(HospitalBase):
-    id: int
+    id: str
 
     class Config:
         from_attributes = True
@@ -111,8 +111,8 @@ class AttachmentResponse(BaseModel):
 
 class DoctorAssessmentResponse(BaseModel):
     id: int
-    patient_session_id: int
-    hospital_id: int
+    patient_session_id: str
+    hospital_id: str
     doctor_id: int
     questionnaire_feedback: Optional[str] = None
     is_questionnaire_correct: bool
@@ -129,7 +129,7 @@ class DoctorAssessmentResponse(BaseModel):
         from_attributes = True
 
 class PatientSessionListItem(BaseModel):
-    id: int
+    id: str
     consent_scanned_url: Optional[str] = None
     consent_timestamp: datetime.datetime
     has_assessment: bool = False
@@ -150,11 +150,11 @@ class PatientSessionDetail(PatientSessionListItem):
         from_attributes = True
 
 class QuestionnaireSubmission(BaseModel):
-    session_id: int
+    session_id: str
     responses: list[PatientResponseCreate]
 
 class DoctorAssessmentCreate(BaseModel):
-    patient_session_id: int
+    patient_session_id: str
     questionnaire_feedback: Optional[str] = None
     is_questionnaire_correct: bool = False
     mammo_birads: Optional[str] = None
