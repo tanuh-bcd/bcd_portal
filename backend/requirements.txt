@@ -12,3 +12,5 @@ google-cloud-storage
 cloud-sql-python-connector[pymysql]
 google-auth
 pytz
+pytest
+httpx
