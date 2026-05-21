@@ -120,15 +120,20 @@ function Consent({ onAccept }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setIsCameraActive(true);
+      setTimeout(() => {
+        if (videoRef.current && streamRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(() => {});
+        }
+      }, 100);
     } catch (err) {
       setCameraError('Could not access camera. Please use the upload option.');
     }
   };
 
   const stopCamera = () => {
-    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(track => track.stop()); streamRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
     setIsCameraActive(false);
   };
@@ -137,16 +142,41 @@ function Consent({ onAccept }) {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (video.videoWidth === 0) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    canvas.toBlob((blob) => {
-      if (blob) {
-        setScannedFile(new File([blob], `consent-${Date.now()}.jpg`, { type: 'image/jpeg' }));
-        setTimeout(() => stopCamera(), 100);
+
+    const doCapture = () => {
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        setCameraError('Camera not ready. Please wait a moment and try again.');
+        return;
       }
-    }, 'image/jpeg', 0.9);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      try {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            setScannedFile(new File([blob], `consent-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+            setTimeout(() => stopCamera(), 100);
+          } else {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            const arr = dataUrl.split(',');
+            const bstr = atob(arr[1]);
+            const u8 = new Uint8Array(bstr.length);
+            for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+            setScannedFile(new File([u8], `consent-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+            setTimeout(() => stopCamera(), 100);
+          }
+        }, 'image/jpeg', 0.9);
+      } catch (e) {
+        setCameraError('Capture failed. Please try again or use upload.');
+      }
+    };
+
+    if (video.videoWidth === 0) {
+      setTimeout(doCapture, 500);
+    } else {
+      doCapture();
+    }
   };
 
   const handleFileChange = (e) => {
@@ -208,7 +238,7 @@ function Consent({ onAccept }) {
 
         {isCameraActive && (
           <div className="camera-preview-container">
-            <video ref={videoRef} autoPlay playsInline className="camera-video" />
+            <video ref={videoRef} autoPlay playsInline muted className="camera-video" />
             <div className="camera-controls">
               <button type="button" className="action-button capture-btn" onClick={capturePhoto}>
                 <div className="capture-inner" />
@@ -224,14 +254,21 @@ function Consent({ onAccept }) {
         {cameraError && <p className="camera-error">{cameraError}</p>}
 
         {scannedFile && (
-          <div className="selected-file-container">
-            <p className="file-name">{scannedFile.name}</p>
-            <button type="button" className="action-button retake-btn" onClick={() => { setScannedFile(null); startCamera(); }}>
-              <RefreshCw size={16} /> Retake
-            </button>
-            <button type="button" className="action-button remove-file-btn" onClick={() => setScannedFile(null)}>
-              <X size={16} />
-            </button>
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <img
+              src={URL.createObjectURL(scannedFile)}
+              alt="Captured consent"
+              style={{ maxWidth: '100%', maxHeight: 250, borderRadius: 10, border: '2px solid #14868C', marginBottom: 10 }}
+            />
+            <div className="selected-file-container">
+              <p className="file-name">{scannedFile.name}</p>
+              <button type="button" className="action-button retake-btn" onClick={() => { setScannedFile(null); startCamera(); }}>
+                <RefreshCw size={16} /> Retake
+              </button>
+              <button type="button" className="action-button remove-file-btn" onClick={() => setScannedFile(null)}>
+                <X size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>
