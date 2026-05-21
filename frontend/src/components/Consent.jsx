@@ -111,8 +111,11 @@ function Consent({ onAccept }) {
 
   return (
     <div className="consent-container">
-
-      {/* --- ADD LANGUAGE SWITCHER HERE --- */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <img src="/tanuh.png" alt="TANUH Logo" style={{ height: 55, objectFit: 'contain' }} />
+        <img src="/MoE_Logo.svg" alt="MoE Logo" style={{ height: 45, objectFit: 'contain' }} />
+        <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: 60, objectFit: 'contain' }} />
+      </div>
       <LanguageSwitcher />
 
       {/* Use the 't' function to get the text */}

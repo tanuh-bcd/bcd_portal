@@ -65,9 +65,9 @@ def _seed_test_data():
         session.close()
         return
 
-    session.add(Hospital(id=1, name="TestHospital", contact_person="Dr. Test", email="test@hospital.com"))
-    session.add(Hospital(id=2, name="Test1", contact_person="Super Admin", email="super@test1.com"))
-    for name in ["Admin", "Doctor", "Staff"]:
+    session.add(Hospital(id="clinic_00001", name="TestHospital", contact_person="Dr. Test", email="test@hospital.com"))
+    session.add(Hospital(id="clinic_00002", name="Test", contact_person="Super Admin", email="super@test.com"))
+    for name in ["Admin", "Doctor", "Staff", "Clinician"]:
         session.add(Role(name=name))
     session.commit()
 
@@ -75,9 +75,11 @@ def _seed_test_data():
     doctor_role = session.query(Role).filter(Role.name == "Doctor").first()
     staff_role = session.query(Role).filter(Role.name == "Staff").first()
 
-    session.add(User(email="admin@test.com", password_hash=get_password_hash("password123"), hospital_id=1, role_id=admin_role.id, is_active=True, full_name="Admin User"))
-    session.add(User(email="doctor@test.com", password_hash=get_password_hash("password123"), hospital_id=1, role_id=doctor_role.id, is_active=True, full_name="Dr. Test"))
-    session.add(User(email="staff@test.com", password_hash=get_password_hash("password123"), hospital_id=1, role_id=staff_role.id, is_active=True, full_name="Staff User"))
+    clinician_role = session.query(Role).filter(Role.name == "Clinician").first()
+
+    session.add(User(email="admin@test.com", password_hash=get_password_hash("password123"), hospital_id="clinic_00001", role_id=admin_role.id, is_active=True, full_name="Admin User"))
+    session.add(User(email="doctor@test.com", password_hash=get_password_hash("password123"), hospital_id="clinic_00001", role_id=clinician_role.id, is_active=True, full_name="Dr. Test"))
+    session.add(User(email="staff@test.com", password_hash=get_password_hash("password123"), hospital_id="clinic_00001", role_id=staff_role.id, is_active=True, full_name="Staff User"))
     session.commit()
     session.close()
 
@@ -93,10 +95,10 @@ def client():
 
 @pytest.fixture
 def seed_hospital_and_user():
-    return {"hospital_id": 1, "hospital_name": "TestHospital"}
+    return {"hospital_id": "clinic_00001", "hospital_name": "TestHospital"}
 
 
-def get_token(role="Admin", email=None, hospital_id=1):
+def get_token(role="Admin", email=None, hospital_id="clinic_00001"):
     if email is None:
         email = f"{role.lower()}@test.com"
     return create_access_token(data={"sub": email, "hospital_id": hospital_id, "role": role})

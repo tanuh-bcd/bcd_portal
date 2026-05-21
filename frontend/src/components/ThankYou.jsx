@@ -364,10 +364,11 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
     return (
     <div className="thank-you-overlay">
       <div className="thank-you-dialog">
-        {/* --- MODIFIED (but still commented out) ---
-        <img src="/tanuh.png" alt={thankYouData.logos.tanuhAlt} className="logo tanuh-logo" />
-        <img src="/IISc_logo.png" alt={thankYouData.logos.iiscAlt} className="logo iisc-logo" />
-        */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <img src="/tanuh.png" alt="TANUH Logo" style={{ height: 55, objectFit: 'contain' }} />
+          <img src="/MoE_Logo.svg" alt="MoE Logo" style={{ height: 45, objectFit: 'contain' }} />
+          <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: 60, objectFit: 'contain' }} />
+        </div>
 
         <button className="close-button" onClick={() => window.location.reload()}>&times;</button>
         <div className="thank-you-header">

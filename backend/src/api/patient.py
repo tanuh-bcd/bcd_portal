@@ -68,6 +68,93 @@ def upload_to_gcs(file_content, destination_blob_name):
     blob.upload_from_string(file_content, content_type="application/octet-stream")
     return f"gs://{settings.GCP_STORAGE_BUCKET}/{destination_blob_name}"
 
+def _get_storage_client():
+    if settings.GOOGLE_APPLICATION_CREDENTIALS and settings.GOOGLE_APPLICATION_CREDENTIALS.strip():
+        return storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
+    return storage.Client()
+
+
+@router.post("/upload-url")
+def generate_upload_url(
+    file_type: str = Form(...),
+    file_name: str = Form(...),
+    session_id: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    hospital_id = current_user.get("hospital_id")
+    if not hospital_id:
+        raise HTTPException(status_code=400, detail="User hospital ID not found")
+
+    ist_now = get_ist_now()
+    blob_path = build_blob_path(hospital_id, session_id, file_type, file_name, ist_now)
+
+    client = _get_storage_client()
+    bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+    blob = bucket.blob(blob_path)
+
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=datetime.timedelta(hours=1),
+        method="PUT",
+        content_type="application/octet-stream",
+    )
+
+    gcs_url = f"gs://{settings.GCP_STORAGE_BUCKET}/{blob_path}"
+    return {
+        "upload_url": signed_url,
+        "gcs_url": gcs_url,
+        "blob_path": blob_path,
+    }
+
+
+@router.post("/upload-complete")
+def record_upload(
+    session_id: str = Form(...),
+    file_type: str = Form(...),
+    file_name: str = Form(...),
+    gcs_url: str = Form(...),
+    mime_type: str = Form(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    hospital_id = current_user.get("hospital_id")
+    doctor_id = current_user.get("id")
+
+    assessment = db.query(DoctorAssessment).filter(
+        DoctorAssessment.patient_session_id == session_id
+    ).first()
+
+    if not assessment:
+        assessment = DoctorAssessment(
+            patient_session_id=session_id,
+            hospital_id=hospital_id,
+            doctor_id=doctor_id,
+        )
+        db.add(assessment)
+        db.flush()
+
+    existing = db.query(Attachment).filter(
+        Attachment.assessment_id == assessment.id,
+        Attachment.file_type == file_type
+    ).first()
+
+    if existing:
+        existing.file_name = file_name
+        existing.storage_url = gcs_url
+        existing.mime_type = mime_type
+    else:
+        db.add(Attachment(
+            assessment_id=assessment.id,
+            file_type=file_type,
+            file_name=file_name,
+            storage_url=gcs_url,
+            mime_type=mime_type,
+        ))
+
+    db.commit()
+    return {"success": True}
+
+
 @router.get("/questions", response_model=List[QuestionResponse])
 def get_questions(lang: str = "en", db: Session = Depends(get_db)):
     # Optimized query with joinedload to fetch translations and options in fewer queries

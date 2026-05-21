@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ResumableUpload from './ResumableUpload';
 
 const BIRADS_OPTIONS = [
   { value: '0', label: '0 — Incomplete' },
@@ -562,15 +563,15 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <UploadSlot label="CC Left" hint=".dcm" accept=".dcm,application/dicom,image/*" name="mammo_cc_left" file={files.mammo_cc_left} existing={getAttachmentByType('mammo_cc_left')} onChange={handleFileChange} />
-                  <UploadSlot label="MLO Left" hint=".dcm" accept=".dcm,application/dicom,image/*" name="mammo_mlo_left" file={files.mammo_mlo_left} existing={getAttachmentByType('mammo_mlo_left')} onChange={handleFileChange} />
+                  <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} />
+                  <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} />
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <UploadSlot label="CC Right" hint=".dcm" accept=".dcm,application/dicom,image/*" name="mammo_cc_right" file={files.mammo_cc_right} existing={getAttachmentByType('mammo_cc_right')} onChange={handleFileChange} />
-                  <UploadSlot label="MLO Right" hint=".dcm" accept=".dcm,application/dicom,image/*" name="mammo_mlo_right" file={files.mammo_mlo_right} existing={getAttachmentByType('mammo_mlo_right')} onChange={handleFileChange} />
+                  <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} />
+                  <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} />
                 </div>
               </div>
             </div>
@@ -603,9 +604,9 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={styles.cardBody}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <UploadSlot label="Ultrasound" hint=".dcm / .jpg" accept=".dcm,image/*,video/*" name="us_video" file={files.us_video} existing={getAttachmentByType('us_video')} onChange={handleFileChange} />
-              <UploadSlot label="Ultrasound Report" hint=".pdf" accept=".pdf,image/*" name="us_reading" file={files.us_reading} existing={getAttachmentByType('us_reading')} onChange={handleFileChange} />
-              <UploadSlot label="Biopsy Report" hint=".pdf" accept=".pdf,image/*" name="biopsy_doc" file={files.biopsy_doc} existing={getAttachmentByType('biopsy_reading')} onChange={handleFileChange} />
+              <ResumableUpload label="Sonogram" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} />
+              <UploadSlot label="Sonogram Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" name="us_reading" file={files.us_reading} existing={getAttachmentByType('us_reading')} onChange={handleFileChange} />
+              <UploadSlot label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" name="biopsy_doc" file={files.biopsy_doc} existing={getAttachmentByType('biopsy_reading')} onChange={handleFileChange} />
             </div>
           </div>
         </div>
@@ -621,15 +622,15 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <UploadSlot label="CC Left Annotation" hint=".dcm" accept=".dcm,application/dicom" name="annot_cc_left" file={files.annot_cc_left} existing={getAttachmentByType('annot_cc_left')} onChange={handleFileChange} />
-                  <UploadSlot label="MLO Left Annotation" hint=".dcm" accept=".dcm,application/dicom" name="annot_mlo_left" file={files.annot_mlo_left} existing={getAttachmentByType('annot_mlo_left')} onChange={handleFileChange} />
+                  <ResumableUpload label="CC Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_left" sessionId={sessionId} existing={getAttachmentByType('annot_cc_left')} />
+                  <ResumableUpload label="MLO Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_left" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_left')} />
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <UploadSlot label="CC Right Annotation" hint=".dcm" accept=".dcm,application/dicom" name="annot_cc_right" file={files.annot_cc_right} existing={getAttachmentByType('annot_cc_right')} onChange={handleFileChange} />
-                  <UploadSlot label="MLO Right Annotation" hint=".dcm" accept=".dcm,application/dicom" name="annot_mlo_right" file={files.annot_mlo_right} existing={getAttachmentByType('annot_mlo_right')} onChange={handleFileChange} />
+                  <ResumableUpload label="CC Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_right" sessionId={sessionId} existing={getAttachmentByType('annot_cc_right')} />
+                  <ResumableUpload label="MLO Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_right" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_right')} />
                 </div>
               </div>
             </div>
