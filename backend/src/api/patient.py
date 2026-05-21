@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Form
 from sqlalchemy.orm import Session, joinedload
-from ..db.session import get_db
+from ..db.session import get_db, get_questionnaire_db
 from ..models.models import PatientSession, Question, QuestionTranslation, QuestionOption, QuestionOptionTranslation, PatientResponse, DoctorAssessment, Attachment
 from ..schemas.schemas import QuestionResponse, QuestionOptionResponse, QuestionnaireSubmission, PatientSessionListItem, PatientSessionDetail, DoctorAssessmentCreate, DoctorAssessmentResponse
 from ..core.config import settings
@@ -247,23 +247,24 @@ async def create_doctor_assessment(
     annot_mlo_left: Optional[UploadFile] = File(None),
     annot_mlo_right: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
+    q_db: Session = Depends(get_questionnaire_db),
     current_user: dict = Depends(get_current_user)
 ):
     try:
         hospital_id = current_user.get("hospital_id")
         doctor_id = current_user.get("id")
         user_role = current_user.get("role")
-        
+
         if not hospital_id or not doctor_id:
             raise HTTPException(status_code=400, detail="User hospital ID or doctor ID not found")
-            
-        # Verify session
-        session = db.query(PatientSession).filter(
-            PatientSession.id == patient_session_id,
-            PatientSession.hospital_id == hospital_id
-        ).first()
-        
-        if not session:
+
+        # Verify session exists in bcd_questionnaire
+        from sqlalchemy import text as sql_text
+        session_row = q_db.execute(sql_text(
+            "SELECT session_id FROM session_table WHERE session_id = :sid"
+        ), {"sid": patient_session_id}).fetchone()
+
+        if not session_row:
             raise HTTPException(status_code=404, detail="Patient session not found")
             
         # Check if assessment already exists
