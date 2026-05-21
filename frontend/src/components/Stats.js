@@ -143,7 +143,7 @@ const Stats = () => {
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><MapPinIcon className="summary-icon" size={24} /><h3>States</h3></div>
-          <div className="big-number"><AnimatedCounter value={2} /></div>
+          <div className="big-number"><AnimatedCounter value={data.statesCount || 0} /></div>
         </div>
       </div>
 

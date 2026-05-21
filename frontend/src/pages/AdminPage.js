@@ -16,7 +16,7 @@ const AdminPage = () => {
     const token = localStorage.getItem('token');
     const hospital = localStorage.getItem('hospitalName');
     
-    if (!token || !['admin', 'doctor', 'staff'].includes(role)) {
+    if (!token || !['admin', 'clinician', 'staff'].includes(role)) {
       navigate('/login');
     } else {
       setUserRole(role);
@@ -25,7 +25,7 @@ const AdminPage = () => {
       // Redirect staff and doctor to their respective pages if they aren't admin
       if (role === 'staff') {
         navigate('/patient');
-      } else if (role === 'doctor') {
+      } else if (role === 'clinician') {
         navigate('/doctor');
       }
     }
@@ -35,12 +35,14 @@ const AdminPage = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('hospitalName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     navigate('/login');
   };
 
   const tabs = [
-    { id: 'patient', label: 'Patient View' },
-    { id: 'doctor', label: 'Doctor View' },
+    { id: 'patient', label: 'Subject View' },
+    { id: 'doctor', label: 'Clinician View' },
     { id: 'admin', label: 'Admin' }
   ];
 
@@ -130,7 +132,7 @@ const AdminContent = ({ hospitalName }) => {
   // Forms states
   const [doctorForm, setDoctorForm] = useState({ fullName: '', email: '', password: '', hospitalId: '' });
   const [staffForm, setStaffForm] = useState({ fullName: '', email: '', password: '', hospitalId: '' });
-  const [hospitalForm, setHospitalForm] = useState({ name: '', contactPerson: '', email: '', address: '' });
+  const [hospitalForm, setHospitalForm] = useState({ name: '', contactPerson: '', email: '', address: '', pincode: '', state: '' });
   const [adminForm, setAdminForm] = useState({ fullName: '', email: '', password: '', hospitalId: '' });
 
   useEffect(() => {
@@ -254,13 +256,15 @@ const AdminContent = ({ hospitalName }) => {
           name: hospitalForm.name,
           contact_person: hospitalForm.contactPerson,
           email: hospitalForm.email,
-          address: hospitalForm.address
+          address: hospitalForm.address,
+          pincode: hospitalForm.pincode,
+          state: hospitalForm.state
         })
       });
       
       if (response.ok) {
         alert('Hospital account created successfully!');
-        setHospitalForm({ name: '', contactPerson: '', email: '', address: '' });
+        setHospitalForm({ name: '', contactPerson: '', email: '', address: '', pincode: '', state: '' });
         fetchHospitals(); // Refresh hospital list
       } else {
         const contentType = response.headers.get("content-type");
@@ -341,10 +345,10 @@ const AdminContent = ({ hospitalName }) => {
     <div style={{ color: '#333' }}>
       <h2 style={{ marginBottom: '20px', color: '#14868C' }}>Administrative Tasks</h2>
       
-      {/* 1. Create Doctor Account */}
+      {/* 1. Create Clinician Account */}
       <div style={accordionStyle}>
         <div style={accordionHeaderStyle} onClick={() => toggleSection('doctor')}>
-          1. Create a doctor account for the hospital
+          1. Create a clinician account for the hospital
           <span>{expandedSection === 'doctor' ? '−' : '+'}</span>
         </div>
         {expandedSection === 'doctor' && (
@@ -389,9 +393,9 @@ const AdminContent = ({ hospitalName }) => {
             <button 
               style={{...buttonStyle, opacity: loading ? 0.7 : 1}} 
               disabled={loading}
-              onClick={() => handleCreateUser(doctorForm, 'Doctor')}
+              onClick={() => handleCreateUser(doctorForm, 'Clinician')}
             >
-              {loading ? 'Creating...' : 'Create Doctor Account'}
+              {loading ? 'Creating...' : 'Create Clinician Account'}
             </button>
           </div>
         )}
@@ -489,14 +493,35 @@ const AdminContent = ({ hospitalName }) => {
               </div>
               <div style={formGroupStyle}>
                 <label style={labelStyle}>Address</label>
-                <textarea 
-                  style={{...inputStyle, height: '80px'}} 
+                <textarea
+                  style={{...inputStyle, height: '80px'}}
                   value={hospitalForm.address}
                   onChange={(e) => setHospitalForm({...hospitalForm, address: e.target.value})}
                 />
               </div>
-              <button 
-                style={{...buttonStyle, opacity: loading ? 0.7 : 1}} 
+              <div style={{ display: 'flex', gap: '15px' }}>
+                <div style={{ ...formGroupStyle, flex: 1 }}>
+                  <label style={labelStyle}>Pincode</label>
+                  <input
+                    style={inputStyle}
+                    value={hospitalForm.pincode}
+                    placeholder="e.g. 560012"
+                    maxLength={10}
+                    onChange={(e) => setHospitalForm({...hospitalForm, pincode: e.target.value})}
+                  />
+                </div>
+                <div style={{ ...formGroupStyle, flex: 2 }}>
+                  <label style={labelStyle}>State</label>
+                  <input
+                    style={inputStyle}
+                    value={hospitalForm.state}
+                    placeholder="e.g. Karnataka"
+                    onChange={(e) => setHospitalForm({...hospitalForm, state: e.target.value})}
+                  />
+                </div>
+              </div>
+              <button
+                style={{...buttonStyle, opacity: loading ? 0.7 : 1}}
                 disabled={loading}
                 onClick={handleCreateHospital}
               >

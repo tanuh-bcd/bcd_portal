@@ -10,12 +10,13 @@ const DoctorPage = ({ isEmbedded = false }) => {
   const [error, setError] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortStack, setSortStack] = useState([{ key: 'date', dir: 'desc' }]);
 
   useEffect(() => {
     if (!isEmbedded) {
       const role = localStorage.getItem('role')?.toLowerCase();
       const token = localStorage.getItem('token');
-      if (!token || (role !== 'doctor' && role !== 'admin')) {
+      if (!token || (role !== 'clinician' && role !== 'admin')) {
         navigate('/login');
         return;
       }
@@ -23,7 +24,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
     fetchSessions();
   }, [navigate, isEmbedded]);
 
-  const fetchSessions = async () => {
+  const fetchSessions = async (sortParam) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -33,7 +34,8 @@ const DoctorPage = ({ isEmbedded = false }) => {
         return;
       }
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/api/v1/doctor/sessions`, {
+      const sortQuery = sortParam || sortStack.map(s => `${s.key}:${s.dir}`).join(',');
+      const response = await fetch(`${apiUrl}/api/v1/doctor/sessions?sort=${encodeURIComponent(sortQuery)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,6 +102,8 @@ const DoctorPage = ({ isEmbedded = false }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('hospitalName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     navigate('/login');
   };
 
@@ -112,63 +116,125 @@ const DoctorPage = ({ isEmbedded = false }) => {
     return gcsUrl;
   };
 
+  const RISK_COLORS = { 'Baseline Risk': '#6ee7b7', 'Evident Risk': '#fde047', 'Significant Risk': '#fb923c', 'High Risk': '#fb7185' };
+
+  const handleSort = (key) => {
+    setSortStack(prev => {
+      const existing = prev.find(s => s.key === key);
+      let newStack;
+      if (existing) {
+        newStack = prev.map(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : s);
+      } else {
+        newStack = [...prev, { key, dir: 'asc' }];
+        if (newStack.length > 3) newStack = newStack.slice(-3);
+      }
+      const sortQuery = newStack.map(s => `${s.key}:${s.dir}`).join(',');
+      fetchSessions(sortQuery);
+      return newStack;
+    });
+  };
+
+  const clearSort = () => {
+    const defaultSort = [{ key: 'date', dir: 'desc' }];
+    setSortStack(defaultSort);
+    fetchSessions('date:desc');
+  };
+
+  const sortArrow = (key) => {
+    const entry = sortStack.find(s => s.key === key);
+    if (!entry) return ' ⇅';
+    const pos = sortStack.indexOf(entry) + 1;
+    const arrow = entry.dir === 'asc' ? '↑' : '↓';
+    return ` ${arrow}${sortStack.length > 1 ? pos : ''}`;
+  };
+
   const content = (
     <div style={contentStyle}>
-      <h2 style={{ color: '#333', marginBottom: '20px' }}>Patient List</h2>
-      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ color: '#333', margin: 0 }}>Subject List</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {sortStack.map((s, i) => (
+            <span key={i} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, backgroundColor: '#e8f7f8', color: '#14868C', fontWeight: 600 }}>
+              {s.key}{s.dir === 'asc' ? '↑' : '↓'}
+            </span>
+          ))}
+          {sortStack.length > 1 && (
+            <button onClick={clearSort} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, border: '1px solid #ccc', background: '#fff', cursor: 'pointer', color: '#666' }}>
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
       {loading && <p>Loading sessions...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      {!loading && !error && sessions.length === 0 && <p>No patient sessions found.</p>}
+
+      {!loading && !error && sessions.length === 0 && <p>No sessions found.</p>}
       
       {!loading && !error && sessions.length > 0 && (
         <div style={tableContainerStyle}>
           <table style={tableStyle}>
             <thead>
               <tr style={headerRowStyle}>
-                <th style={thStyle}>Patient ID</th>
-                <th style={thStyle}>Consent Date</th>
-                <th style={thStyle}>Doctor Assessment</th>
-                <th style={thStyle}>Mammo DICOM</th>
-                <th style={thStyle}>Mammo Reading</th>
-                <th style={thStyle}>US Video</th>
-                <th style={thStyle}>US Reading</th>
-                <th style={thStyle}>Biopsy</th>
-                <th style={thStyle}>Actions</th>
+                <th style={thCenterStyle}>Patient ID</th>
+                <th style={sortableThStyle} onClick={() => handleSort('date')}>Date{sortArrow('date')}</th>
+                <th style={thCenterStyle}>Risk</th>
+                <th style={sortableThStyle} onClick={() => handleSort('assessment')}>Assessment{sortArrow('assessment')}</th>
+                <th style={thCenterStyle}>Mammo DICOM</th>
+                <th style={thCenterStyle}>Mammo Report</th>
+                <th style={thCenterStyle}>Sonogram</th>
+                <th style={thCenterStyle}>Sonogram Report</th>
+                <th style={thCenterStyle}>Biopsy</th>
+                <th style={thCenterStyle}>Annotations</th>
+                <th style={thCenterStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {sessions.map((session) => (
                 <tr key={session.id} style={rowStyle}>
-                  <td style={tdStyle}>{session.id}</td>
-                  <td style={tdStyle}>{new Date(session.consent_timestamp).toLocaleString()}</td>
-                  <td style={{ ...tdStyle, color: session.has_assessment ? 'green' : 'red', fontWeight: 'bold' }}>
+                  <td style={{ ...tdStyle, textAlign: 'center' }}>{session.patient_id || session.id?.substring(0, 8)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.consent_timestamp ? new Date(session.consent_timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center' }}>
+                    {session.risk_category ? (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        backgroundColor: RISK_COLORS[session.risk_category] || '#eee',
+                        color: '#111',
+                      }}>{session.risk_category.replace(' Risk', '')}</span>
+                    ) : '-'}
+                  </td>
+                  <td style={statusCellStyle(session.has_assessment)}>
                     {session.has_assessment ? 'Yes' : 'No'}
                   </td>
-                  <td style={{ ...tdStyle, color: session.has_mammo_dicom ? 'green' : 'red', fontWeight: 'bold' }}>
+                  <td style={statusCellStyle(session.has_mammo_dicom)}>
                     {session.has_mammo_dicom ? 'Yes' : 'No'}
                   </td>
-                  <td style={{ ...tdStyle, color: session.has_mammo_reading ? 'green' : 'red', fontWeight: 'bold' }}>
+                  <td style={statusCellStyle(session.has_mammo_reading)}>
                     {session.has_mammo_reading ? 'Yes' : 'No'}
                   </td>
-                  <td style={{ ...tdStyle, color: session.has_us_video ? 'green' : 'red', fontWeight: 'bold' }}>
+                  <td style={statusCellStyle(session.has_us_video)}>
                     {session.has_us_video ? 'Yes' : 'No'}
                   </td>
-                  <td style={{ ...tdStyle, color: session.has_us_reading ? 'green' : 'red', fontWeight: 'bold' }}>
+                  <td style={statusCellStyle(session.has_us_reading)}>
                     {session.has_us_reading ? 'Yes' : 'No'}
                   </td>
-                  <td style={{ ...tdStyle, color: session.has_biopsy ? 'green' : 'red', fontWeight: 'bold' }}>
+                  <td style={statusCellStyle(session.has_biopsy)}>
                     {session.has_biopsy ? 'Yes' : 'No'}
                   </td>
-                  <td style={tdStyle}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button 
-                        onClick={() => fetchSessionDetail(session.id)}
-                        style={linkButtonStyle}
-                      >
-                        {session.has_assessment ? 'Edit Assessment' : 'View Responses'}
-                      </button>
-                    </div>
+                  <td style={statusCellStyle(session.has_annotations)}>
+                    {session.has_annotations ? 'Yes' : 'No'}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'center' }}>
+                    <button
+                      onClick={() => fetchSessionDetail(session.id)}
+                      style={linkButtonStyle}
+                    >
+                      {session.has_assessment ? 'Edit Assessment' : 'View Responses'}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -208,9 +274,26 @@ const DoctorPage = ({ isEmbedded = false }) => {
                 </tbody>
               </table>
               
-              <DoctorAssessmentForm 
+              <DoctorAssessmentForm
                 sessionId={selectedSession.id}
                 initialData={selectedSession.assessment}
+                snehithaRisk={(() => {
+                  if (!selectedSession.responses) return null;
+                  const r = {};
+                  selectedSession.responses.forEach(resp => { r[resp.question] = resp.answer; });
+                  const age = parseInt(r['What is your current age? (Please enter a number - years)'] || r['Q1'] || '0') || 0;
+                  const aam = parseInt(r['What age were you when you had your first menstrual period? (Please enter a number)'] || r['Q10'] || '0') || 0;
+                  const irr = (r['Q12_Current'] === 'No' || r['Are your menstrual cycles regular? - Currently'] === 'No') ? 1 : 0;
+                  const bf = (r['Q17'] === 'greater than 24 months' || r['For how long did you breastfeed?'] === 'greater than 24 months') ? 1 : 0;
+                  const fh = (r['Q21'] === 'First Order (Mother, Sibling, Father)' || (r['Has anyone in your family been diagnosed with any type of cancer?'] || '').includes('First')) ? 1 : 0;
+                  const bx = (r['Q40'] === 'Yes' || r['Have you had a breast biopsy?'] === 'Yes') ? 1 : 0;
+                  const nul = (r['Q14'] === 'No' || r['Have you given birth to a child?'] === 'No') ? 1 : 0;
+                  const a25 = (r['Q16'] === '25 to 29') ? 1 : 0;
+                  const a30 = (r['Q16'] === 'After 30') ? 1 : 0;
+                  const ab = (nul || a25) ? 1 : 0;
+                  const lp = -0.940 + 0.027*age - 0.082*aam + 0.453*irr - 0.892*bf + 0.810*fh + 1.420*bx + 0.811*ab + 1.035*a30;
+                  return ((1 / (1 + Math.exp(-lp))) * 100).toFixed(2);
+                })()}
                 onSaveSuccess={() => {
                   fetchSessions();
                   setTimeout(() => setIsModalOpen(false), 2000);
@@ -229,7 +312,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
 
   return (
     <Layout 
-      userRole="doctor" 
+      userRole="clinician" 
       handleLogout={handleLogout} 
       fullWidth={true}
     >
@@ -265,6 +348,30 @@ const thStyle = {
   color: '#495057',
   fontWeight: '600'
 };
+
+const thCenterStyle = {
+  padding: '12px',
+  textAlign: 'center',
+  color: '#495057',
+  fontWeight: '600'
+};
+
+const sortableThStyle = {
+  padding: '12px',
+  textAlign: 'center',
+  color: '#14868C',
+  fontWeight: '600',
+  cursor: 'pointer',
+  userSelect: 'none',
+};
+
+const statusCellStyle = (isTrue) => ({
+  padding: '12px',
+  verticalAlign: 'middle',
+  textAlign: 'center',
+  color: isTrue ? 'green' : 'red',
+  fontWeight: 'bold',
+});
 
 const rowStyle = {
   borderBottom: '1px solid #dee2e6'

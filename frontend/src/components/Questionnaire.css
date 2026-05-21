@@ -236,9 +236,24 @@
   padding: 30px 40px 40px;
   max-width: 800px;
   width: 100%;
-  border: 1px solid rgba(0, 0, 0, 0.05); border-top: 6px solid #14868C;
-  /* NEW: Add margin to prevent overlap with fixed progress bar */
-  margin-top: 70px; /* Adjust if progress bar height changes */
+  margin: 70px auto 0 auto;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 6px solid #14868C;
+}
+
+@media (max-width: 768px) {
+  .questionnaire-container {
+    padding: 20px 16px 30px;
+    border-radius: 10px;
+    margin-top: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .questionnaire-container {
+    padding: 16px 10px 24px;
+    border-radius: 8px;
+  }
 }
 
 .form-header {

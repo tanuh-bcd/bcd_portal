@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import tanuhLogo from '../assets/tanuh.png';
-import iiscLogo from '../assets/IISc_logo.png';
+// Logos served from public/ folder for consistency with Navbar
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -53,16 +52,18 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Login successful!');
-        // Here you would typically store the token and redirect
+        const userName = data.full_name || formData.email;
+        toast.success(`\u{1F44B} Welcome, ${userName}!`, { autoClose: 4000 });
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('role', formData.role);
         localStorage.setItem('hospitalName', formData.hospitalName);
+        localStorage.setItem('userEmail', formData.email);
+        localStorage.setItem('userName', userName);
         
         const roleLower = formData.role.toLowerCase();
         if (roleLower === 'admin') {
           navigate('/admin');
-        } else if (roleLower === 'doctor') {
+        } else if (roleLower === 'clinician') {
           navigate('/doctor');
         } else if (roleLower === 'staff') {
           navigate('/patient');
@@ -112,48 +113,37 @@ const LoginPage = () => {
       backgroundColor: 'transparent',
       fontFamily: '"Inter", sans-serif'
     }}>
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '20px',
-        flexWrap: 'wrap',
-        gap: '20px'
+      <header style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginBottom: '30px',
+        gap: '16px'
       }}>
-        <a href={process.env.REACT_APP_WEBSITE_URL} target="_blank" rel="noopener noreferrer">
-          <img 
-            src={tanuhLogo} 
-            alt="Tanuh Logo" 
-            style={{ 
-              height: '96px', // Approx 1 inch
-              width: '96px',  // Approx 1 inch
-              objectFit: 'contain'
-            }} 
-          />
-        </a>
-        <h1 style={{ 
-          fontSize: '24px', 
-          fontWeight: '600', 
-          color: '#14868C', // Darker magenta color
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap' }}>
+          <a href={process.env.REACT_APP_WEBSITE_URL} target="_blank" rel="noopener noreferrer">
+            <img src="/tanuh.png" alt="TANUH Logo" style={{ height: '65px', objectFit: 'contain' }} />
+          </a>
+          <img src="/MoE_Logo.svg" alt="Ministry of Education Logo" style={{ height: '55px', objectFit: 'contain' }} />
+          <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: '75px', objectFit: 'contain' }} />
+        </div>
+        <h1 style={{
+          fontSize: '22px',
+          fontWeight: '700',
+          color: '#14868C',
           textAlign: 'center',
-          flex: '1 1 auto',
-          margin: '0 20px'
+          margin: 0,
+          fontFamily: "'Poppins', sans-serif"
         }}>
-          AI enabled Breast Cancer Screening Tool
+          AI enabled Breast Cancer Risk Prediction Tool
         </h1>
-        <img 
-          src={iiscLogo} 
-          alt="IISc Logo" 
-          style={{ 
-            height: '96px', // Approx 1 inch
-            width: '96px',  // Approx 1 inch
-            objectFit: 'contain'
-          }} 
-        />
+        <p style={{ color: '#e91e8c', fontWeight: 800, fontSize: '1.5rem', fontFamily: "'Poppins', sans-serif", letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
+          PinkShieldAI
+        </p>
       </header>
 
-      <main style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ width: '100%', maxWidth: '400px', border: '1px solid #ccc', padding: '30px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', backgroundColor: 'white' }}>
+      <main style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 16px' }}>
+        <div style={{ width: '100%', maxWidth: '420px', border: '1px solid rgba(0,0,0,0.05)', padding: '30px', borderRadius: '16px', boxShadow: '0 8px 30px rgba(20,134,140,0.1)', backgroundColor: 'white', borderTop: '5px solid #14868C' }}>
           <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Enter credentials</h2>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -185,7 +175,7 @@ const LoginPage = () => {
                 style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
               >
                 <option value="">Select Role</option>
-                <option value="doctor">Doctor</option>
+                <option value="clinician">Clinician</option>
                 <option value="admin">Admin</option>
                 <option value="staff">Staff</option>
               </select>

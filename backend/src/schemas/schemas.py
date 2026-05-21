@@ -21,6 +21,7 @@ class User(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    full_name: Optional[str] = None
 
 class TokenData(BaseModel):
     email: Optional[str] = None
@@ -38,6 +39,8 @@ class HospitalBase(BaseModel):
     contact_person: str
     email: EmailStr
     address: Optional[str] = None
+    pincode: Optional[str] = None
+    state: Optional[str] = None
 
 class HospitalCreate(HospitalBase):
     pass
@@ -122,6 +125,11 @@ class DoctorAssessmentResponse(BaseModel):
     us_biopsy_density: Optional[str] = None
     precision_diagnosis: Optional[str] = None
     datapoint_feedback: Optional[str] = None
+    clinical_findings: Optional[dict] = None
+    recommendation_followup: Optional[str] = None
+    routine_views_uploaded: Optional[bool] = False
+    doctor_risk_class: Optional[str] = None
+    doctor_case_notes: Optional[str] = None
     created_at: datetime.datetime
     attachments: List[AttachmentResponse] = []
 
@@ -130,14 +138,18 @@ class DoctorAssessmentResponse(BaseModel):
 
 class PatientSessionListItem(BaseModel):
     id: str
+    patient_id: Optional[str] = None
     consent_scanned_url: Optional[str] = None
-    consent_timestamp: datetime.datetime
+    consent_timestamp: Optional[datetime.datetime] = None
+    snehita_risk: Optional[str] = None
+    risk_category: Optional[str] = None
     has_assessment: bool = False
     has_mammo_dicom: bool = False
     has_mammo_reading: bool = False
     has_us_video: bool = False
     has_us_reading: bool = False
     has_biopsy: bool = False
+    has_annotations: bool = False
 
     class Config:
         from_attributes = True

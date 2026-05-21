@@ -147,28 +147,29 @@ function Consent({ onAccept }) {
     setIsUploading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
       const token = localStorage.getItem('token');
-      
-      const formData = new FormData();
-      if (scannedFile) {
-        formData.append('file', scannedFile);
-      }
-      
-      const response = await fetch(`${apiUrl}/api/v1/patient/consent`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
 
-      if (response.ok) {
-        const result = await response.json();
-        onAccept(result);
+      if (token) {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const formData = new FormData();
+        if (scannedFile) {
+          formData.append('file', scannedFile);
+        }
+        const response = await fetch(`${apiUrl}/api/v1/patient/consent`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          onAccept(result);
+        } else {
+          const errorData = await response.json();
+          alert(`Upload failed: ${errorData.detail || 'Unknown error'}`);
+        }
       } else {
-        const errorData = await response.json();
-        alert(`Upload failed: ${errorData.detail || 'Unknown error'}`);
+        onAccept({ file: scannedFile || null });
       }
     } catch (error) {
       console.error('Error uploading consent:', error);
@@ -211,29 +212,24 @@ function Consent({ onAccept }) {
       ))}
 
       <div className="consent-upload">
-        <label>
-          <strong>{t('uploadLabel') || 'Capture photo or upload image of the physical consent form signed (Optional):'}</strong>
-        </label>
-        
+        <strong className="consent-upload-title">Consent Upload</strong>
         {!isCameraActive && !scannedFile && (
           <div className="upload-options">
             <button type="button" className="action-button camera-btn" onClick={startCamera}>
               <Camera size={20} />
               {t('takePhoto') || 'Take Photo'}
             </button>
-            <div className="upload-wrapper">
-              <label htmlFor="consent-file" className="action-button upload-btn">
-                <Upload size={20} />
-                {t('uploadImage') || 'Upload Image'}
-              </label>
-              <input
-                type="file"
-                id="consent-file"
-                accept="image/*,application/pdf"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-              />
-            </div>
+            <button type="button" className="action-button upload-btn" onClick={() => document.getElementById('consent-file').click()}>
+              <Upload size={20} />
+              {t('uploadImage') || 'Upload Image'}
+            </button>
+            <input
+              type="file"
+              id="consent-file"
+              accept="image/*,application/pdf"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
           </div>
         )}
 

@@ -10,9 +10,6 @@ services:
       - .env
     volumes:
       - ./gcp-service-account.json:/app/gcp-service-account.json:ro
-      - ./server-ca.pem:/app/server-ca.pem:ro
-      - ./client-cert.pem:/app/client-cert.pem:ro
-      - ./client-key.pem:/app/client-key.pem:ro
     networks:
       - bcdnet
     restart: always
@@ -25,7 +22,7 @@ services:
         REACT_APP_API_URL: ""
     container_name: bcd-frontend
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     networks:

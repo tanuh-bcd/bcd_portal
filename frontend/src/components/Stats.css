@@ -4,12 +4,30 @@
   padding: 2rem;
   background: #FDFCFC;
   min-height: calc(100vh - 80px);
-  /* Account for navbar */
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-top: 6px solid #14868C;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   font-family: 'Poppins', sans-serif;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    padding: 1rem;
+    margin: 1rem auto;
+    border-radius: 8px;
+  }
+  .summary-section {
+    flex-direction: column !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-container {
+    padding: 0.75rem;
+    margin: 0.5rem auto;
+  }
 }
 
 .fade-in {

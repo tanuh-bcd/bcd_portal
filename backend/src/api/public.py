@@ -1,12 +1,14 @@
 import math
 import uuid
 import datetime
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..db.session import get_questionnaire_db
+from ..core.config import settings
+from google.cloud import storage
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 
 router = APIRouter()
 
@@ -59,6 +61,43 @@ def start_session(request: Request, db: Session = Depends(get_questionnaire_db))
     return {"success": True, "sessionId": session_id}
 
 
+@router.post("/session/{session_id}/consent")
+async def upload_public_consent(
+    session_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_questionnaire_db)
+):
+    session = db.execute(
+        text("SELECT session_id FROM session_table WHERE session_id = :sid"),
+        {"sid": session_id}
+    ).fetchone()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    content = await file.read()
+    extension = file.filename.rsplit('.', 1)[-1] if '.' in file.filename else 'jpg'
+    upload_date = datetime.datetime.utcnow().strftime("%Y%m%d")
+    blob_name = f"tanuh-data-capture/consent/{session_id}_consent_{upload_date}.{extension}"
+
+    if settings.GOOGLE_APPLICATION_CREDENTIALS and settings.GOOGLE_APPLICATION_CREDENTIALS.strip():
+        client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
+    else:
+        client = storage.Client()
+
+    bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+    blob = bucket.blob(blob_name)
+    blob.upload_from_string(content, content_type=file.content_type or "application/octet-stream")
+    gcs_url = f"gs://{settings.GCP_STORAGE_BUCKET}/{blob_name}"
+
+    db.execute(
+        text("UPDATE session_table SET consent_url = :url WHERE session_id = :sid"),
+        {"url": gcs_url, "sid": session_id},
+    )
+    db.commit()
+
+    return {"success": True, "consent_url": gcs_url}
+
+
 class SubmitPayload(BaseModel):
     sessionId: str
     formDataEn: Dict[str, str]
@@ -88,11 +127,20 @@ def submit_questionnaire(payload: SubmitPayload, db: Session = Depends(get_quest
         now = now + datetime.timedelta(seconds=1)
 
     risk_decimal = round(float(risk_percentage) / 100, 2)
+    if risk_decimal < 0.4004:
+        risk_cat = "Baseline Risk"
+    elif risk_decimal < 0.574:
+        risk_cat = "Evident Risk"
+    elif risk_decimal < 0.795:
+        risk_cat = "Significant Risk"
+    else:
+        risk_cat = "High Risk"
+
     db.execute(
         text(
-            "UPDATE session_table SET session_end_time = :end, snehita_lifetime_risk = :risk WHERE session_id = :sid"
+            "UPDATE session_table SET session_end_time = :end, snehita_lifetime_risk = :risk, risk_category = :cat WHERE session_id = :sid"
         ),
-        {"end": datetime.datetime.utcnow(), "risk": str(risk_decimal), "sid": session_id},
+        {"end": datetime.datetime.utcnow(), "risk": str(risk_decimal), "cat": risk_cat, "sid": session_id},
     )
     db.commit()
 

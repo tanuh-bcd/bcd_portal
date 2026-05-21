@@ -1,99 +1,180 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from ..db.session import get_db
-from ..models.models import PatientSession, DoctorAssessment, Attachment
-from ..schemas.schemas import PatientSessionListItem, PatientSessionDetail, DoctorAssessmentResponse
+from sqlalchemy import text
+from ..db.session import get_db, get_questionnaire_db
+from ..models.models import DoctorAssessment, Attachment, Hospital
+from ..schemas.schemas import PatientSessionListItem, PatientSessionDetail
 from .auth import get_current_user
 from typing import List
 
 router = APIRouter()
 
-def get_session_status_dict(session: PatientSession):
-    # This assumes session.assessments and their attachments are already loaded
-    assessment = session.assessments[0] if session.assessments else None
-    
-    status_dict = {
-        "has_assessment": assessment is not None,
-        "has_mammo_dicom": False,
-        "has_mammo_reading": False,
-        "has_us_video": False,
-        "has_us_reading": False,
-        "has_biopsy": False
-    }
-    
+INSTITUTE_QUESTIONS = (
+    "Institute Name",
+    "Enter the Hospital ID(If any, else leave):",
+)
+
+
+def _get_hospital_name(app_db, hospital_id):
+    hospital = app_db.query(Hospital).filter(Hospital.id == hospital_id).first()
+    return hospital.name if hospital else None
+
+
+def _get_attachment_flags(assessment):
+    att_types = set()
     if assessment:
         for att in assessment.attachments:
-            if att.file_type == 'mammo_dicom':
-                status_dict["has_mammo_dicom"] = True
-            elif att.file_type == 'mammo_reading':
-                status_dict["has_mammo_reading"] = True
-            elif att.file_type == 'us_video':
-                status_dict["has_us_video"] = True
-            elif att.file_type == 'us_reading':
-                status_dict["has_us_reading"] = True
-            elif att.file_type == 'biopsy_reading':
-                status_dict["has_biopsy"] = True
-    return status_dict
+            att_types.add(att.file_type)
+    return {
+        "has_assessment": assessment is not None,
+        "has_mammo_dicom": any(t in att_types for t in ('mammo_dicom', 'mammo_cc_left', 'mammo_cc_right', 'mammo_mlo_left', 'mammo_mlo_right')),
+        "has_mammo_reading": 'mammo_reading' in att_types,
+        "has_us_video": 'us_video' in att_types,
+        "has_us_reading": 'us_reading' in att_types,
+        "has_biopsy": 'biopsy_reading' in att_types,
+        "has_annotations": any(t.startswith('annot_') for t in att_types),
+    }
+
+
+SORT_COLUMN_MAP = {
+    "date": "s.session_start_time",
+    "risk": "FIELD(s.risk_category, 'Baseline Risk', 'Evident Risk', 'Significant Risk', 'High Risk')",
+    "assessment": None,
+}
+
+
+def _build_order_clause(sort_param):
+    if not sort_param:
+        return "s.session_start_time DESC"
+
+    clauses = []
+    for part in sort_param.split(","):
+        part = part.strip()
+        if ":" in part:
+            key, direction = part.split(":", 1)
+        else:
+            key, direction = part, "asc"
+
+        key = key.strip().lower()
+        direction = direction.strip().upper()
+        if direction not in ("ASC", "DESC"):
+            direction = "ASC"
+
+        col = SORT_COLUMN_MAP.get(key)
+        if col:
+            clauses.append(f"{col} {direction}")
+
+    return ", ".join(clauses) if clauses else "s.session_start_time DESC"
+
 
 @router.get("/sessions", response_model=List[PatientSessionListItem])
 def get_patient_sessions(
-    db: Session = Depends(get_db),
+    sort: str = None,
+    q_db: Session = Depends(get_questionnaire_db),
+    app_db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     hospital_id = current_user.get("hospital_id")
     if not hospital_id:
         raise HTTPException(status_code=400, detail="User hospital ID not found")
-    
-    sessions = db.query(PatientSession).filter(
-        PatientSession.hospital_id == hospital_id
-    ).options(
-        joinedload(PatientSession.assessments).joinedload(DoctorAssessment.attachments)
-    ).order_by(PatientSession.consent_timestamp.desc()).all()
-    
+
+    hospital_name = _get_hospital_name(app_db, hospital_id)
+    if not hospital_name:
+        raise HTTPException(status_code=400, detail="Hospital not found")
+
+    order_clause = _build_order_clause(sort)
+
+    rows = q_db.execute(text(f"""
+        SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
+               pid.answer AS patient_id, s.risk_category
+        FROM session_table s
+        JOIN session_data_table sd ON s.session_id = sd.session_id
+        LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
+          AND pid.question = 'Enter your Patient ID(if any, else leave):'
+        WHERE sd.question IN :q1
+          AND sd.answer = :hospital_name
+          AND s.snehita_lifetime_risk IS NOT NULL
+        ORDER BY {order_clause}
+    """), {"q1": INSTITUTE_QUESTIONS, "hospital_name": hospital_name}).fetchall()
+
     result = []
-    for s in sessions:
-        status_dict = get_session_status_dict(s)
-        # Create a dictionary and update with status
-        s_dict = {
-            "id": s.id,
-            "consent_scanned_url": s.consent_scanned_url,
-            "consent_timestamp": s.consent_timestamp,
-            **status_dict
-        }
-        result.append(s_dict)
-    
+    for row in rows:
+        session_id = row[0]
+        assessment = app_db.query(DoctorAssessment).filter(
+            DoctorAssessment.patient_session_id == session_id
+        ).options(joinedload(DoctorAssessment.attachments)).first()
+
+        flags = _get_attachment_flags(assessment)
+        result.append({
+            "id": session_id,
+            "patient_id": row[3] or "",
+            "consent_scanned_url": None,
+            "consent_timestamp": row[1],
+            "snehita_risk": row[2],
+            "risk_category": row[4] or "",
+            **flags,
+        })
+
+    if sort and "assessment" in sort:
+        for part in sort.split(","):
+            part = part.strip()
+            if part.startswith("assessment"):
+                direction = "asc"
+                if ":" in part:
+                    direction = part.split(":")[1].strip().lower()
+                result.sort(
+                    key=lambda x: (1 if x["has_assessment"] else 0),
+                    reverse=(direction == "desc")
+                )
+                break
+
     return result
+
 
 @router.get("/sessions/{session_id}", response_model=PatientSessionDetail)
 def get_patient_session_detail(
-    session_id: int,
-    db: Session = Depends(get_db),
+    session_id: str,
+    q_db: Session = Depends(get_questionnaire_db),
+    app_db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     hospital_id = current_user.get("hospital_id")
     if not hospital_id:
         raise HTTPException(status_code=400, detail="User hospital ID not found")
-    
-    session = db.query(PatientSession).filter(
-        PatientSession.id == session_id,
-        PatientSession.hospital_id == hospital_id
-    ).options(
-        joinedload(PatientSession.responses),
-        joinedload(PatientSession.assessments).joinedload(DoctorAssessment.attachments)
-    ).first()
-    
-    if not session:
-        raise HTTPException(status_code=404, detail="Patient session not found")
-    
-    status_dict = get_session_status_dict(session)
-    assessment = session.assessments[0] if session.assessments else None
-    
-    # We need to return a combined object
+
+    session_row = q_db.execute(text(
+        "SELECT session_id, session_start_time, snehita_lifetime_risk, risk_category FROM session_table WHERE session_id = :sid"
+    ), {"sid": session_id}).fetchone()
+
+    if not session_row:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    response_rows = q_db.execute(text(
+        "SELECT session_data_id, question, answer, created_at FROM session_data_table WHERE session_id = :sid ORDER BY created_at ASC"
+    ), {"sid": session_id}).fetchall()
+
+    responses = []
+    for r in response_rows:
+        responses.append({
+            "id": abs(hash(r[0])) % 2147483647,
+            "question": r[1] or "",
+            "answer": r[2] or "",
+            "created_at": r[3],
+        })
+
+    assessment = app_db.query(DoctorAssessment).filter(
+        DoctorAssessment.patient_session_id == session_id
+    ).options(joinedload(DoctorAssessment.attachments)).first()
+
+    flags = _get_attachment_flags(assessment)
+
     return {
-        "id": session.id,
-        "consent_scanned_url": session.consent_scanned_url,
-        "consent_timestamp": session.consent_timestamp,
-        "responses": session.responses,
+        "id": session_id,
+        "consent_scanned_url": None,
+        "consent_timestamp": session_row[1],
+        "snehita_risk": session_row[2],
+        "risk_category": session_row[3] or "",
+        "responses": responses,
         "assessment": assessment,
-        **status_dict
+        **flags,
     }

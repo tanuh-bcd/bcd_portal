@@ -16,6 +16,8 @@ class Hospital(Base):
     contact_person = Column(String(50), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     address = Column(Text)
+    pincode = Column(String(10))
+    state = Column(String(100))
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     users = relationship("User", back_populates="hospital")
@@ -141,6 +143,8 @@ class DoctorAssessment(Base):
     clinical_findings = Column(JSON)
     recommendation_followup = Column(Text)
     routine_views_uploaded = Column(Boolean, default=False)
+    doctor_risk_class = Column(String(50))
+    doctor_case_notes = Column(Text)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     session = relationship("PatientSession")

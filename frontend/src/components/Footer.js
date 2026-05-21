@@ -10,68 +10,73 @@ const Footer = () => {
   ];
 
   return (
-    <footer style={{ 
-      padding: '40px 20px', 
-      borderTop: '1px solid #eee', 
+    <footer style={{
+      padding: '40px 20px',
+      borderTop: '1px solid #eee',
       backgroundColor: 'transparent',
       color: '#555',
       fontSize: '14px',
       lineHeight: '1.6',
       fontFamily: '"Inter", sans-serif'
     }}>
-      <div style={{ 
-        maxWidth: '1200px', 
-        margin: '0 auto', 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        gap: '30px'
+        gap: '24px'
       }}>
-        {/* 2-column layout for Address and Contact */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-          gap: '40px', 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '40px',
           width: '100%',
-          textAlign: 'left'
         }}>
-          {/* Left Column: Address */}
-          <div>
-            <strong style={{ display: 'block', marginBottom: '10px', fontSize: '16px' }}>Address</strong>
+          <div style={{ textAlign: 'left' }}>
+            <strong style={{ display: 'block', marginBottom: '10px', fontSize: '15px', color: '#14868C' }}>Address</strong>
             AI Centre of Excellence in Healthcare<br />
             Indian Institute of Science<br />
             Seventh Floor, TCS Smart-X Hub<br />
             Bengaluru, India - 560 012
           </div>
 
-          {/* Right Column: Contact */}
-          <div>
-            <strong style={{ display: 'block', marginBottom: '10px', fontSize: '16px' }}>Contact Information</strong>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div>Study related details: <a href="mailto:breastcancerdetection@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>breastcancerdetection@tanuh.ai</a></div>
-              <div>General Email: <a href="mailto:info@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>info@tanuh.ai</a></div>
-              <div style={{ marginTop: '10px' }}>
-                <strong>Telephone</strong><br />
-                (080) 2293 4106 &nbsp;|&nbsp; (080) 2293 4107
+          <div style={{ textAlign: 'right' }}>
+            <strong style={{ display: 'block', marginBottom: '10px', fontSize: '15px', color: '#14868C' }}>Contact Information</strong>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+              <div>Study: <a href="mailto:breastcancerdetection@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>breastcancerdetection@tanuh.ai</a></div>
+              <div>General: <a href="mailto:info@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>info@tanuh.ai</a></div>
+              <div style={{ marginTop: '6px' }}>
+                Tel: (080) 2293 4106 &nbsp;|&nbsp; (080) 2293 4107
               </div>
             </div>
           </div>
         </div>
 
-        {/* Social Links - Moved below address table */}
-        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+        <div style={{
+          display: 'flex',
+          gap: '24px',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '12px 0',
+        }}>
           {socialLinks.map((link, index) => (
-            <a 
-              key={index} 
-              href={link.url} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{ 
-                color: '#555', 
-                textDecoration: 'none', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px' 
+            <a
+              key={index}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#14868C',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                backgroundColor: '#e8f7f8',
+                transition: 'all 0.2s',
               }}
               title={link.label}
             >
@@ -80,9 +85,8 @@ const Footer = () => {
           ))}
         </div>
 
-        {/* Copyright */}
-        <div style={{ borderTop: '1px solid #ddd', paddingTop: '20px', width: '100%', fontSize: '12px', textAlign: 'center' }}>
-          © 2025 by TANUH Foundation
+        <div style={{ borderTop: '1px solid #ddd', paddingTop: '16px', width: '100%', fontSize: '12px', textAlign: 'center', color: '#999' }}>
+          &copy; 2025 by TANUH Foundation
         </div>
       </div>
     </footer>

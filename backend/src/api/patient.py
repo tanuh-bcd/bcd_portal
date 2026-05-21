@@ -23,9 +23,13 @@ FILE_TYPE_MAP = {
     "mammo_cc_right": "mammogram",
     "mammo_mlo_left": "mammogram",
     "mammo_mlo_right": "mammogram",
-    "mammo_reading": "report",
+    "mammo_reading": "mammogram-report",
+    "annot_cc_left": "annotation",
+    "annot_cc_right": "annotation",
+    "annot_mlo_left": "annotation",
+    "annot_mlo_right": "annotation",
     "us_video": "ultrasound",
-    "us_reading": "report",
+    "us_reading": "ultrasound-report",
     "biopsy_reading": "biopsy",
     "consent": "consent",
 }
@@ -135,8 +139,10 @@ async def upload_consent(
 
         if file:
             content = await file.read()
-            destination_blob_name = build_blob_path(hospital_id, subject_id, "consent", file.filename, ist_now)
-            gcs_url = upload_to_gcs(content, destination_blob_name)
+            extension = file.filename.rsplit('.', 1)[-1] if '.' in file.filename else 'jpg'
+            upload_date = ist_now.strftime("%Y%m%d")
+            consent_blob = f"{GCS_BASE_PREFIX}/consent/{hospital_id}_{subject_id}_consent_{upload_date}.{extension}"
+            gcs_url = upload_to_gcs(content, consent_blob)
 
         new_session = PatientSession(
             id=subject_id,
@@ -213,7 +219,7 @@ async def submit_questionnaire(
 
 @router.post("/assessment", response_model=DoctorAssessmentResponse)
 async def create_doctor_assessment(
-    patient_session_id: int = Form(...),
+    patient_session_id: str = Form(...),
     questionnaire_feedback: Optional[str] = Form(None),
     is_questionnaire_correct: bool = Form(False),
     mammo_birads: Optional[str] = Form(None),
@@ -225,6 +231,8 @@ async def create_doctor_assessment(
     clinical_findings: Optional[str] = Form(None),
     recommendation_followup: Optional[str] = Form(None),
     routine_views_uploaded: bool = Form(False),
+    doctor_risk_class: Optional[str] = Form(None),
+    doctor_case_notes: Optional[str] = Form(None),
     mammo_cc_left: Optional[UploadFile] = File(None),
     mammo_cc_right: Optional[UploadFile] = File(None),
     mammo_mlo_left: Optional[UploadFile] = File(None),
@@ -234,6 +242,10 @@ async def create_doctor_assessment(
     us_video: Optional[UploadFile] = File(None),
     us_reading: Optional[UploadFile] = File(None),
     biopsy_doc: Optional[UploadFile] = File(None),
+    annot_cc_left: Optional[UploadFile] = File(None),
+    annot_cc_right: Optional[UploadFile] = File(None),
+    annot_mlo_left: Optional[UploadFile] = File(None),
+    annot_mlo_right: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -276,6 +288,8 @@ async def create_doctor_assessment(
             assessment.clinical_findings = json.loads(clinical_findings) if clinical_findings else None
             assessment.recommendation_followup = recommendation_followup
             assessment.routine_views_uploaded = routine_views_uploaded
+            assessment.doctor_risk_class = doctor_risk_class
+            assessment.doctor_case_notes = doctor_case_notes
         else:
             assessment = DoctorAssessment(
                 patient_session_id=patient_session_id,
@@ -292,6 +306,8 @@ async def create_doctor_assessment(
                 clinical_findings=json.loads(clinical_findings) if clinical_findings else None,
                 recommendation_followup=recommendation_followup,
                 routine_views_uploaded=routine_views_uploaded,
+                doctor_risk_class=doctor_risk_class,
+                doctor_case_notes=doctor_case_notes,
             )
             db.add(assessment)
             db.flush() # Get assessment ID
@@ -344,6 +360,15 @@ async def create_doctor_assessment(
             
         if biopsy_doc and biopsy_doc.filename:
             await handle_upload(biopsy_doc, "biopsy_reading", replace=True)
+
+        if annot_cc_left and annot_cc_left.filename:
+            await handle_upload(annot_cc_left, "annot_cc_left", replace=True)
+        if annot_cc_right and annot_cc_right.filename:
+            await handle_upload(annot_cc_right, "annot_cc_right", replace=True)
+        if annot_mlo_left and annot_mlo_left.filename:
+            await handle_upload(annot_mlo_left, "annot_mlo_left", replace=True)
+        if annot_mlo_right and annot_mlo_right.filename:
+            await handle_upload(annot_mlo_right, "annot_mlo_right", replace=True)
 
         db.commit()
         db.refresh(assessment)

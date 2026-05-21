@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import PatientPage from './pages/PatientPage';
 import DoctorPage from './pages/DoctorPage';
+import PublicQuestionnairePage from './pages/PublicQuestionnairePage';
 import Footer from './components/Footer';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -33,12 +34,14 @@ function App() {
       <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            {/* Public pages with Navbar — no login required */}
             <Route path="/" element={<PublicLayout />}>
-              <Route index element={<PatientPage />} />
+              <Route index element={<PublicQuestionnairePage />} />
               <Route path="demo" element={<Demo />} />
               <Route path="stats" element={<Stats />} />
+              <Route path="login" element={<LoginPage />} />
             </Route>
-            <Route path="/login" element={<LoginPage />} />
+            {/* Auth-protected pages — no Navbar */}
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/patient" element={<PatientPage />} />
             <Route path="/doctor" element={<DoctorPage />} />

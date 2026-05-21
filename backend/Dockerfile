@@ -6,7 +6,6 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
-COPY ../gcp-service-account.json ./gcp-service-account.json 2>/dev/null || true
 
 EXPOSE 8000
 

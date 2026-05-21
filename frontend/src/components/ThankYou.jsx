@@ -3,8 +3,7 @@ import './ThankYou.css';
 // import { formStructure } from './Questionnaire'; // This import is untouched
 import jsPDF from 'jspdf';
 import { Download, CheckCircle } from 'lucide-react';
-// --- MODIFICATION: Import the new JSON file ---
-import thankYouData from '../../public/locales/english/thankyou.json' with { type: 'json' };
+import thankYouData from '../assets/locales/english/thankyou.json';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';   
 

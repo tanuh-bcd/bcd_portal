@@ -85,7 +85,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": user.email, "hospital_id": user.hospital_id, "role": role.name}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "full_name": user.full_name or ""}
 
 @router.post("/reset-password")
 def reset_password(email_data: dict):

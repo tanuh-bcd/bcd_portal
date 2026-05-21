@@ -24,6 +24,8 @@ const PatientPage = ({ isEmbedded = false }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('hospitalName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     navigate('/login');
   };
 
@@ -109,10 +111,13 @@ const PatientPage = ({ isEmbedded = false }) => {
 };
 
 const contentStyle = {
-  backgroundColor: 'white',
-  padding: '40px',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  padding: '20px 16px',
   minHeight: '400px',
-  color: '#666'
+  color: '#666',
+  width: '100%',
 };
 
 export default PatientPage;

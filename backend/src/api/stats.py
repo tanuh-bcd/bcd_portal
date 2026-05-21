@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..db.session import get_questionnaire_db
+from ..db.session import get_questionnaire_db, get_db
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ RISK_CASE = """
 
 
 @router.get("/")
-def get_stats(db: Session = Depends(get_questionnaire_db)):
+def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Depends(get_db)):
     total_res = db.execute(text(f"""
         SELECT COUNT(DISTINCT s.session_id) as total
         FROM session_table s {INSTITUTE_FILTER}
@@ -114,11 +114,20 @@ def get_stats(db: Session = Depends(get_questionnaire_db)):
         for r in month_rows
     ]
 
-    institutions_empanelled = len(hospital_bins)
+    inst_res = app_db.execute(text(
+        "SELECT COUNT(*) FROM hospitals WHERE name != 'Test1'"
+    )).fetchone()
+    institutions_empanelled = inst_res[0] if inst_res else 0
+
+    states_res = app_db.execute(text(
+        "SELECT COUNT(DISTINCT state) FROM hospitals WHERE name != 'Test1' AND state IS NOT NULL AND state != ''"
+    )).fetchone()
+    states_count = states_res[0] if states_res else 0
 
     return {
         "totalSubjects": total_subjects,
         "institutionsEmpanelled": institutions_empanelled,
+        "statesCount": states_count,
         "riskBins": risk_bins,
         "hospitalBins": hospital_bins,
         "ageBins": age_bins,

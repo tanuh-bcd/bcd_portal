@@ -86,3 +86,46 @@ The following variables are used by the frontend:
    ./fe_starter.sh
    ```
 5. Follow the specific setup instructions in each module's directory (where available).
+
+## GCS Storage Structure
+
+All clinical files are stored in the `breast-cancer-image-dataset` bucket under the following folder hierarchy:
+
+```
+breast-cancer-image-dataset/
+  tanuh-data-capture/
+    consent/                  ← Signed consent form photos (captured before subject registration)
+    {clinic_id}/
+      {subject_id}/
+        mammogram/            ← CC Left/Right, MLO Left/Right DICOM images
+        mammogram-report/     ← Mammography reading/report PDFs
+        ultrasound/           ← Sonogram DICOM/images
+        ultrasound-report/    ← Sonogram reading/report PDFs
+        biopsy/               ← Biopsy report PDFs
+        annotation/           ← Annotated mammogram DICOMs (per view)
+```
+
+### File Naming Convention
+
+```
+{clinic_id}_{subject_id}_{file_type}_{upload_date}.{extension}
+```
+
+Examples:
+- `clinic_00003_subject_00010_mammo_cc_left_20260521.dcm`
+- `clinic_00003_subject_00010_mammo_reading_20260521.pdf`
+- `clinic_00003_subject_00010_us_video_20260521.dcm`
+- `clinic_00003_subject_00010_us_reading_20260521.pdf`
+- `clinic_00003_subject_00010_biopsy_reading_20260521.pdf`
+- `clinic_00003_subject_00010_annot_cc_left_20260521.dcm`
+- `clinic_00003_subject_00010_consent_20260521.jpg`
+
+For multiple files of the same type (e.g. multiple DICOM slices), a sequence number is appended: `mammo_dicom-1`, `mammo_dicom-2`, etc.
+
+### Database Reference
+
+File metadata (URL, filename, type, MIME type) is stored in the `attachments` table in `bcd_application2`, linked to `doctor_assessments` via `assessment_id`.
+
+```sql
+SELECT file_type, file_name, storage_url FROM attachments WHERE assessment_id = ?;
+```
