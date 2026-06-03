@@ -227,6 +227,18 @@ const Demo = () => {
     if (!qData) return null;
     const value = typedValues[qNode.key];
 
+    if (qNode.type === 'hospital-select') {
+      const demoInstitutes = ['Institute 1', 'Institute 2', 'Institute 3', 'Institute 4'];
+      return (
+        <div className="mock-input-wrapper">
+          <select className={`mock-text-input ${value ? 'has-value' : ''}`} value={value || ''} readOnly>
+            <option value="" disabled>Select an option</option>
+            {demoInstitutes.map((name, idx) => <option key={idx} value={name}>{name}</option>)}
+          </select>
+        </div>
+      );
+    }
+
     if ((qNode.type === 'radio' || qNode.type === 'select') && qData.answers) {
       return (
         <div className="mock-options">
