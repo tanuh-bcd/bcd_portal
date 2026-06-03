@@ -92,11 +92,15 @@ def create_user(
                 detail="Only Test hospital admins can create other admin accounts",
             )
 
-    user = db.query(User).filter(User.email == user_in.email).first()
+    user = db.query(User).filter(
+        User.email == user_in.email,
+        User.hospital_id == user_in.hospital_id,
+        User.role_id == user_in.role_id
+    ).first()
     if user:
         raise HTTPException(
             status_code=400,
-            detail="A user with this email already exists.",
+            detail="A user with this email, hospital, and role already exists.",
         )
     
     # Verify hospital exists

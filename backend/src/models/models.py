@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP, text, Text, Enum, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP, text, Text, Enum, JSON, Index
 from sqlalchemy.orm import relationship
 from ..db.session import Base
 import enum
@@ -32,11 +32,14 @@ class Role(Base):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        Index("idx_users_email_hospital_role", "email", "hospital_id", "role_id", unique=True),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     hospital_id = Column(String(20), ForeignKey("hospitals.id"))
     role_id = Column(Integer, ForeignKey("roles.id"))
-    email = Column(String(255), nullable=False, unique=True)
+    email = Column(String(255), nullable=False)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255))
     is_active = Column(Boolean, default=True)
