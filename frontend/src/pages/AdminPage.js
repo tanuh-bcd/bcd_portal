@@ -213,7 +213,7 @@ const AdminContent = ({ hospitalName }) => {
           email: formData.email,
           password: formData.password,
           full_name: formData.fullName,
-          hospital_id: parseInt(formData.hospitalId),
+          hospital_id: formData.hospitalId,
           role_id: role.id
         })
       });
@@ -228,7 +228,14 @@ const AdminContent = ({ hospitalName }) => {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const error = await response.json();
-          alert(`Error: ${error.detail || 'Failed to create account'}`);
+          const detail = error.detail;
+          let message;
+          if (Array.isArray(detail)) {
+            message = detail.map(d => d.msg || JSON.stringify(d)).join('; ');
+          } else {
+            message = detail || 'Failed to create account';
+          }
+          alert(`Error: ${message}`);
         } else {
           const errorText = await response.text();
           console.error("Non-JSON error response:", errorText);
@@ -270,7 +277,14 @@ const AdminContent = ({ hospitalName }) => {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const error = await response.json();
-          alert(`Error: ${error.detail || 'Failed to create hospital'}`);
+          const detail = error.detail;
+          let message;
+          if (Array.isArray(detail)) {
+            message = detail.map(d => d.msg || JSON.stringify(d)).join('; ');
+          } else {
+            message = detail || 'Failed to create hospital';
+          }
+          alert(`Error: ${message}`);
         } else {
           const errorText = await response.text();
           console.error("Non-JSON error response:", errorText);
