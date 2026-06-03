@@ -5,6 +5,7 @@ from ..db.session import get_db
 from ..models.models import User, Hospital, Role
 from ..schemas.schemas import UserCreate, HospitalCreate, User as UserSchema, HospitalResponse
 from ..core.security import get_password_hash
+from ..core.email import send_account_created_email
 from .auth import get_current_user
 
 router = APIRouter()
@@ -114,6 +115,18 @@ def create_user(
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    try:
+        send_account_created_email(
+            to_email=user_in.email,
+            full_name=user_in.full_name or "",
+            hospital_name=hospital.name,
+            role_name=role.name,
+            temp_password=user_in.password
+        )
+    except Exception:
+        pass
+
     return db_user
 
 @router.get("/roles")
