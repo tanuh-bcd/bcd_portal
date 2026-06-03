@@ -65,7 +65,6 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     // Pre-fill the form with defaults from the translation file
     setFormData(prevData => ({
       ...prevData,
-      Q44: newId,
       Q45: t('ui.defaults.q45') // Use default from JSON
     }));
   }, [t]); // 't' dependency re-runs this if language changes
@@ -309,14 +308,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     const dataToSubmitEn = { ...formDataEn };
 
 
-    if (!dataToSubmitEn.Q44) {
-        dataToSubmitEn.Q44 = randomPatientId;
-    }
     if (!dataToSubmitEn.Q45) {
-        dataToSubmitEn.Q45 = "Universal"; 
-    }
-    if (!dataToSubmit.Q44) {
-        dataToSubmit.Q44 = randomPatientId;
+        dataToSubmitEn.Q45 = "Universal";
     }
     if (!dataToSubmit.Q45) {
         dataToSubmit.Q45 = t('ui.defaults.q45'); 
@@ -357,7 +350,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     const name = qConfig.name || qConfig.key;
     let placeholder = qConfig.placeholder || '';
     if (qConfig.key === 'Q44') {
-        placeholder = randomPatientId; 
+        placeholder = '';
     }
 
     if (!Array.isArray(data.answers) || data.answers.length === 0) {
