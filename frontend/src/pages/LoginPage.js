@@ -219,7 +219,7 @@ const LoginPage = () => {
             </button>
           </form>
           <div style={{ marginTop: '16px', textAlign: 'center' }}>
-            <button style={{ background: 'none', border: 'none', color: '#14868C', cursor: 'pointer', textDecoration: 'underline' }}>
+            <button onClick={() => navigate('/reset-password')} style={{ background: 'none', border: 'none', color: '#14868C', cursor: 'pointer', textDecoration: 'underline' }}>
               Reset password
             </button>
           </div>

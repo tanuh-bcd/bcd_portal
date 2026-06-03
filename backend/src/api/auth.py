@@ -4,8 +4,8 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from ..db.session import get_db
 from ..models.models import User, Hospital, Role
-from ..schemas.schemas import Token, LoginRequest, HospitalResponse, TokenData
-from ..core.security import verify_password, create_access_token
+from ..schemas.schemas import Token, LoginRequest, HospitalResponse, TokenData, ResetPasswordRequest
+from ..core.security import verify_password, create_access_token, get_password_hash
 from ..core.config import settings
 from typing import List
 
@@ -89,6 +89,28 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer", "full_name": user.full_name or ""}
 
 @router.post("/reset-password")
-def reset_password(email_data: dict):
-    # This is a placeholder as per the blueprint
-    return {"msg": f"Password reset email sent to {email_data.get('email')}"}
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    hospital = db.query(Hospital).filter(Hospital.name == data.hospital_name).first()
+    if not hospital:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid hospital name")
+
+    role = db.query(Role).filter(Role.name == data.role).first()
+    if not role:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+
+    user = db.query(User).filter(
+        User.email == data.email,
+        User.hospital_id == hospital.id,
+        User.role_id == role.id
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account found with these details")
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account is inactive")
+
+    user.password_hash = get_password_hash(data.new_password)
+    db.commit()
+
+    return {"msg": "Password has been reset successfully"}

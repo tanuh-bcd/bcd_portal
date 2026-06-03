@@ -34,6 +34,12 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class ResetPasswordRequest(BaseModel):
+    hospital_name: str
+    role: str
+    email: EmailStr
+    new_password: str
+
 class HospitalBase(BaseModel):
     name: str
     contact_person: str

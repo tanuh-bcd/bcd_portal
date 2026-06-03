@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminPage from './pages/AdminPage';
 import PatientPage from './pages/PatientPage';
 import DoctorPage from './pages/DoctorPage';
@@ -40,6 +41,7 @@ function App() {
               <Route path="demo" element={<Demo />} />
               <Route path="stats" element={<Stats />} />
               <Route path="login" element={<LoginPage />} />
+              <Route path="reset-password" element={<ResetPasswordPage />} />
             </Route>
             {/* Auth-protected pages — no Navbar */}
             <Route path="/admin" element={<AdminPage />} />
