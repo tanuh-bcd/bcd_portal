@@ -27,16 +27,13 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
 
   // State hooks
-  const [formData, setFormData] = useState(() => ({
-    Q45: t('ui.defaults.q45')
-  }));
-  const [formDataEn, setFormDataEn] = useState(() => ({
-    Q45: 'Universal'
-  }));
+  const [formData, setFormData] = useState({});
+  const [formDataEn, setFormDataEn] = useState({});
   const [validationErrors, setValidationErrors] = useState([]);
-  const [showQ27VideoPrompt, setShowQ27VideoPrompt] = useState(false); 
+  const [showQ27VideoPrompt, setShowQ27VideoPrompt] = useState(false);
   const [q27VideoConfirmed, setQ27VideoConfirmed] = useState(false);
   const [randomPatientId, setRandomPatientId] = useState('');
+  const [hospitals, setHospitals] = useState([]);
   
   // Helper to get the translated value for a condition
   const getTranslatedConditionValue = useCallback((condition) => {
@@ -58,16 +55,20 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     return translatedAnswers?.[index] || enAnswers[index];
   }, [questionnaireData, questionnaireDataEn]);
 
-  // Effect to set random ID and defaults
+  // Effect to set random ID
   useEffect(() => {
     const newId = generateRandomId();
     setRandomPatientId(newId);
-    // Pre-fill the form with defaults from the translation file
-    setFormData(prevData => ({
-      ...prevData,
-      Q45: t('ui.defaults.q45') // Use default from JSON
-    }));
-  }, [t]); // 't' dependency re-runs this if language changes
+  }, []);
+
+  // Fetch hospitals for Q45 dropdown
+  useEffect(() => {
+    const apiUrl = process.env.REACT_APP_API_URL || '';
+    fetch(`${apiUrl}/api/v1/auth/hospitals`)
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setHospitals(data); })
+      .catch(() => {});
+  }, []);
   
   
   // Progress calculation - OPTIMIZED: Moved to useMemo to avoid extra render cycle
@@ -308,12 +309,6 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     const dataToSubmitEn = { ...formDataEn };
 
 
-    if (!dataToSubmitEn.Q45) {
-        dataToSubmitEn.Q45 = "Universal";
-    }
-    if (!dataToSubmit.Q45) {
-        dataToSubmit.Q45 = t('ui.defaults.q45'); 
-    }
     const visibleRequiredKeys = getVisibleRequiredQuestions();
     const missingFields = visibleRequiredKeys.filter(key => {
         const value = dataToSubmit[key];
@@ -351,6 +346,15 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     let placeholder = qConfig.placeholder || '';
     if (qConfig.key === 'Q44') {
         placeholder = '';
+    }
+
+    if (qConfig.type === 'hospital-select') {
+      return (
+        <select name={name} onChange={handleChange} value={formData[name] || ""} className="select-input">
+          <option value="" disabled>{t('ui.inputs.selectDefault')}</option>
+          {hospitals.map((h) => <option key={h.id} value={h.name}>{h.name}</option>)}
+        </select>
+      );
     }
 
     if (!Array.isArray(data.answers) || data.answers.length === 0) {
@@ -555,6 +559,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
             t={t}
             displayNumber={displayNumber}
             randomPatientId={randomPatientId}
+            hospitals={hospitals}
           />
           {hasValidChildren && (
             <div className="sub-question-container visible">
@@ -651,6 +656,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                     q27VideoConfirmed={q27VideoConfirmed}
                     setQ27VideoConfirmed={setQ27VideoConfirmed}
                     randomPatientId={randomPatientId}
+                    hospitals={hospitals}
                   />
                   {hasValidChildren && (
                     <div className="sub-question-container visible">

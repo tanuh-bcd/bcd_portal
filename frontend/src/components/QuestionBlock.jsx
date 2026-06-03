@@ -15,6 +15,7 @@ const QuestionBlock = ({
   t,
   displayNumber,
   randomPatientId, // NEW: Passed prop
+  hospitals,
   // Q27 specific props
   isQ27No,
   showQ27VideoPrompt,
@@ -36,6 +37,15 @@ const QuestionBlock = ({
     if (config.key === 'Q44') {
       // FIX: Use the prop for placeholder
       placeholder = randomPatientId;
+    }
+
+    if (config.type === 'hospital-select') {
+      return (
+        <select name={qName} onChange={handleChange} value={formData[qName] || ""} className="select-input">
+          <option value="" disabled>{t('ui.inputs.selectDefault')}</option>
+          {(hospitals || []).map((h) => <option key={h.id} value={h.name}>{h.name}</option>)}
+        </select>
+      );
     }
 
     if (!Array.isArray(qData.answers) || qData.answers.length === 0) {
@@ -196,6 +206,7 @@ const arePropsEqual = (prev, next) => {
   if (prev.validationErrors.includes(name) !== next.validationErrors.includes(name)) return false;
 
   if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
+  if (prev.hospitals !== next.hospitals) return false;
 
   // 2. Check value change
   if (prev.formData[name] !== next.formData[name]) return false;
