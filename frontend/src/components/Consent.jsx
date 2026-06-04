@@ -189,10 +189,10 @@ function Consent({ onAccept }) {
 
   return (
     <div className="consent-container">
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        <img src="/tanuh.png" alt="TANUH Logo" style={{ height: 55, objectFit: 'contain' }} />
-        <img src="/MoE_Logo.svg" alt="MoE Logo" style={{ height: 45, objectFit: 'contain' }} />
-        <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: 60, objectFit: 'contain' }} />
+      <div className="logos-container" style={{ marginBottom: '1.5rem' }}>
+        <img src="/tanuh.png" alt="TANUH Logo" className="logo-tanuh" />
+        <img src="/MoE_Logo.svg" alt="MoE Logo" className="logo-moe" />
+        <img src="/IISc_logo.png" alt="IISc Logo" className="logo-iisc" />
       </div>
       <LanguageSwitcher />
 

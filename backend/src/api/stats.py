@@ -9,7 +9,7 @@ INSTITUTE_FILTER = """
     JOIN (
         SELECT session_id, MAX(answer) as answer
         FROM session_data_table
-        WHERE question IN ('Institute Name', 'Enter the Hospital ID(If any, else leave):')
+        WHERE question IN ('Institute Name', 'Enter the Hospital ID(If any, else leave):', 'Q45')
           AND answer NOT IN ('Other', 'Test')
           AND answer IS NOT NULL AND answer != ''
         GROUP BY session_id

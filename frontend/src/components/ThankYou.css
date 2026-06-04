@@ -1,135 +1,4 @@
-/* 
-.thank-you-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  font-family: 'Inter', sans-serif;
-}
-
-.thank-you-dialog {
-  background: #FDFCFC;
-  border-radius: 16px;
-  padding: 2rem 2.5rem;
-  width: 90%;
-  max-width: 420px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  position: relative;
-  animation: fadeIn 0.4s ease-in-out;
-}
-
-.close-button {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  background: transparent;
-  border: none;
-  font-size: 1.6rem;
-  color: #999;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.close-button:hover {
-  color: #000;
-}
-
-.icon-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.success-icon {
-  color: #4caf50;
-  width: 50px;
-  height: 50px;
-}
-
-.thank-you-message {
-  color: #444;
-  font-size: 1rem;
-  margin: 0.5rem 0 1.2rem;
-}
-
-.risk-result-container {
-  background: #f9f9fb;
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.05);
-}
-
-.risk-percentage {
-  font-size: 2rem;
-  color: #14868C;
-  margin-top: 0.5rem;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.ok-button, .download-button {
-  border: none;
-  border-radius: 8px;
-  padding: 0.7rem 1.5rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.ok-button {
-  background-color: #14868C;
-  color: white;
-}
-
-.ok-button:hover {
-  background-color: #0e6a6f;
-}
-
-.download-button {
-  background-color: #f0f0f5;
-  color: #333;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.download-button:hover {
-  background-color: #e0e0eb;
-}
-
-.download-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.fade-in {
-  animation: fadeIn 0.4s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-} */
-
-/* 
+/* Legacy commented sections removed for brevity — see git history */
 
 .thank-you-overlay {
   position: fixed;
@@ -140,35 +9,35 @@
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
-  overflow-y: auto; 
-  padding: 20px; 
+  overflow-y: auto;
+  padding: clamp(12px, 1.6vw, 20px);
 }
 
 .thank-you-dialog {
   background: #FDFCFC;
-  border-radius: 16px;
-  padding: 30px 40px;
+  border-radius: clamp(10px, 1.3vw, 16px);
+  padding: clamp(20px, 2.5vw, 30px) clamp(20px, 3.2vw, 40px);
   width: 90%;
-  max-width: 650px; 
+  max-width: clamp(320px, 52vw, 650px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   text-align: center;
   position: relative;
   border-top: 6px solid #14868C;
   animation: slideInUp 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-  margin: auto; 
+  margin: auto;
 }
 
 .close-button {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: clamp(10px, 1.2vw, 15px);
+  right: clamp(10px, 1.2vw, 15px);
   background: #f1f3f5;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 1.5rem;
-  line-height: 30px;
+  width: clamp(24px, 2.5vw, 30px);
+  height: clamp(24px, 2.5vw, 30px);
+  font-size: clamp(1.1rem, 1.3vw, 1.5rem);
+  line-height: clamp(24px, 2.5vw, 30px);
   color: #868e96;
   cursor: pointer;
   display: flex;
@@ -187,8 +56,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
+  gap: clamp(8px, 1vw, 12px);
+  margin-bottom: clamp(10px, 1.2vw, 15px);
 }
 
 .success-icon {
@@ -196,7 +65,7 @@
 }
 
 .thank-you-dialog h3 {
-  font-size: 1.8rem;
+  font-size: clamp(1.3rem, 1.6vw, 1.8rem);
   font-weight: 700;
   color: #343a40;
   margin: 0;
@@ -204,16 +73,16 @@
 
 .thank-you-dialog p {
   color: #6c757d;
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
   line-height: 1.6;
-  margin: 0 0 25px 0;
+  margin: 0 0 clamp(14px, 2vw, 25px) 0;
 }
 
 .risk-result-container {
   background: #f0fafb;
-  border-radius: 12px;
-  padding: 20px;
-  margin: 25px 0;
+  border-radius: clamp(8px, 1vw, 12px);
+  padding: clamp(12px, 1.6vw, 20px);
+  margin: clamp(14px, 2vw, 25px) 0;
   border: 1px solid #cceef0;
 }
 
@@ -221,246 +90,11 @@
   margin: 0;
   color: #495057;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
 }
-
 
 .risk-score {
-  font-size: 2.8rem;
-  font-weight: 700;
-  color: #14868C;
-  margin-top: 5px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-.ok-button, .download-button {
-  flex: 1;
-  border: none;
-  border-radius: 8px;
-  padding: 14px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ok-button {
-  background-color: #14868C;
-  color: white;
-  box-shadow: 0 4px 15px rgba(20, 134, 140, 0.2);
-
-}
-
-.ok-button:hover {
-  background-color: #0e6a6f;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(20, 134, 140, 0.3);
-}
-
-.download-button {
-  background-color: #f1f3f5;
-  color: #495057;
-  border: 1px solid #dee2e6;
-}
-
-.download-button:hover {
-  background-color: #e9ecef;
-  border-color: #adb5bd;
-  transform: translateY(-2px);
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-.interpretation-container {
-  margin-top: 30px;
-  text-align: left; 
-}
-
-.interpretation-container h4 {
-  font-size: 1.2rem;
-  color: #495057;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.risk-interpretation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  overflow: hidden; 
-}
-
-.risk-interpretation-table th, 
-.risk-interpretation-table td {
-  border: 1px solid #e9ecef;
-  padding: 10px 12px;
-  vertical-align: top;
-}
-
-.risk-interpretation-table th {
-  background-color: #f0fafb; 
-  color: #14868C; 
-  font-weight: 600;
-  text-align: left;
-}
-
-.risk-interpretation-table td {
-  color: #6c757d;
-  line-height: 1.5;
-}
-
-
-.risk-interpretation-table tbody tr:nth-child(even) {
-  background-color: #fcfaff; 
-}
-
-
-
-
-.risk-interpretation-table tbody tr.highlighted-risk-row {
-  background-color: #fff9e6;
-  font-weight: 500;
-}
-
-
-.risk-interpretation-table tbody tr.highlighted-risk-row td {
-  color: #5c523a; 
-}
-
-
-
-
-.disclaimer-text {
-  font-size: 0.8rem;
-  color: #6c757d; 
-  margin-top: 15px;
-  text-align: left;
-  line-height: 1.4;
-}
-
-.disclaimer-asterisk {
-  color: #e63946; 
-  font-weight: bold;
-  margin-right: 4px;
-} */
-
-.thank-you-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(10, 20, 30, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-  overflow-y: auto; /* Allow scrolling if content is long */
-  padding: 20px; /* Add padding for smaller screens */
-}
-
-.thank-you-dialog {
-  background: #FDFCFC;
-  border-radius: 16px;
-  padding: 30px 40px;
-  width: 90%;
-  max-width: 650px; /* Increased width to accommodate table */
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  position: relative;
-  border-top: 6px solid #14868C;
-  animation: slideInUp 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-  margin: auto; /* Center vertically if space allows */
-}
-
-.close-button {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: #f1f3f5;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 1.5rem;
-  line-height: 30px;
-  color: #868e96;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.close-button:hover {
-  background-color: #e9ecef;
-  color: #343a40;
-  transform: rotate(90deg);
-}
-
-.thank-you-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
-}
-
-.success-icon {
-  color: #14868C !important;
-}
-
-.thank-you-dialog h3 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #343a40;
-  margin: 0;
-}
-
-.thank-you-dialog p {
-  color: #6c757d;
-  font-size: 1rem;
-  line-height: 1.6;
-  margin: 0 0 25px 0;
-}
-
-.risk-result-container {
-  background: #f0fafb;
-  border-radius: 12px;
-  padding: 20px;
-  margin: 25px 0;
-  border: 1px solid #cceef0;
-}
-
-.risk-result-container p {
-  margin: 0;
-  color: #495057;
-  font-weight: 500;
-  font-size: 0.95rem;
-}
-
-/* Changed class name */
-.risk-score {
-  font-size: 2.8rem;
+  font-size: clamp(2rem, 2.5vw, 2.8rem);
   font-weight: 700;
   color: #14868C;
   margin-top: 5px;
@@ -468,9 +102,9 @@
 
 .male-disclaimer-container {
   background: #fff5f5;
-  border-radius: 12px;
-  padding: 20px;
-  margin: 25px 0;
+  border-radius: clamp(8px, 1vw, 12px);
+  padding: clamp(12px, 1.6vw, 20px);
+  margin: clamp(14px, 2vw, 25px) 0;
   border: 1px solid #feb2b2;
 }
 
@@ -478,21 +112,21 @@
   margin: 0 !important;
   color: #c53030 !important;
   font-weight: 600;
-  font-size: 1.1rem !important;
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem) !important;
 }
 
 .action-buttons {
   display: flex;
-  gap: 15px;
-  margin-top: 30px;
+  gap: clamp(10px, 1.2vw, 15px);
+  margin-top: clamp(16px, 2.5vw, 30px);
 }
 
 .ok-button, .download-button {
   flex: 1;
   border: none;
-  border-radius: 8px;
-  padding: 14px;
-  font-size: 1rem;
+  border-radius: clamp(6px, 0.6vw, 8px);
+  padding: clamp(10px, 1.1vw, 14px);
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 600;
@@ -505,7 +139,6 @@
   background-color: #14868C;
   color: white;
   box-shadow: 0 4px 15px rgba(20, 134, 140, 0.2);
-  /* font-size: 1.5rem; */ /* Removed to match download button size */
 }
 
 .ok-button:hover {
@@ -537,39 +170,38 @@
   }
 }
 
-/* --- NEW Styles for Interpretation Table --- */
 .interpretation-container {
-  margin-top: 30px;
-  text-align: left; /* Align table content left */
+  margin-top: clamp(16px, 2.5vw, 30px);
+  text-align: left;
 }
 
 .interpretation-container h4 {
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
   color: #495057;
-  margin-bottom: 15px;
+  margin-bottom: clamp(10px, 1.2vw, 15px);
   text-align: center;
 }
 
 .risk-interpretation-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem; /* Slightly smaller text for table */
-  margin-bottom: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-  border-radius: 8px;
-  overflow: hidden; /* Ensures border-radius applies to table */
+  font-size: clamp(0.75rem, 0.9vw, 0.85rem);
+  margin-bottom: clamp(14px, 2vw, 25px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: clamp(6px, 0.6vw, 8px);
+  overflow: hidden;
 }
 
-.risk-interpretation-table th, 
+.risk-interpretation-table th,
 .risk-interpretation-table td {
   border: 1px solid #e9ecef;
-  padding: 10px 12px;
-  vertical-align: top; /* Align text to top */
+  padding: clamp(6px, 0.8vw, 10px) clamp(8px, 1vw, 12px);
+  vertical-align: top;
 }
 
 .risk-interpretation-table th {
-  background-color: #f0fafb; /* Light teal header */
-  color: #14868C; /* Teal text */
+  background-color: #f0fafb;
+  color: #14868C;
   font-weight: 600;
   text-align: left;
 }
@@ -579,67 +211,38 @@
   line-height: 1.5;
 }
 
-/* Alternate row color for readability */
 .risk-interpretation-table tbody tr:nth-child(even) {
-  background-color: #f8fdfd; 
+  background-color: #f8fdfd;
 }
 
-/* Style for highlighting the user's risk row in the HTML table */
 .risk-interpretation-table tbody tr.highlighted-risk-row {
-  background-color: #fff9e6; /* Light yellow background */
-  font-weight: 500; /* Slightly bolder text */
+  background-color: #fff9e6;
+  font-weight: 500;
 }
 
-/* Optional: Make text in highlighted row slightly darker for contrast */
 .risk-interpretation-table tbody tr.highlighted-risk-row td {
-  color: #5c523a; 
+  color: #5c523a;
 }
 
-/* Styles for the disclaimer text below the table */
 .disclaimer-text {
-  font-size: 0.8rem; /* Smaller font size */
-  color: #6c757d; /* Lighter gray text */
-  margin-top: 15px; /* Space above the text */
-  text-align: left; /* Align text to the left */
+  font-size: clamp(0.7rem, 0.8vw, 0.8rem);
+  color: #6c757d;
+  margin-top: clamp(10px, 1.2vw, 15px);
+  text-align: left;
   line-height: 1.4;
 }
 
 .disclaimer-asterisk {
-  color: #e63946; /* Red color for the asterisk */
+  color: #e63946;
   font-weight: bold;
   margin-right: 4px;
 }
 
-
-/*
-==============================================
---- NEW: RESPONSIVE STYLES FOR MOBILE ---
-==============================================
-*/
 @media (max-width: 650px) {
-
-  /* 1. Reduce dialog padding */
-  .thank-you-dialog {
-    padding: 25px 20px;
-    width: 95%; /* Give a tiny bit more width */
-  }
-
-  .thank-you-dialog h3 {
-    font-size: 1.5rem; /* Slightly smaller title */
-  }
-
-  .risk-score {
-    font-size: 2.4rem; /* Slightly smaller score */
-  }
-
-  /* 2. Stack action buttons */
   .action-buttons {
     flex-direction: column;
-    gap: 12px;
   }
 
-  
-  /* Hide the desktop header */
   .risk-interpretation-table thead {
     display: none;
   }
@@ -648,24 +251,23 @@
   .risk-interpretation-table tbody,
   .risk-interpretation-table tr,
   .risk-interpretation-table td {
-    display: block; /* Make everything block-level */
+    display: block;
     width: 100%;
   }
 
   .risk-interpretation-table tr {
     margin-bottom: 15px;
-    border: 1px solid #dee2e6; /* Give each "card" a border */
+    border: 1px solid #dee2e6;
     border-radius: 8px;
-    overflow: hidden; /* Contain the cells */
+    overflow: hidden;
   }
-  
-  /* Style the cells */
+
   .risk-interpretation-table td {
     border: none;
-    border-bottom: 1px solid #e9ecef; /* Separate cells within a card */
-    padding-left: 50%; /* Make space for the label */
+    border-bottom: 1px solid #e9ecef;
+    padding-left: 50%;
     position: relative;
-    text-align: right; /* Align the value to the right */
+    text-align: right;
     padding-top: 12px;
     padding-bottom: 12px;
   }
@@ -675,124 +277,213 @@
   }
 
   .risk-interpretation-table td:last-child {
-    border-bottom: none; /* No border on the last cell in a card */
+    border-bottom: none;
   }
 
-  /* Use the ::before pseudo-element to add the label from the data-label attribute */
   .risk-interpretation-table td[data-label]::before {
-    content: attr(data-label); /* Get text from 'data-label' */
+    content: attr(data-label);
     position: absolute;
     left: 12px;
-    width: calc(50% - 24px); /* (50% left padding) - (12px padding) */
+    width: calc(50% - 24px);
     font-weight: 600;
-    color: #14868C; /* Use theme color for label */
+    color: #14868C;
     text-align: left;
     vertical-align: top;
   }
 
-  /* Maintain highlight style */
   .risk-interpretation-table tbody tr.highlighted-risk-row {
     background-color: #fff9e6;
     border-color: #ffe8a1;
   }
 
   .risk-interpretation-table tbody tr.highlighted-risk-row td {
-     color: #5c523a;
+    color: #5c523a;
   }
-  
+
   .risk-interpretation-table tbody tr.highlighted-risk-row td[data-label]::before {
-    color: #b38f00; /* Darker label for highlighted card */
+    color: #b38f00;
   }
 }
 
 
 .what-to-do-container {
-  margin-top: 1.5rem;
+  margin-top: clamp(0.8rem, 1.2vw, 1.5rem);
   text-align: left;
 }
 
 .what-to-do-title {
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
   font-weight: 600;
   color: #333;
-  margin-bottom: 0.8rem;
+  margin-bottom: clamp(0.4rem, 0.6vw, 0.8rem);
 }
 
 .what-to-do-box {
   background-color: #f9f9f9;
   border-left: 4px solid #007bff;
-  padding: 1rem;
-  border-radius: 8px;
+  padding: clamp(0.6rem, 0.8vw, 1rem);
+  border-radius: clamp(6px, 0.6vw, 8px);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .what-to-do-text {
-  font-size: 1rem;
+  font-size: clamp(0.85rem, 1.1vw, 1rem);
   color: #444;
   line-height: 1.6;
   margin: 0;
 }
 
 .no-data-text {
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
   color: #777;
   margin-top: 0.5rem;
 }
 
 
-
-
-
-/* 
-.consent-container, 
-.questionnaire-container, 
-.thank-you-dialog {
-  position: relative; 
-  padding-top: 140px; 
+/* Riskometer — gauge internals kept at fixed 280px (aspect-ratio dependent) */
+.riskometer-container {
+  position: relative;
+  width: 100%;
+  max-width: clamp(280px, 32vw, 400px);
+  margin: clamp(0.8rem, 1.2vw, 1.5rem) auto;
+  background: white;
+  border-radius: clamp(10px, 1.3vw, 16px);
+  padding: clamp(1.2rem, 2vw, 2.5rem) clamp(0.8rem, 1.2vw, 1.5rem) clamp(0.8rem, 1.2vw, 1.5rem);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.thank-you-dialog .logo {
+.riskometer-gauge {
+  position: relative;
+  width: 280px;
+  height: 140px;
+  overflow: hidden;
+}
+
+.gauge-background {
   position: absolute;
-  top: 20px;       
-  height: 40px;    
-  width: auto;     
+  top: 0;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: conic-gradient(from 270deg,
+      #6ee7b7 0deg,
+      #6ee7b7 45deg,
+      #fde047 45deg,
+      #fde047 90deg,
+      #fb923c 90deg,
+      #fb923c 135deg,
+      #fb7185 135deg,
+      #fb7185 180deg,
+      transparent 180deg);
+  mask: radial-gradient(farthest-side, transparent 70%, blue 71%);
+  -webkit-mask: radial-gradient(farthest-side, transparent 70%, blue 71%);
 }
 
-.thank-you-dialog .tanuh-logo {
-  left: 30px;       
+.riskometer-needle {
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - 2px);
+  width: 4px;
+  height: 112px;
+  background: #333;
+  transform-origin: bottom center;
+  transform: rotate(-90deg);
+  transition: transform 1.5s ease-out;
+  border-radius: 4px;
 }
 
-.thank-you-dialog .iisc-logo {
-  right: 30px;     
-  background-color: transparent; 
-  padding: 0;                
-  border-radius: 0;          
-  height: 40px;              
-  top: 20px;                
+.riskometer-center {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background: #333;
+  border-radius: 50%;
+  border: 3px solid white;
+}
 
-} */
+.gauge-labels {
+  display: flex;
+  width: 100%;
+  max-width: 240px;
+  justify-content: space-between;
+  margin-top: clamp(12px, 1.6vw, 20px);
+  padding: 0 5px;
+  font-size: clamp(0.65rem, 0.8vw, 0.8rem);
+  font-weight: 700;
+  color: #6c757d;
+}
 
+.gauge-labels span {
+  flex: 1;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.gauge-labels span.active-level {
+  color: #14868C;
+  transform: scale(1.15);
+}
+
+.demo-result-header-centered {
+  text-align: center;
+  margin-bottom: clamp(1rem, 1.6vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.demo-thank-you-msg {
+  color: #666;
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
+  margin-bottom: clamp(0.8rem, 1.2vw, 1.5rem);
+  text-align: center;
+}
+
+.demo-risk-status-hero {
+  margin: clamp(0.8rem, 1.2vw, 1.5rem) 0;
+  text-align: center;
+}
+
+.risk-status-text {
+  font-size: clamp(1.5rem, 2vw, 2.2rem);
+  font-weight: 800;
+  color: #14868C;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 
 /*
 ==============================================
---- NEW: STYLES FOR HIDDEN PDF CONTENT ---
+--- PDF STYLES (fixed A4 dimensions) ---
 ==============================================
 */
 .pdf-content-wrapper {
-    /* Critical: Hide the element from the screen but keep it in the DOM for html2canvas */
     position: absolute;
     top: -9999px;
     left: -9999px;
-    width: 210mm; /* A4 width */
-    padding: 15mm; /* Document margin */
+    width: 210mm;
+    padding: 15mm;
     box-sizing: border-box;
-    background-color: #FDFCFC; /* Ensure a white background for the PDF */
-    color: #333; /* Standard text color */
-    font-family: Arial, sans-serif; /* Use a common font for better rendering, actual language fonts will be used by the browser if available */
+    background-color: #FDFCFC;
+    color: #333;
+    font-family: Arial, sans-serif;
 }
 
-/* PDF Header and Title */
 .pdf-header {
     border-bottom: 2px solid #14868C;
     padding-bottom: 10px;
@@ -814,7 +505,6 @@
     margin-top: 5px;
 }
 
-/* PDF Risk Score */
 .pdf-risk-result-container {
     background: #f0fafb;
     border: 1px solid #cceef0;
@@ -838,7 +528,6 @@
     color: #14868C;
 }
 
-/* PDF Sections and Titles */
 .pdf-section-title {
     font-size: 12pt;
     font-weight: bold;
@@ -849,7 +538,6 @@
     padding-bottom: 5px;
 }
 
-/* PDF Interpretation Table */
 .pdf-risk-interpretation-table {
     width: 100%;
     border-collapse: collapse;
@@ -877,11 +565,10 @@
 }
 
 .pdf-risk-interpretation-table .pdf-highlighted-risk-row {
-    background-color: #fff9e6; /* Highlight color in PDF */
+    background-color: #fff9e6;
     font-weight: 600;
 }
 
-/* PDF Disclaimer */
 .pdf-disclaimer-text {
     font-size: 7pt;
     color: #6c757d;
@@ -897,7 +584,6 @@
     margin-right: 2px;
 }
 
-/* PDF Q&A Pairs */
 .pdf-qa-pair {
     margin-bottom: 10px;
     padding: 8px 10px;
@@ -938,131 +624,4 @@
     padding-left: 15px;
     border-left: 1px dashed #ddd;
     margin-top: 5px;
-}
-
-/* --- Added from Demo.css --- */
-/* Common Riskometer Styles - Keep parity with Demo.css */
-.riskometer-container {
-  position: relative;
-  width: 100%;
-  max-width: 400px;
-  margin: 1.5rem auto;
-  background: white;
-  border-radius: 16px;
-  padding: 2.5rem 1.5rem 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.riskometer-gauge {
-  position: relative;
-  width: 280px;
-  height: 140px;
-  overflow: hidden; 
-}/* Hide the bottom half */
-
-.gauge-background {
-  position: absolute;
-  top: 0;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  background: conic-gradient(from 270deg, 
-      #6ee7b7 0deg, 
-      #6ee7b7 45deg,
-      #fde047 45deg, 
-      #fde047 90deg, 
-      #fb923c 90deg, 
-      #fb923c 135deg,
-      #fb7185 135deg, 
-      #fb7185 180deg, 
-      transparent 180deg);
-  mask: radial-gradient(farthest-side, transparent 70%, blue 71%);
-  -webkit-mask: radial-gradient(farthest-side, transparent 70%, blue 71%);
-}
-
-.riskometer-needle {
-  position: absolute;
-  bottom: 0;
-  left: calc(50% - 2px);
-  width: 4px;
-  height: 112px;
-  background: #333;
-  transform-origin: bottom center;
-  transform: rotate(-90deg); /* Start at No Risk (LEFT) */
-  transition: transform 1.5s ease-out;
-  border-radius: 4px;
-}
-
-.riskometer-center {
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 20px;
-  background: #333;
-  border-radius: 50%;
-  border: 3px solid white;
-}
-
-.gauge-labels {
-  display: flex;
-  width: 100%;
-  max-width: 240px;
-  justify-content: space-between;
-  margin-top: 20px;
-  padding: 0 5px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6c757d;
-}
-
-.gauge-labels span {
-    flex: 1;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.gauge-labels span.active-level {
-    color: #14868C;
-    transform: scale(1.15);
-}
-
-.demo-result-header-centered {
-  text-align: center;
-  margin-bottom: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.demo-thank-you-msg {
-  color: #666;
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.demo-risk-status-hero {
-  margin: 1.5rem 0;
-  text-align: center;
-}
-
-.risk-status-text {
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: #14868C;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.fade-in { animation: fadeIn 0.4s ease forwards; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }

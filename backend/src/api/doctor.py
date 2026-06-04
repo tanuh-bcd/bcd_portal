@@ -12,6 +12,7 @@ router = APIRouter()
 INSTITUTE_QUESTIONS = (
     "Institute Name",
     "Enter the Hospital ID(If any, else leave):",
+    "Q45",
 )
 
 
@@ -98,7 +99,7 @@ def get_patient_sessions(
         FROM session_table s
         JOIN session_data_table sd ON s.session_id = sd.session_id
         LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
-          AND pid.question = 'Enter your Patient ID(if any, else leave):'
+          AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Q44')
         WHERE sd.question IN :q1
           AND sd.answer = :hospital_name
           AND s.snehita_lifetime_risk IS NOT NULL

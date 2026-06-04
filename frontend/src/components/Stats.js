@@ -119,10 +119,10 @@ const Stats = () => {
   return (
     <div className="stats-container fade-in">
       <div className="stats-header-branding">
-        <div className="stats-logos-container">
-          <img src="/tanuh.png" alt="TANUH Logo" className="stats-logo" />
-          <img src="/MoE_Logo.svg" alt="Ministry of Education Logo" className="stats-logo moe-img" />
-          <img src="/IISc_logo.png" alt="IISc Logo" className="stats-logo iisc-img" />
+        <div className="logos-container" style={{ marginBottom: '1.5rem' }}>
+          <img src="/tanuh.png" alt="TANUH Logo" className="logo-tanuh" />
+          <img src="/MoE_Logo.svg" alt="Ministry of Education Logo" className="logo-moe" />
+          <img src="/IISc_logo.png" alt="IISc Logo" className="logo-iisc" />
         </div>
         <h1 className="stats-main-title">AI enabled Breast Cancer Risk Prediction Tool</h1>
         <p className="stats-powered-by"><span style={{ color: '#e91e8c', fontWeight: 800, fontSize: '2.2rem', fontFamily: 'Poppins, sans-serif', letterSpacing: '1px', textTransform: 'uppercase' }}>PinkShieldAI</span></p>

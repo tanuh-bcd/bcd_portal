@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-// Logos served from public/ folder for consistency with Navbar
+import './LoginPage.css';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -12,7 +12,6 @@ const LoginPage = () => {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState({
     hospitalName: '',
     role: '',
@@ -30,7 +29,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.hospitalName || !formData.role || !formData.email || !formData.password) {
       toast.error('Please fill in all fields');
       return;
@@ -45,7 +44,7 @@ const LoginPage = () => {
         },
         body: JSON.stringify({
           hospital_name: formData.hospitalName,
-          role: formData.role.charAt(0).toUpperCase() + formData.role.slice(1), // Capitalize first letter to match backend expected roles (Admin, Doctor, Staff)
+          role: formData.role.charAt(0).toUpperCase() + formData.role.slice(1),
           email: formData.email,
           password: formData.password
         }),
@@ -61,7 +60,7 @@ const LoginPage = () => {
         localStorage.setItem('hospitalName', formData.hospitalName);
         localStorage.setItem('userEmail', formData.email);
         localStorage.setItem('userName', userName);
-        
+
         const roleLower = formData.role.toLowerCase();
         if (roleLower === 'admin') {
           navigate('/admin');
@@ -69,12 +68,8 @@ const LoginPage = () => {
           navigate('/doctor');
         } else if (roleLower === 'staff') {
           navigate('/patient');
-        } else {
-          // Handle other roles when their pages are ready
-          // navigate('/dashboard');
         }
       } else {
-        // Handle specific error messages from backend if needed
         const errorMsg = data.detail || 'Credentials wrong';
         toast.error(errorMsg);
       }
@@ -107,55 +102,34 @@ const LoginPage = () => {
   }, []);
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      minHeight: '100vh', 
-      padding: '20px',
-      backgroundColor: 'transparent',
-      fontFamily: '"Inter", sans-serif'
-    }}>
-      <header style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginBottom: '30px',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2.5rem', flexWrap: 'wrap' }}>
+    <div className="login-page">
+      <header className="login-header">
+        <div className="logos-container">
           <a href={process.env.REACT_APP_WEBSITE_URL} target="_blank" rel="noopener noreferrer">
-            <img src="/tanuh.png" alt="TANUH Logo" style={{ height: '65px', objectFit: 'contain' }} />
+            <img src="/tanuh.png" alt="TANUH Logo" className="logo-tanuh" />
           </a>
-          <img src="/MoE_Logo.svg" alt="Ministry of Education Logo" style={{ height: '55px', objectFit: 'contain' }} />
-          <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: '75px', objectFit: 'contain' }} />
+          <img src="/MoE_Logo.svg" alt="Ministry of Education Logo" className="logo-moe" />
+          <img src="/IISc_logo.png" alt="IISc Logo" className="logo-iisc" />
         </div>
-        <h1 style={{
-          fontSize: '22px',
-          fontWeight: '700',
-          color: '#14868C',
-          textAlign: 'center',
-          margin: 0,
-          fontFamily: "'Poppins', sans-serif"
-        }}>
+        <h1 className="login-title">
           AI enabled Breast Cancer Risk Prediction Tool
         </h1>
-        <p style={{ color: '#e91e8c', fontWeight: 800, fontSize: '1.5rem', fontFamily: "'Poppins', sans-serif", letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
+        <p className="login-subtitle">
           PinkShieldAI
         </p>
       </header>
 
-      <main style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 16px' }}>
-        <div style={{ width: '100%', maxWidth: '420px', border: '1px solid rgba(0,0,0,0.05)', padding: '30px', borderRadius: '16px', boxShadow: '0 8px 30px rgba(20,134,140,0.1)', backgroundColor: 'white', borderTop: '5px solid #14868C' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Enter credentials</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <main className="login-main">
+        <div className="login-card">
+          <h2>Enter credentials</h2>
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-field">
               <label htmlFor="hospitalName">Hospital Name</label>
-              <select 
-                id="hospitalName" 
-                name="hospitalName" 
+              <select
+                id="hospitalName"
+                name="hospitalName"
                 value={formData.hospitalName}
                 onChange={handleChange}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 disabled={loading}
               >
                 <option value="">{loading ? 'Loading hospitals...' : 'Select Hospital'}</option>
@@ -165,16 +139,15 @@ const LoginPage = () => {
                   </option>
                 ))}
               </select>
-              {error && <span style={{ color: 'red', fontSize: '12px' }}>{error}</span>}
+              {error && <span className="login-error">{error}</span>}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="login-field">
               <label htmlFor="role">Role</label>
-              <select 
-                id="role" 
-                name="role" 
+              <select
+                id="role"
+                name="role"
                 value={formData.role}
                 onChange={handleChange}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
               >
                 <option value="">Select Role</option>
                 <option value="clinician">Clinician</option>
@@ -182,49 +155,39 @@ const LoginPage = () => {
                 <option value="staff">Staff</option>
               </select>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="login-field">
               <label htmlFor="email">Email address</label>
-              <input 
-                type="email" 
-                id="email" 
-                name="email" 
+              <input
+                type="email"
+                id="email"
+                name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} 
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="login-field">
               <label htmlFor="password">Password</label>
-              <div style={{ position: 'relative' }}>
+              <div className="login-password-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
                 />
-                <span onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: '18px', userSelect: 'none' }}>{showPassword ? '🙈' : '👁️'}</span>
+                <span className="login-password-toggle" onClick={() => setShowPassword(!showPassword)}>{showPassword ? '\u{1F648}' : '\u{1F441}\u{FE0F}'}</span>
               </div>
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loginLoading}
-              style={{ 
-                padding: '10px', 
-                backgroundColor: loginLoading ? '#ccc' : '#14868C', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: loginLoading ? 'not-allowed' : 'pointer', 
-                marginTop: '10px' 
-              }}
+              className="login-submit"
             >
               {loginLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
-          <div style={{ marginTop: '16px', textAlign: 'center' }}>
-            <button onClick={() => navigate('/reset-password')} style={{ background: 'none', border: 'none', color: '#14868C', cursor: 'pointer', textDecoration: 'underline' }}>
+          <div className="login-reset-link">
+            <button onClick={() => navigate('/reset-password')}>
               Reset password
             </button>
           </div>

@@ -26,9 +26,9 @@ const Navbar = () => {
       <div className="navbar-content">
         <div className="navbar-logo">
           <Link to="/" className="logo-link">
-            <img src="/tanuh.png" alt="Tanuh Logo" className="logo-img" />
-            <img src="/MoE_Logo.svg" alt="MOE Logo" className="logo-img" />
-            <img src="/IISc_logo.png" alt="IISc Logo" className="logo-img iisc-logo" />
+            <img src="/tanuh.png" alt="Tanuh Logo" className="logo-img logo-tanuh" />
+            <img src="/MoE_Logo.svg" alt="MOE Logo" className="logo-img logo-moe" />
+            <img src="/IISc_logo.png" alt="IISc Logo" className="logo-img logo-iisc" />
           </Link>
         </div>
         <div className="navbar-tabs">

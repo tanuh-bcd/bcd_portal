@@ -1,6 +1,6 @@
 .navbar-container {
   width: 100%;
-  background: #DAF3F4; /* Updated to correct teal color */
+  background: #DAF3F4;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(0,0,0,0.1);
@@ -8,7 +8,7 @@
   top: 0;
   z-index: 1000;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease-in-out; /* Added for scroll hide */
+  transition: transform 0.3s ease-in-out;
 }
 
 .navbar-container.hidden {
@@ -21,45 +21,62 @@
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0.8rem 2rem;
+  padding: clamp(0.4rem, 0.8vw, 0.8rem) clamp(1rem, 2vw, 2rem);
 }
 
 .navbar-logo {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5vw;
 }
 
 .logo-link {
   display: flex;
   align-items: center;
-  gap: 1rem; /* Spacing between logos */
+  gap: 1.5vw;
   text-decoration: none;
 }
 
 .logo-img {
-  height: 40px;
   width: auto;
   object-fit: contain;
 }
 
-.logo-img.iisc-logo {
+.logo-img.logo-tanuh {
+  height: 3vw;
+  min-height: 22px;
+  max-height: 40px;
+}
+
+.logo-img.logo-moe {
+  height: 2.8vw;
+  min-height: 20px;
+  max-height: 36px;
+}
+
+.logo-img.logo-iisc {
+  height: 3.5vw;
+  min-height: 24px;
+  max-height: 45px;
   mix-blend-mode: multiply;
 }
 
 .navbar-tabs {
   display: flex;
-  gap: 1.5rem;
+  gap: clamp(0.4rem, 1.2vw, 1.5rem);
   font-family: 'Poppins', sans-serif;
-  font-weight: 700; /* Poppins Bold */
+  font-weight: 700;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .nav-link {
   text-decoration: none;
   color: #333;
   font-weight: 700;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: clamp(0.3rem, 0.5vw, 0.5rem) clamp(0.5rem, 0.9vw, 1rem);
+  border-radius: clamp(4px, 0.6vw, 8px);
+  font-size: clamp(0.75rem, 1vw, 1rem);
   transition: all 0.3s ease;
 }
 
@@ -69,7 +86,7 @@
 }
 
 .nav-link.active {
-  background: #14868C; /* Selection color updated */
+  background: #14868C;
   color: white;
   box-shadow: 0 4px 10px rgba(20, 134, 140, 0.3);
 }
@@ -78,31 +95,5 @@
   .navbar-content {
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.6rem 1rem;
-  }
-  .logo-img {
-    height: 30px;
-  }
-  .navbar-tabs {
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .nav-link {
-    padding: 0.4rem 0.7rem;
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .logo-link {
-    gap: 0.5rem;
-  }
-  .logo-img {
-    height: 24px;
-  }
-  .nav-link {
-    padding: 0.3rem 0.5rem;
-    font-size: 0.8rem;
   }
 }

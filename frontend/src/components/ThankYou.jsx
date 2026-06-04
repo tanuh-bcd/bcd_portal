@@ -1,17 +1,16 @@
 import React from 'react';
 import './ThankYou.css';
-// import { formStructure } from './Questionnaire'; // This import is untouched
 import jsPDF from 'jspdf';
 import { Download, CheckCircle } from 'lucide-react';
 import thankYouData from '../assets/locales/english/thankyou.json';
 import { useTranslation } from 'react-i18next';
-import { useEffect } from 'react';   
+import { useEffect, useState } from 'react';
+import RiskTable from './RiskTable';
 
 
-// Helper function to determine the risk level based on the score (Unchanged)
 const getRiskLevel = (score, t) => {
     const rows = t('interpretation.data', { returnObjects: true });
-    const levels = Array.isArray(rows) ? rows.map(r => r.level) : ["No Risk", "Low Risk", "Moderate Risk", "High Risk"];
+    const levels = Array.isArray(rows) ? rows.map(r => r.level) : ["Baseline Risk", "Evident Risk", "Significant Risk", "High Risk"];
 
     const numScore = parseFloat(score);
     if (isNaN(numScore)) return null;
@@ -22,28 +21,48 @@ const getRiskLevel = (score, t) => {
     return null;
 };
 
-// const getRiskAction = (score, t) => {
-//     const rows = t('interpretation.data', { returnObjects: true });
-//     const levels = Array.isArray(rows) ? rows.map(r => r.action) : ["Normal Risk", "Moderate Risk", "High Risk", "Very High Risk"];
-
-//     const numScore = parseFloat(score);
-//     if (isNaN(numScore)) return null;
-//     if (numScore < 0.4004) return levels[0];
-//     if (numScore >= 0.4004 && numScore < 0.574) return levels[1];
-//     if (numScore >= 0.574 && numScore < 0.795) return levels[2];
-//     if (numScore >= 0.795) return levels[3];
-//     return null;
-// };
-
 
 const getRiskLevelEn = (score) => {
     const numScore = parseFloat(score);
     if (isNaN(numScore)) return null;
-    if (numScore < 0.4004) return "No Risk";
-    if (numScore >= 0.4004 && numScore < 0.574) return "Low Risk";
-    if (numScore >= 0.574 && numScore < 0.795) return "Moderate Risk";
+    if (numScore < 0.4004) return "Baseline Risk";
+    if (numScore >= 0.4004 && numScore < 0.574) return "Evident Risk";
+    if (numScore >= 0.574 && numScore < 0.795) return "Significant Risk";
     if (numScore >= 0.795) return "High Risk";
     return null;
+};
+
+const Riskometer = ({ riskLevel }) => {
+    const [needleRotation, setNeedleRotation] = useState(-90);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const angles = {
+                "Baseline Risk": -67.5,
+                "Evident Risk": -22.5,
+                "Significant Risk": 22.5,
+                "High Risk": 67.5
+            };
+            setNeedleRotation(angles[riskLevel] || 67.5);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [riskLevel]);
+
+    return (
+        <div className="riskometer-container fade-in">
+            <div className="riskometer-gauge">
+                <div className="gauge-background"></div>
+                <div className="riskometer-needle" style={{ transform: `rotate(${needleRotation}deg)` }}></div>
+                <div className="riskometer-center"></div>
+            </div>
+            <div className="gauge-labels">
+                <span className={riskLevel === "Baseline Risk" ? "active-level" : ""}>Baseline</span>
+                <span className={riskLevel === "Evident Risk" ? "active-level" : ""}>Evident</span>
+                <span className={riskLevel === "Significant Risk" ? "active-level" : ""}>Significant</span>
+                <span className={riskLevel === "High Risk" ? "active-level" : ""}>High</span>
+            </div>
+        </div>
+    );
 };
 
 
@@ -364,71 +383,33 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
     return (
     <div className="thank-you-overlay">
       <div className="thank-you-dialog">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <img src="/tanuh.png" alt="TANUH Logo" style={{ height: 55, objectFit: 'contain' }} />
-          <img src="/MoE_Logo.svg" alt="MoE Logo" style={{ height: 45, objectFit: 'contain' }} />
-          <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: 60, objectFit: 'contain' }} />
-        </div>
-
         <button className="close-button" onClick={() => window.location.reload()}>&times;</button>
-        <div className="thank-you-header">
-          <CheckCircle className="success-icon" size={40} /> 
-          {/* --- MODIFIED --- */}
-          <h3>{tThankYou('title')}</h3>
-        </div>
-        {/* --- MODIFIED --- */}
-        <p>{tThankYou('message')}</p>
-        
-        {isMale && (
-          <div className="male-disclaimer-container">
-            <p className="male-disclaimer-text">
-              {tThankYou('maleDisclaimer')}
-            </p>
-          </div>
-        )}
-        
-        {score !== null && !isMale && (
-          <div className="risk-result-container">
-            {/* --- MODIFIED --- */}
-            <p>{tThankYou('riskScoreLabel')}</p>
-            <h2 className="risk-score">{userRiskLevel}</h2> 
-          </div>
-        )}
 
-        {/* {score !== null && (
-          <div className="interpretation-container">
-            <h4>{tThankYou('interpretation.title')}</h4>
-            <table className="risk-interpretation-table">
-              <thead>
-                <tr>
-                  <th>{tThankYou('interpretation.headers.level')}</th>
-                  <th>{tThankYou('interpretation.headers.range')}</th>
-                  <th>{tThankYou('interpretation.headers.meaning')}</th>
-                  <th>{tThankYou('interpretation.headers.action')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {riskInterpretationData.map((row, index) => (
-                  <tr 
-                    key={index} 
-                    className={row.level === userRiskLevel ? 'highlighted-risk-row' : ''}
-                  >
-                    <td data-label={tThankYou('interpretation.headers.level')}>{row.level}</td>
-                    <td data-label={tThankYou('interpretation.headers.range')}>{row.range}</td>
-                    <td data-label={tThankYou('interpretation.headers.meaning')}>{row.meaning}</td>
-                    <td data-label={tThankYou('interpretation.headers.action')}>{row.action}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <p className="disclaimer-text">
-              <span className="disclaimer-asterisk">{tThankYou('disclaimer.asterisk')}</span>
-              <strong>{tThankYou('disclaimer.title')}</strong>:
-              {' '}{tThankYou('disclaimer.text')}
-            </p>
+        <div className="demo-result-header-centered">
+          <div className="thank-you-header">
+            <CheckCircle className="success-icon" size={48} />
+            <h3>{tThankYou('title')}</h3>
           </div>
-        )} */}
+          <p className="demo-thank-you-msg">{tThankYou('message')}</p>
+
+          {isMale && (
+            <div className="male-disclaimer-container">
+              <p className="male-disclaimer-text">
+                {tThankYou('maleDisclaimer')}
+              </p>
+            </div>
+          )}
+
+          {score !== null && !isMale && (
+            <div className="demo-risk-status-hero">
+              <h2 className="risk-status-text">{userRiskLevel}</h2>
+            </div>
+          )}
+        </div>
+
+        {score !== null && !isMale && (
+            <Riskometer riskLevel={userRiskLevelEn || userRiskLevel} />
+        )}
 
         {score !== null && !isMale && (() => {
             const highlightedRow = riskInterpretationData.find(
@@ -450,16 +431,24 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
             );
         })()}
 
+        {score !== null && !isMale && (
+            <div style={{ width: '100%' }}>
+              <RiskTable />
+            </div>
+        )}
 
+        <p className="disclaimer-text" style={{ textAlign: 'left', marginTop: '20px', marginBottom: '30px' }}>
+          <span className="disclaimer-asterisk">{tThankYou('disclaimer.asterisk')}</span>
+          <strong>{tThankYou('disclaimer.title')}</strong>:
+          {' '}{tThankYou('disclaimer.text')}
+        </p>
 
         <div className="action-buttons">
-          {/* --- MODIFIED --- */}
           <button className="ok-button" onClick={() => window.location.reload()}>
             {tThankYou('buttons.ok')}
           </button>
           <button className="download-button" onClick={handleDownloadPdf}>
-            <Download size={18} style={{ marginRight: '8px' }} /> 
-            {/* --- MODIFIED --- */}
+            <Download size={18} style={{ marginRight: '8px' }} />
             {tThankYou('buttons.download')}
           </button>
         </div>

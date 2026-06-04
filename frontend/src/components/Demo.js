@@ -304,11 +304,11 @@ const Demo = () => {
         <div className="demo-content-card">
           <div className="demo-card-header">
             <div className="demo-header-brands">
-              <img src="/tanuh.png" alt="Tanuh" className="brand-logo" />
+              <img src="/tanuh.png" alt="Tanuh" className="brand-logo logo-tanuh" />
               <div className="brand-divider"></div>
-              <img src="/MoE_Logo.svg" alt="MoE" className="brand-logo" />
+              <img src="/MoE_Logo.svg" alt="MoE" className="brand-logo logo-moe" />
               <div className="brand-divider"></div>
-              <img src="/IISc_logo.png" alt="IISc" className="brand-logo" />
+              <img src="/IISc_logo.png" alt="IISc" className="brand-logo logo-iisc" />
             </div>
           </div>
 
