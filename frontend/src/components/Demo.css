@@ -28,7 +28,7 @@
   background: var(--border-color);
   border-radius: 10px;
   overflow: hidden;
-  max-width: clamp(300px, 65vw, 800px);
+  max-width: 90%;
   width: 100%;
   margin: 0 auto;
 }
@@ -41,7 +41,7 @@
 
 /* Single Column Layout */
 .demo-main-single-column {
-  max-width: clamp(300px, 65vw, 800px);
+  max-width: 90%;
   width: 100%;
   margin: 0 auto;
   flex: 1;

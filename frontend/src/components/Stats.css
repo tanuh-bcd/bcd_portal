@@ -1,5 +1,5 @@
 .stats-container {
-  max-width: clamp(320px, 75vw, 1000px);
+  max-width: 90%;
   margin: clamp(0.5rem, 1.6vw, 2rem) auto;
   padding: clamp(0.75rem, 1.6vw, 2rem);
   background: #FDFCFC;
