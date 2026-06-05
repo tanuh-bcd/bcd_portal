@@ -372,7 +372,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
       const hasValidChildren = Array.isArray(renderedChildren) && renderedChildren.some(child => child !== null);
 
       return (
-        <React.Fragment key={subQKey}>
+        <div key={subQKey}>
           <QuestionBlock
             qConfig={subQConfig}
             questionnaireData={currentQuestionnaireData}
@@ -391,7 +391,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
               {renderedChildren}
             </div>
           )}
-        </React.Fragment>
+        </div>
       );
     });
   };
@@ -465,7 +465,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
               const hasValidChildren = Array.isArray(children) && children.some(child => child !== null);
 
               return (
-                <React.Fragment key={name}>
+                <div key={name}>
                   <QuestionBlock
                     qConfig={qConfig}
                     questionnaireData={questionnaireData}
@@ -488,7 +488,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                       {children}
                     </div>
                   )}
-                </React.Fragment>
+                </div>
               );
             })}
           </div>
