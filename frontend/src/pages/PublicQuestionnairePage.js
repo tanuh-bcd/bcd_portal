@@ -56,6 +56,15 @@ const PublicQuestionnairePage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, formDataEn: submitData }),
       });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const detail = Array.isArray(errorData.detail)
+          ? errorData.detail.map(e => e.msg || e.type).join('; ')
+          : errorData.detail || 'Server error';
+        alert(`Submission failed: ${detail}. Please try again.`);
+        setFinalFormData(null);
+        return;
+      }
       const result = await res.json();
       if (result.success) {
         setRiskResult(result.riskPercentage);

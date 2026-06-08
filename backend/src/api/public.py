@@ -8,7 +8,7 @@ from ..db.session import get_questionnaire_db
 from ..core.config import settings
 from google.cloud import storage
 from pydantic import BaseModel
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 router = APIRouter()
 
@@ -100,7 +100,7 @@ async def upload_public_consent(
 
 class SubmitPayload(BaseModel):
     sessionId: str
-    formDataEn: Dict[str, str]
+    formDataEn: Dict[str, Any]
 
 
 @router.post("/submit")
