@@ -302,7 +302,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
         <div style={modalOverlayStyle} onClick={() => setIsModalOpen(false)}>
           <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             <div style={modalHeaderStyle}>
-              <h3>Responses for Subject ID: {selectedSession.id}</h3>
+              <h3>Responses for Subject ID: {selectedSession.patient_id || selectedSession.id}</h3>
               <button style={closeButtonStyle} onClick={() => setIsModalOpen(false)}>&times;</button>
             </div>
             <div style={modalBodyStyle}>

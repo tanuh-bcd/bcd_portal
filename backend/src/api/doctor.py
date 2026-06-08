@@ -164,6 +164,10 @@ def get_patient_session_detail(
         "SELECT session_id, session_start_time, snehita_lifetime_risk, risk_category FROM session_table WHERE session_id = :sid"
     ), {"sid": session_id}).fetchone()
 
+    patient_id_row = q_db.execute(text(
+        "SELECT answer FROM session_data_table WHERE session_id = :sid AND question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44') LIMIT 1"
+    ), {"sid": session_id}).fetchone()
+
     if not session_row:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -189,6 +193,7 @@ def get_patient_session_detail(
 
     return {
         "id": session_id,
+        "patient_id": (patient_id_row[0] if patient_id_row else "") or "",
         "consent_scanned_url": None,
         "consent_timestamp": session_row[1],
         "snehita_risk": session_row[2],
