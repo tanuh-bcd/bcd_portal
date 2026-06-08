@@ -183,8 +183,10 @@ const QuestionBlock = ({
             </div>
           )}
           {q27VideoConfirmed && qConfig.videoUrlOnNo && (
-            <div className="youtube-player-container">
-              <iframe width="560" height="315" src={qConfig.videoUrlOnNo} title={t('ui.videoPrompt.videoTitle')} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+            <div className="video-container">
+              <video width="100%" controls autoPlay src={qConfig.videoUrlOnNo} title={t('ui.videoPrompt.videoTitle')} style={{ borderRadius: 8, maxHeight: 400 }}>
+                Your browser does not support the video tag.
+              </video>
             </div>
           )}
         </>

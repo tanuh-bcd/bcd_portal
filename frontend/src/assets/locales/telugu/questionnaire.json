@@ -278,7 +278,7 @@
           "key": "Q27",
           "type": "radio",
           "required": true,
-          "videoUrlOnNo": "https://www.youtube.com/embed/-ygucOBbKCA?autoplay=1&rel=0&start=0",
+          "videoUrlOnNo": "/BCD_SBC.mp4",
           "subQuestions": [
             {
               "key": "Q28",

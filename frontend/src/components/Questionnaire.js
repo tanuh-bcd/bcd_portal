@@ -389,14 +389,16 @@ function Questionnaire({ onSubmit, isSubmitting }) {
               )}
               {q27VideoConfirmed && videoUrlOnNo && (
                 <div className="video-container">
-                  <iframe 
-                    width="100%" 
-                    height="315" 
-                    src={videoUrlOnNo} 
-                    title={t('ui.videoPrompt.videoTitle')} 
-                    frameBorder="0" 
-                    allowFullScreen
-                  ></iframe>
+                  <video
+                    width="100%"
+                    controls
+                    autoPlay
+                    src={videoUrlOnNo}
+                    title={t('ui.videoPrompt.videoTitle')}
+                    style={{ borderRadius: 8, maxHeight: 400 }}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               )}
             </div>

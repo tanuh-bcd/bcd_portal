@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
@@ -5,12 +7,19 @@ from ..db.session import get_db, get_questionnaire_db
 from ..models.models import DoctorAssessment, Attachment, Hospital
 from ..schemas.schemas import PatientSessionListItem, PatientSessionDetail
 from .auth import get_current_user
-from typing import List
+from typing import Dict, List
 
 router = APIRouter()
 
+_qpath = Path(__file__).resolve().parent / "questionnaire_en.json"
+_Q_TEXT_MAP: Dict[str, str] = {}
+if _qpath.exists():
+    with open(_qpath, encoding="utf-8") as _f:
+        _Q_TEXT_MAP = {k: v.get("question", k) for k, v in json.load(_f).get("questions", {}).items()}
+
 INSTITUTE_QUESTIONS = (
     "Institute Name",
+    "Institute Name:",
     "Enter the Hospital ID(If any, else leave):",
     "Q45",
 )
@@ -99,7 +108,7 @@ def get_patient_sessions(
         FROM session_table s
         JOIN session_data_table sd ON s.session_id = sd.session_id
         LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
-          AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Q44')
+          AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
         WHERE sd.question IN :q1
           AND sd.answer = :hospital_name
           AND s.snehita_lifetime_risk IS NOT NULL
@@ -164,9 +173,10 @@ def get_patient_session_detail(
 
     responses = []
     for r in response_rows:
+        raw_question = r[1] or ""
         responses.append({
             "id": abs(hash(r[0])) % 2147483647,
-            "question": r[1] or "",
+            "question": _Q_TEXT_MAP.get(raw_question, raw_question),
             "answer": r[2] or "",
             "created_at": r[3],
         })

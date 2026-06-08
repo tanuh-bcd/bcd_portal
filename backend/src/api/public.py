@@ -1,6 +1,8 @@
 import math
+import json
 import uuid
 import datetime
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -11,6 +13,12 @@ from pydantic import BaseModel
 from typing import Any, Dict, Optional
 
 router = APIRouter()
+
+_questionnaire_json_path = Path(__file__).resolve().parent / "questionnaire_en.json"
+_QUESTION_TEXT_MAP: Dict[str, str] = {}
+if _questionnaire_json_path.exists():
+    with open(_questionnaire_json_path, encoding="utf-8") as _f:
+        _QUESTION_TEXT_MAP = {k: v.get("question", k) for k, v in json.load(_f).get("questions", {}).items()}
 
 
 def calculate_snehitha_risk(form_data: dict) -> str:
@@ -117,12 +125,13 @@ def submit_questionnaire(payload: SubmitPayload, db: Session = Depends(get_quest
     for key, value in form_data_en.items():
         data_id = str(uuid.uuid4())
         answer = ", ".join(value) if isinstance(value, list) else str(value)
+        question_text = _QUESTION_TEXT_MAP.get(key, key)
         db.execute(
             text(
                 "INSERT INTO session_data_table (session_data_id, session_id, question, answer, created_at) "
                 "VALUES (:did, :sid, :q, :a, :ts)"
             ),
-            {"did": data_id, "sid": session_id, "q": key, "a": answer, "ts": now},
+            {"did": data_id, "sid": session_id, "q": question_text, "a": answer, "ts": now},
         )
         now = now + datetime.timedelta(seconds=1)
 
