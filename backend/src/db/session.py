@@ -46,10 +46,11 @@ def _build_connector_engine(db_name):
     return create_engine(
         "mysql+pymysql://",
         creator=getconn,
-        pool_size=5,
-        max_overflow=10,
+        pool_size=3,
+        max_overflow=5,
         pool_pre_ping=True,
         pool_recycle=1800,
+        pool_timeout=30,
     )
 
 
@@ -80,10 +81,11 @@ def _build_direct_engine(db_name):
     return create_engine(
         url,
         connect_args=connect_args,
-        pool_size=5,
-        max_overflow=10,
+        pool_size=3,
+        max_overflow=5,
         pool_pre_ping=True,
         pool_recycle=1800,
+        pool_timeout=30,
     )
 
 
