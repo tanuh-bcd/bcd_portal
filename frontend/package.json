@@ -11,6 +11,7 @@
     "prebuild": "cp ../.env .env 2>/dev/null || true",
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "postbuild": "node scripts/obfuscate.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -49,5 +50,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^5.4.3"
   }
 }
