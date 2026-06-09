@@ -61,12 +61,17 @@ def start_session(request: Request, db: Session = Depends(get_questionnaire_db))
     ip_address = request.client.host if request.client else "unknown"
     now = datetime.datetime.utcnow()
 
-    db.execute(
-        text("INSERT INTO session_table (session_id, ip_address, session_start_time) VALUES (:sid, :ip, :ts)"),
-        {"sid": session_id, "ip": ip_address, "ts": now},
-    )
-    db.commit()
-    return {"success": True, "sessionId": session_id}
+    try:
+        db.execute(
+            text("INSERT INTO session_table (session_id, ip_address, session_start_time) VALUES (:sid, :ip, :ts)"),
+            {"sid": session_id, "ip": ip_address, "ts": now},
+        )
+        db.commit()
+        return {"success": True, "sessionId": session_id}
+    except Exception as e:
+        db.rollback()
+        print(f"Error starting session: {e}")
+        raise HTTPException(status_code=500, detail="Could not start session. Please try again.")
 
 
 @router.post("/session/{session_id}/consent")
@@ -119,38 +124,56 @@ def submit_questionnaire(payload: SubmitPayload, db: Session = Depends(get_quest
     if not session_id or not form_data_en:
         raise HTTPException(status_code=400, detail="Session ID and form data are required.")
 
-    risk_percentage = calculate_snehitha_risk(form_data_en)
+    session_row = db.execute(
+        text("SELECT session_id FROM session_table WHERE session_id = :sid"),
+        {"sid": session_id},
+    ).fetchone()
+    if not session_row:
+        raise HTTPException(status_code=404, detail="Session not found. Please start a new questionnaire.")
 
-    now = datetime.datetime.utcnow()
-    for key, value in form_data_en.items():
-        data_id = str(uuid.uuid4())
-        answer = ", ".join(value) if isinstance(value, list) else str(value)
-        question_text = _QUESTION_TEXT_MAP.get(key, key)
+    try:
+        risk_percentage = calculate_snehitha_risk(form_data_en)
+
+        now = datetime.datetime.utcnow()
+        for key, value in form_data_en.items():
+            data_id = str(uuid.uuid4())
+            answer = ", ".join(value) if isinstance(value, list) else str(value)
+            question_text = _QUESTION_TEXT_MAP.get(key, key)
+            db.execute(
+                text(
+                    "INSERT INTO session_data_table (session_data_id, session_id, question, answer, created_at) "
+                    "VALUES (:did, :sid, :q, :a, :ts)"
+                ),
+                {"did": data_id, "sid": session_id, "q": question_text, "a": answer, "ts": now},
+            )
+            now = now + datetime.timedelta(seconds=1)
+
+        risk_decimal = round(float(risk_percentage) / 100, 2)
+        if risk_decimal < 0.4004:
+            risk_cat = "Baseline Risk"
+        elif risk_decimal < 0.574:
+            risk_cat = "Evident Risk"
+        elif risk_decimal < 0.795:
+            risk_cat = "Significant Risk"
+        else:
+            risk_cat = "High Risk"
+
         db.execute(
             text(
-                "INSERT INTO session_data_table (session_data_id, session_id, question, answer, created_at) "
-                "VALUES (:did, :sid, :q, :a, :ts)"
+                "UPDATE session_table SET session_end_time = :end, snehita_lifetime_risk = :risk, risk_category = :cat WHERE session_id = :sid"
             ),
-            {"did": data_id, "sid": session_id, "q": question_text, "a": answer, "ts": now},
+            {"end": datetime.datetime.utcnow(), "risk": str(risk_decimal), "cat": risk_cat, "sid": session_id},
         )
-        now = now + datetime.timedelta(seconds=1)
+        db.commit()
 
-    risk_decimal = round(float(risk_percentage) / 100, 2)
-    if risk_decimal < 0.4004:
-        risk_cat = "Baseline Risk"
-    elif risk_decimal < 0.574:
-        risk_cat = "Evident Risk"
-    elif risk_decimal < 0.795:
-        risk_cat = "Significant Risk"
-    else:
-        risk_cat = "High Risk"
+        return {"success": True, "message": "Questionnaire submitted successfully!", "riskPercentage": risk_percentage}
 
-    db.execute(
-        text(
-            "UPDATE session_table SET session_end_time = :end, snehita_lifetime_risk = :risk, risk_category = :cat WHERE session_id = :sid"
-        ),
-        {"end": datetime.datetime.utcnow(), "risk": str(risk_decimal), "cat": risk_cat, "sid": session_id},
-    )
-    db.commit()
-
-    return {"success": True, "message": "Questionnaire submitted successfully!", "riskPercentage": risk_percentage}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error submitting questionnaire for session {session_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Could not save your responses. Please try submitting again.",
+        )

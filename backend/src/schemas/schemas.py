@@ -158,6 +158,7 @@ class PatientSessionListItem(BaseModel):
     has_us_reading: Optional[str] = ""
     has_biopsy: bool = False
     has_annotations: bool = False
+    has_additional_docs: bool = False
 
     class Config:
         from_attributes = True

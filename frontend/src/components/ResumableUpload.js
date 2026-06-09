@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Eye } from 'lucide-react';
 
-const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, onComplete }) => {
+const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, onComplete, onView }) => {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
+  const [uploadedAttachment, setUploadedAttachment] = useState(null);
   const xhrRef = useRef(null);
 
   const handleFileSelect = (e) => {
@@ -74,14 +75,16 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
       completeForm.append('gcs_url', gcs_url);
       completeForm.append('mime_type', file.type || 'application/octet-stream');
 
-      await fetch(`${apiUrl}/api/v1/patient/upload-complete`, {
+      const completeRes = await fetch(`${apiUrl}/api/v1/patient/upload-complete`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: completeForm,
       });
+      const completeData = await completeRes.json();
 
       setDone(true);
       setProgress(100);
+      if (completeData.attachment) setUploadedAttachment(completeData.attachment);
       if (onComplete) onComplete(fileType, gcs_url);
 
     } catch (err) {
@@ -117,12 +120,28 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
       padding: '16px',
       background: done ? '#e8f7f8' : '#fafefe',
       transition: 'all 0.2s',
+      overflow: 'hidden',
+      minWidth: 0,
     }}>
       <div style={{ fontSize: 13, color: '#14868C', fontWeight: 600, marginBottom: 4 }}>{label}</div>
 
       {hasExisting && !file && !done && (
-        <div style={{ fontSize: 12, color: '#14868C', marginBottom: 6 }}>
-          Existing: {existing.file_name}
+        <div style={{ fontSize: 12, color: '#14868C', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Existing: {existing.file_name}</span>
+          {onView && (
+            <button
+              type="button"
+              onClick={() => onView(existing)}
+              style={{
+                background: 'none', border: '1px solid #14868C', borderRadius: 4,
+                color: '#14868C', cursor: 'pointer', padding: '2px 6px',
+                display: 'flex', alignItems: 'center', gap: 3,
+                fontSize: 11, fontWeight: 600, flexShrink: 0, fontFamily: 'inherit',
+              }}
+            >
+              <Eye size={12} /> View
+            </button>
+          )}
         </div>
       )}
 
@@ -155,8 +174,8 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
       )}
 
       {file && !done && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 12px', background: '#f0fafb', borderRadius: 8, border: '1px solid #c8e0e2' }}>
-          <span style={{ flex: 1, fontSize: 12, color: '#333', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 12px', background: '#f0fafb', borderRadius: 8, border: '1px solid #c8e0e2', minWidth: 0 }}>
+          <span style={{ flex: 1, fontSize: 12, color: '#333', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{file.name}</span>
           <span style={{ fontSize: 11, color: '#888', flexShrink: 0 }}>{fileSizeLabel(file.size)}</span>
           <button type="button" onClick={() => { setFile(null); setProgress(0); }} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }}>&times;</button>
         </div>
@@ -200,8 +219,22 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
       )}
 
       {done && (
-        <div style={{ fontSize: 12, color: '#155724', fontWeight: 600 }}>
-          &#10003; Uploaded successfully
+        <div style={{ fontSize: 12, color: '#155724', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>&#10003; Uploaded successfully</span>
+          {onView && uploadedAttachment && (
+            <button
+              type="button"
+              onClick={() => onView(uploadedAttachment)}
+              style={{
+                background: 'none', border: '1px solid #14868C', borderRadius: 4,
+                color: '#14868C', cursor: 'pointer', padding: '2px 6px',
+                display: 'flex', alignItems: 'center', gap: 3,
+                fontSize: 11, fontWeight: 600, flexShrink: 0, fontFamily: 'inherit',
+              }}
+            >
+              <Eye size={12} /> View
+            </button>
+          )}
         </div>
       )}
 

@@ -51,6 +51,7 @@ def _get_attachment_flags(assessment):
         "has_us_reading": "SMR" if smr else ("Yes" if has_us_reading else ""),
         "has_biopsy": 'biopsy_reading' in att_types,
         "has_annotations": any(t.startswith('annot_') for t in att_types),
+        "has_additional_docs": any(t.startswith('additional_') for t in att_types),
     }
 
 

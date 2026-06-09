@@ -49,36 +49,51 @@ const PublicQuestionnairePage = () => {
     setIsSubmitting(true);
     setFinalFormData(formDataEn || formData);
 
-    try {
-      const submitData = formDataEn || formData;
-      const res = await fetch(`${API_URL}/api/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, formDataEn: submitData }),
-      });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        const detail = Array.isArray(errorData.detail)
-          ? errorData.detail.map(e => e.msg || e.type).join('; ')
-          : errorData.detail || 'Server error';
-        alert(`Submission failed: ${detail}. Please try again.`);
+    const submitData = formDataEn || formData;
+    const MAX_RETRIES = 2;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch(`${API_URL}/api/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, formDataEn: submitData }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          const detail = Array.isArray(errorData.detail)
+            ? errorData.detail.map(e => e.msg || e.type).join('; ')
+            : errorData.detail || 'Server error';
+          if (res.status >= 500 && attempt < MAX_RETRIES) {
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          alert(`Submission failed: ${detail}. Please try again.`);
+          setFinalFormData(null);
+          setIsSubmitting(false);
+          return;
+        }
+        const result = await res.json();
+        if (result.success) {
+          setRiskResult(result.riskPercentage);
+          setStep('thankyou');
+          window.scrollTo(0, 0);
+        } else {
+          alert('Submission failed. Please try again.');
+          setFinalFormData(null);
+        }
+        setIsSubmitting(false);
+        return;
+      } catch (error) {
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        alert('Could not connect to the server. Please try again.');
         setFinalFormData(null);
+        setIsSubmitting(false);
         return;
       }
-      const result = await res.json();
-      if (result.success) {
-        setRiskResult(result.riskPercentage);
-        setStep('thankyou');
-        window.scrollTo(0, 0);
-      } else {
-        alert('Submission failed. Please try again.');
-        setFinalFormData(null);
-      }
-    } catch (error) {
-      alert('Could not connect to the server.');
-      setFinalFormData(null);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

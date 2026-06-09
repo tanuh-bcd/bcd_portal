@@ -207,6 +207,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                 <th style={thCenterStyle}>Breast Ultrasound (USG Breast) Report</th>
                 <th style={thCenterStyle}>Biopsy</th>
                 <th style={thCenterStyle}>Annotations</th>
+                <th style={thCenterStyle}>Additional Docs</th>
                 <th style={thCenterStyle}>Actions</th>
               </tr>
             </thead>
@@ -248,6 +249,9 @@ const DoctorPage = ({ isEmbedded = false }) => {
                   </td>
                   <td style={statusCellStyle(session.has_annotations)}>
                     {session.has_annotations ? 'Yes' : 'No'}
+                  </td>
+                  <td style={statusCellStyle(session.has_additional_docs)}>
+                    {session.has_additional_docs ? 'Yes' : 'No'}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' }}>
                     <button
@@ -493,7 +497,7 @@ const modalOverlayStyle = {
 const modalContentStyle = {
   backgroundColor: '#fff',
   width: '80%',
-  maxWidth: '800px',
+  maxWidth: '80vw',
   maxHeight: '80vh',
   borderRadius: '8px',
   display: 'flex',

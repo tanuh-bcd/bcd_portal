@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ResumableUpload from './ResumableUpload';
+import AdditionalDocs from './AdditionalDocs';
+import FileViewer from './FileViewer';
 
 const BIRADS_OPTIONS = [
   { value: '0', label: '0 — Incomplete' },
@@ -45,7 +47,7 @@ const EMPTY_BREAST = {
 
 const styles = {
   form: {
-    maxWidth: 860,
+    width: '100%',
     margin: '0 auto',
     fontFamily: "'Inter', -apple-system, sans-serif",
   },
@@ -331,6 +333,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [viewingAttachment, setViewingAttachment] = useState(null);
 
   useEffect(() => {
     if (initialData) {
@@ -353,6 +356,11 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
   const getAttachmentByType = (type) => {
     if (!initialData || !initialData.attachments) return null;
     return initialData.attachments.find(a => a.file_type === type);
+  };
+
+  const getAttachmentsByPrefix = (prefix) => {
+    if (!initialData || !initialData.attachments) return [];
+    return initialData.attachments.filter(a => a.file_type.startsWith(prefix));
   };
 
   const handleSubmit = async (e) => {
@@ -515,15 +523,15 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} />
-                  <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} />
+                  <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} />
+                  <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} />
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} />
-                  <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} />
+                  <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} />
+                  <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} />
                 </div>
               </div>
             </div>
@@ -545,7 +553,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={{ ...styles.cardBody, borderTop: '2px solid #e8f4f5' }}>
             <label style={styles.label}>Mammography Report</label>
-            <ResumableUpload label="Upload Mammography Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="mammo_reading" sessionId={sessionId} existing={getAttachmentByType('mammo_reading')} />
+            <ResumableUpload label="Upload Mammography Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="mammo_reading" sessionId={sessionId} existing={getAttachmentByType('mammo_reading')} onView={setViewingAttachment} />
           </div>
         </div>
 
@@ -556,9 +564,9 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={styles.cardBody}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <ResumableUpload label="Breast Ultrasound (USG Breast)" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} />
-              <ResumableUpload label="Breast Ultrasound (USG Breast) Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} />
-              <ResumableUpload label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="biopsy_reading" sessionId={sessionId} existing={getAttachmentByType('biopsy_reading')} />
+              <ResumableUpload label="Breast Ultrasound (USG Breast)" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} onView={setViewingAttachment} />
+              <ResumableUpload label="Breast Ultrasound (USG Breast) Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} onView={setViewingAttachment} />
+              <ResumableUpload label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="biopsy_reading" sessionId={sessionId} existing={getAttachmentByType('biopsy_reading')} onView={setViewingAttachment} />
             </div>
           </div>
         </div>
@@ -574,18 +582,33 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_left" sessionId={sessionId} existing={getAttachmentByType('annot_cc_left')} />
-                  <ResumableUpload label="MLO Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_left" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_left')} />
+                  <ResumableUpload label="CC Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_left" sessionId={sessionId} existing={getAttachmentByType('annot_cc_left')} onView={setViewingAttachment} />
+                  <ResumableUpload label="MLO Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_left" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_left')} onView={setViewingAttachment} />
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_right" sessionId={sessionId} existing={getAttachmentByType('annot_cc_right')} />
-                  <ResumableUpload label="MLO Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_right" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_right')} />
+                  <ResumableUpload label="CC Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_right" sessionId={sessionId} existing={getAttachmentByType('annot_cc_right')} onView={setViewingAttachment} />
+                  <ResumableUpload label="MLO Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_right" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_right')} onView={setViewingAttachment} />
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Additional Documents */}
+        <div style={styles.card}>
+          <div style={{ ...styles.cardHeader, background: 'linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%)' }}>
+            <span style={styles.cardHeaderIcon}>&#128196;</span> Additional Documents
+          </div>
+          <div style={styles.cardBody}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>Upload whatever is available — none of these are mandatory</div>
+            <AdditionalDocs
+              sessionId={sessionId}
+              existingAttachments={getAttachmentsByPrefix('additional_')}
+              onView={setViewingAttachment}
+            />
           </div>
         </div>
 
@@ -631,6 +654,16 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           {isSubmitting ? 'Saving...' : (initialData ? 'Update Assessment' : 'Save Assessment')}
         </button>
       </form>
+
+      {viewingAttachment && (
+        <FileViewer
+          attachmentId={viewingAttachment.id}
+          fileName={viewingAttachment.file_name}
+          mimeType={viewingAttachment.mime_type}
+          fileTypeKey={viewingAttachment.file_type}
+          onClose={() => setViewingAttachment(null)}
+        />
+      )}
     </div>
   );
 };

@@ -34,6 +34,22 @@ FILE_TYPE_MAP = {
     "consent": "consent",
 }
 
+ADDITIONAL_DOC_PREFIXES = (
+    "additional_histopathology",
+    "additional_ihc",
+    "additional_prior_imaging",
+    "additional_other_imaging",
+    "additional_mammo_views",
+)
+
+def _resolve_doc_type(file_type):
+    if file_type in FILE_TYPE_MAP:
+        return FILE_TYPE_MAP[file_type]
+    for prefix in ADDITIONAL_DOC_PREFIXES:
+        if file_type.startswith(prefix):
+            return "additional-docs"
+    return file_type
+
 def get_ist_now():
     return datetime.datetime.now(pytz.timezone('Asia/Kolkata'))
 
@@ -47,7 +63,7 @@ def generate_subject_id(db):
     return f"subject_{num:05d}"
 
 def build_blob_path(clinic_id, subject_id, file_type, original_filename, ist_now, seq=None):
-    doc_type = FILE_TYPE_MAP.get(file_type, file_type)
+    doc_type = _resolve_doc_type(file_type)
     extension = original_filename.rsplit('.', 1)[-1] if '.' in original_filename else 'bin'
     upload_date = ist_now.strftime("%Y%m%d")
     detail = f"{file_type}-{seq}" if seq is not None else file_type
@@ -107,6 +123,96 @@ def generate_upload_url(
     }
 
 
+@router.get("/view-url/{attachment_id}")
+def get_view_url(
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    hospital_id = current_user.get("hospital_id")
+    if not hospital_id:
+        raise HTTPException(status_code=400, detail="User hospital ID not found")
+
+    attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
+    assessment = db.query(DoctorAssessment).filter(
+        DoctorAssessment.id == attachment.assessment_id,
+        DoctorAssessment.hospital_id == hospital_id
+    ).first()
+    if not assessment:
+        raise HTTPException(status_code=403, detail="Not authorized to view this file")
+
+    gcs_url = attachment.storage_url
+    if not gcs_url or not gcs_url.startswith("gs://"):
+        raise HTTPException(status_code=400, detail="Invalid storage URL")
+
+    blob_path = "/".join(gcs_url.split("/")[3:])
+    client = _get_storage_client()
+    bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+    blob = bucket.blob(blob_path)
+
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=datetime.timedelta(hours=1),
+        method="GET",
+    )
+
+    return {
+        "view_url": signed_url,
+        "file_name": attachment.file_name,
+        "mime_type": attachment.mime_type,
+    }
+
+
+@router.get("/view-file/{attachment_id}")
+def view_file(
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    from fastapi.responses import Response
+
+    hospital_id = current_user.get("hospital_id")
+    if not hospital_id:
+        raise HTTPException(status_code=400, detail="User hospital ID not found")
+
+    attachment = db.query(Attachment).filter(Attachment.id == attachment_id).first()
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
+    assessment = db.query(DoctorAssessment).filter(
+        DoctorAssessment.id == attachment.assessment_id,
+        DoctorAssessment.hospital_id == hospital_id
+    ).first()
+    if not assessment:
+        raise HTTPException(status_code=403, detail="Not authorized to view this file")
+
+    gcs_url = attachment.storage_url
+    if not gcs_url or not gcs_url.startswith("gs://"):
+        raise HTTPException(status_code=400, detail="Invalid storage URL")
+
+    blob_path = "/".join(gcs_url.split("/")[3:])
+    client = _get_storage_client()
+    bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+    blob = bucket.blob(blob_path)
+
+    if not blob.exists():
+        raise HTTPException(status_code=404, detail="File not found in storage")
+
+    content = blob.download_as_bytes()
+    mime = attachment.mime_type or "application/octet-stream"
+
+    return Response(
+        content=content,
+        media_type=mime,
+        headers={
+            "Content-Disposition": f'inline; filename="{attachment.file_name}"',
+        },
+    )
+
+
 @router.post("/upload-complete")
 def record_upload(
     session_id: str = Form(...),
@@ -133,26 +239,46 @@ def record_upload(
         db.add(assessment)
         db.flush()
 
-    existing = db.query(Attachment).filter(
-        Attachment.assessment_id == assessment.id,
-        Attachment.file_type == file_type
-    ).first()
-
-    if existing:
-        existing.file_name = file_name
-        existing.storage_url = gcs_url
-        existing.mime_type = mime_type
-    else:
-        db.add(Attachment(
+    if file_type.startswith("additional_"):
+        att = Attachment(
             assessment_id=assessment.id,
             file_type=file_type,
             file_name=file_name,
             storage_url=gcs_url,
             mime_type=mime_type,
-        ))
+        )
+        db.add(att)
+    else:
+        att = db.query(Attachment).filter(
+            Attachment.assessment_id == assessment.id,
+            Attachment.file_type == file_type
+        ).first()
+
+        if att:
+            att.file_name = file_name
+            att.storage_url = gcs_url
+            att.mime_type = mime_type
+        else:
+            att = Attachment(
+                assessment_id=assessment.id,
+                file_type=file_type,
+                file_name=file_name,
+                storage_url=gcs_url,
+                mime_type=mime_type,
+            )
+            db.add(att)
 
     db.commit()
-    return {"success": True}
+    db.refresh(att)
+    return {
+        "success": True,
+        "attachment": {
+            "id": att.id,
+            "file_type": att.file_type,
+            "file_name": att.file_name,
+            "mime_type": att.mime_type,
+        },
+    }
 
 
 @router.get("/questions", response_model=List[QuestionResponse])
