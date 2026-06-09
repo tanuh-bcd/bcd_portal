@@ -1797,19 +1797,19 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q26_8, 'ta', 'மற்றவை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q26_8, 'te', 'ఇతరులు');
 -- Question Q27
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', NULL, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', NULL, 'Yes');
 SET @id_Q27 = LAST_INSERT_ID();
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'en', 'Have you ever undergone a Breast Examination (BE)?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'hi', 'क्या आपने कभी स्तन परीक्षण (BE) कराया है?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'bn', 'আপনি কি কখনও স্তন পরীক্ষা (BE) করেছেন?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'gu', 'શું તમે ક્યારેય બ્રેસ્ટ એક્ઝામિનેશન (BE) કરાવ્યું છે?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'kn', 'ನೀವು ಎಂದಾದರೂ ಸ್ತನ ಪರೀಕ್ಷೆ (BE) ಮಾಡಿಸಿಕೊಂಡಿದ್ದೀರಾ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'ml', 'നിങ്ങൾ എപ്പോഴെങ്കിലും ഒരു ബ്രെസ്റ്റ് എക്സാമിനേഷൻ (BE) നടത്തിയിട്ടുണ്ടോ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'mr', 'तुम्ही कधी स्तन तपासणी (BE) करून घेतली आहे का?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'or', 'ଆପଣ କେବେ ସ୍ତନ ପରୀକ୍ଷା (BE) କରିଛନ୍ତି କି?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'pa', 'ਕੀ ਤੁਸੀਂ ਕਦੇ ਛਾਤੀ ਦੀ ਜਾਂਚ (BE) ਕਰਵਾਈ ਹੈ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'ta', 'நீங்கள் எப்போதாவது மார்பக பரிசோதனை (BE) செய்திருக்கிறீர்களா?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'te', 'మీరు ఎప్పుడైనా స్తన పరీక్ష (BE) చేయించుకున్నారా?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'en', 'Have you ever undergone a Clinical Breast Examination (CBE)?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'hi', 'क्या आपने कभी स्तन परीक्षण (CBE) कराया है?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'bn', 'আপনি কি কখনও স্তন পরীক্ষা (CBE) করেছেন?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'gu', 'શું તમે ક્યારેય બ્રેસ્ટ એક્ઝામિનેશન (CBE) કરાવ્યું છે?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'kn', 'ನೀವು ಎಂದಾದರೂ ಸ್ತನ ಪರೀಕ್ಷೆ (CBE) ಮಾಡಿಸಿಕೊಂಡಿದ್ದೀರಾ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'ml', 'നിങ്ങൾ എപ്പോഴെങ്കിലും ഒരു ബ്രെസ്റ്റ് എക്സാമിനേഷൻ (CBE) നടത്തിയിട്ടുണ്ടോ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'mr', 'तुम्ही कधी स्तन तपासणी (CBE) करून घेतली आहे का?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'or', 'ଆପଣ କେବେ ସ୍ତନ ପରୀକ୍ଷା (CBE) କରିଛନ୍ତି କି?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'pa', 'ਕੀ ਤੁਸੀਂ ਕਦੇ ਛਾਤੀ ਦੀ ਜਾਂਚ (CBE) ਕਰਵਾਈ ਹੈ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'ta', 'நீங்கள் எப்போதாவது மார்பக பரிசோதனை (CBE) செய்திருக்கிறீர்களா?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q27, 'te', 'మీరు ఎప్పుడైనా స్తన పరీక్ష (CBE) చేయించుకున్నారా?');
 INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q27, 'Yes', 0);
 SET @opt_id_Q27_0 = LAST_INSERT_ID();
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q27_0, 'en', 'Yes');
@@ -1837,19 +1837,19 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q27_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q27_1, 'te', 'కాదు');
 -- Question Q28
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q27, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q27, NULL);
 SET @id_Q28 = LAST_INSERT_ID();
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'en', 'When was the last BE performed?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'hi', 'अंतिम BE कब किया गया था?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'bn', 'শেষ BE সঞ্চালিত হয়েছিল কখন?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'gu', 'છેલ્લું BE ક્યારે કરવામાં આવ્યું હતું?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'en', 'When was the last CBE performed?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'hi', 'अंतिम CBE कब किया गया था?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'bn', 'শেষ CBE সঞ্চালিত হয়েছিল কখন?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'gu', 'છેલ્લું CBE ક્યારે કરવામાં આવ્યું હતું?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'kn', 'ಕೊನೆಯ ಸ್ತನ ಪರೀಕ್ಷೆ ಯಾವಾಗ ನಡೆಯಿತು?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'ml', 'എപ്പോഴാണ് അവസാന ബിഇ നടത്തിയത്?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'mr', 'शेवटची स्तन तपासणी कधी केली गेली होती?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'or', 'ଶେଷ BE କେବେ କରାଯାଇଥିଲା?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'or', 'ଶେଷ CBE କେବେ କରାଯାଇଥିଲା?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'pa', 'ਆਖਰੀ ਬੀਈ ਕਦੋਂ ਕੀਤੀ ਗਈ ਸੀ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'ta', 'கடைசியாக BE எப்போது நடத்தப்பட்டது?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'te', 'చివరిసారిగా BE ఎప్పుడు జరిగింది?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'ta', 'கடைசியாக CBE எப்போது நடத்தப்பட்டது?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q28, 'te', 'చివరిసారిగా CBE ఎప్పుడు జరిగింది?');
 INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q28, 'Within 1 year', 0);
 SET @opt_id_Q28_0 = LAST_INSERT_ID();
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q28_0, 'en', 'Within 1 year');
@@ -1890,19 +1890,19 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q28_2, 'ta', '3 ஆண்டுகளுக்கு முன்பு');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q28_2, 'te', '3 సంవత్సరాల కంటే ముందు');
 -- Question Q29
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q27, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q27, NULL);
 SET @id_Q29 = LAST_INSERT_ID();
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'en', 'What was the result of BE?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'hi', 'BE का परिणाम क्या था?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'bn', 'BE এর ফলাফল কি ছিল?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'gu', 'BEનું પરિણામ શું આવ્યું?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'en', 'What was the result of CBE?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'hi', 'CBE का परिणाम क्या था?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'bn', 'CBE এর ফলাফল কি ছিল?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'gu', 'CBEનું પરિણામ શું આવ્યું?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'kn', 'ಸ್ತನ ಪರೀಕ್ಷೆಯ ಫಲಿತಾಂಶ ಏನು?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'ml', 'BE യുടെ ഫലം എന്തായിരുന്നു?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'ml', 'CBE യുടെ ഫലം എന്തായിരുന്നു?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'mr', 'स्तन तपासणीचा निकाल काय होता?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'or', 'BE ର ଫଳାଫଳ କ’ଣ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'or', 'CBE ର ଫଳାଫଳ କ’ଣ?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'pa', 'ਬੀਈ ਦਾ ਨਤੀਜਾ ਕੀ ਰਿਹਾ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'ta', 'BE இன் முடிவு என்ன?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'te', 'BE ఫలితం ఏమిటి?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'ta', 'CBE இன் முடிவு என்ன?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q29, 'te', 'CBE ఫలితం ఏమిటి?');
 INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q29, 'Normal – No abnormal findings', 0);
 SET @opt_id_Q29_0 = LAST_INSERT_ID();
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q29_0, 'en', 'Normal – No abnormal findings');
@@ -1956,19 +1956,19 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q29_3, 'ta', 'வீரியம் மிக்க அம்சங்கள் - மார்பக புற்றுநோயை வலுவாகக் குறிக்கிறது');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q29_3, 'te', 'ప్రాణాంతక లక్షణాలు - రొమ్ము క్యాన్సర్‌ను బలంగా సూచిస్తున్నాయి');
 -- Question Q36
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q27, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q27, 'Yes');
 SET @id_Q36 = LAST_INSERT_ID();
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'en', 'After the BE, were you advised for further investigation or follow-up?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'hi', 'BE के बाद क्या आपको आगे की जांच या फॉलो-अप की सलाह दी गई थी?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'bn', 'BE-এর পর, আপনাকে কি আরও তদন্ত বা ফলো-আপের জন্য পরামর্শ দেওয়া হয়েছিল?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'en', 'After the CBE, were you advised for further investigation or follow-up?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'hi', 'CBE के बाद क्या आपको आगे की जांच या फॉलो-अप की सलाह दी गई थी?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'bn', 'CBE-এর পর, আপনাকে কি আরও তদন্ত বা ফলো-আপের জন্য পরামর্শ দেওয়া হয়েছিল?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'gu', 'BE પછી, શું તમને વધુ તપાસ અથવા ફોલો-અપ માટે સલાહ આપવામાં આવી હતી?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'kn', 'ಸ್ತನ ಪರೀಕ್ಷೆಯ ನಂತರ ನಿಮಗೆ ಮುಂದಿನ ತನಿಖೆ ಅಥವಾ ಫಾಲೋ-ಅಪ್ ಮಾಡಲು ಸಲಹೆ ನೀಡಲಾಯಿತೇ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'ml', 'BE-ന് ശേഷം, കൂടുതൽ അന്വേഷണത്തിനോ തുടർനടപടിക്കോ നിങ്ങളെ ഉപദേശിച്ചിട്ടുണ്ടോ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'ml', 'CBE-ന് ശേഷം, കൂടുതൽ അന്വേഷണത്തിനോ തുടർനടപടിക്കോ നിങ്ങളെ ഉപദേശിച്ചിട്ടുണ്ടോ?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'mr', 'स्तन तपासणीनंतर तुम्हाला पुढील तपासणी किंवा फॉलो-अपसाठी सल्ला देण्यात आला का?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'or', 'BE ପରେ, ଆପଣଙ୍କୁ ଅଧିକ ଅନୁସନ୍ଧାନ କିମ୍ବା ଅନୁସରଣ ପାଇଁ ପରାମର୍ଶ ଦିଆଗଲା କି?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'or', 'CBE ପରେ, ଆପଣଙ୍କୁ ଅଧିକ ଅନୁସନ୍ଧାନ କିମ୍ବା ଅନୁସରଣ ପାଇଁ ପରାମର୍ଶ ଦିଆଗଲା କି?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'pa', 'ਬੀ.ਈ. ਤੋਂ ਬਾਅਦ, ਕੀ ਤੁਹਾਨੂੰ ਹੋਰ ਜਾਂਚ ਜਾਂ ਫਾਲੋ-ਅੱਪ ਲਈ ਸਲਾਹ ਦਿੱਤੀ ਗਈ ਸੀ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'ta', 'BE-க்குப் பிறகு, மேலும் விசாரணை அல்லது பின்தொடர்வதற்கு நீங்கள் அறிவுறுத்தப்பட்டீர்களா?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'te', 'BE తర్వాత మరిన్ని పరిశోధనలు చేయమని సూచించారా?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'ta', 'CBE-க்குப் பிறகு, மேலும் விசாரணை அல்லது பின்தொடர்வதற்கு நீங்கள் அறிவுறுத்தப்பட்டீர்களா?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q36, 'te', 'CBE తర్వాత మరిన్ని పరిశోధనలు చేయమని సూచించారా?');
 INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q36, 'Yes', 0);
 SET @opt_id_Q36_0 = LAST_INSERT_ID();
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q36_0, 'en', 'Yes');
@@ -1996,7 +1996,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q36_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q36_1, 'te', 'కాదు');
 -- Question Q37
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q36, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q36, NULL);
 SET @id_Q37 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q37, 'en', 'If Yes, please specify what was recommended next:');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q37, 'hi', 'यदि हाँ, कृपया बताएं आगे क्या सलाह दी गई थी:');
@@ -2022,9 +2022,9 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_0, 'pa', 'ਅਲਟਰਾਸਾਊਂਡ');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_0, 'ta', 'அல்ட்ராசவுண்ட்');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_0, 'te', 'అల్ట్రాసౌండ్');
-INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q37, 'Mammogram', 1);
+INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q37, 'Mammography', 1);
 SET @opt_id_Q37_1 = LAST_INSERT_ID();
-INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_1, 'en', 'Mammogram');
+INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_1, 'en', 'Mammography');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_1, 'hi', 'मैमोग्राम');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_1, 'bn', 'ম্যামোগ্রাম');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_1, 'gu', 'મેમોગ્રામ');
@@ -2062,19 +2062,19 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_3, 'ta', 'மற்றவை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q37_3, 'te', 'ఇతర');
 -- Question Q30
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', NULL, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', NULL, 'Yes');
 SET @id_Q30 = LAST_INSERT_ID();
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'en', 'During BE, was any lump or mass detected in your breast?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'hi', 'क्या BE के दौरान आपके स्तन में कोई गांठ या द्रव्यमान पाया गया था?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'bn', 'BE চলাকালীন, আপনার স্তনে কি কোনো পিণ্ড বা ভর ধরা পড়েছিল?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'gu', 'BE દરમિયાન, શું તમારા સ્તનમાં કોઈ ગઠ્ઠો અથવા સમૂહ જોવા મળ્યો હતો?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'en', 'During CBE, was any lump or mass detected in your breast?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'hi', 'क्या CBE के दौरान आपके स्तन में कोई गांठ या द्रव्यमान पाया गया था?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'bn', 'CBE চলাকালীন, আপনার স্তনে কি কোনো পিণ্ড বা ভর ধরা পড়েছিল?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'gu', 'CBE દરમિયાન, શું તમારા સ્તનમાં કોઈ ગઠ્ઠો અથવા સમૂહ જોવા મળ્યો હતો?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'kn', 'ಸ್ತನ ಪರೀಕ್ಷೆಯ ವೇಳೆ ನಿಮ್ಮ ಸ್ತನದಲ್ಲಿ ಯಾವುದೇ ಗಡ್ಡೆ ಅಥವಾ ಕಠಿಣ ಭಾಗ ಕಂಡುಬಂದಿತೇ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'ml', 'BE സമയത്ത്, നിങ്ങളുടെ സ്തനത്തിൽ എന്തെങ്കിലും മുഴയോ പിണ്ഡമോ കണ്ടെത്തിയോ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'ml', 'CBE സമയത്ത്, നിങ്ങളുടെ സ്തനത്തിൽ എന്തെങ്കിലും മുഴയോ പിണ്ഡമോ കണ്ടെത്തിയോ?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'mr', 'स्तन तपासणी दरम्यान तुमच्या स्तनात गाठ किंवा गाठीसारखा भाग आढळला का?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'or', 'BE ସମୟରେ, ଆପଣଙ୍କ ସ୍ତନରେ କ l ଣସି ଗୁଣ୍ଡ ବା ମାସ ଚିହ୍ନଟ ହେଲା କି?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'pa', 'BE ਦੇ ਦੌਰਾਨ, ਕੀ ਤੁਹਾਡੀ ਛਾਤੀ ਵਿੱਚ ਕੋਈ ਗੰਢ ਜਾਂ ਪੁੰਜ ਪਾਇਆ ਗਿਆ ਸੀ?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'ta', 'BE இன் போது, உங்கள் மார்பகத்தில் ஏதேனும் கட்டி அல்லது நிறை கண்டறியப்பட்டதா?');
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'te', 'BE సమయంలో ఏదైనా ముద్ద లేదా మాస్ గుర్తించబడిందా?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'or', 'CBE ସମୟରେ, ଆପଣଙ୍କ ସ୍ତନରେ କ l ଣସି ଗୁଣ୍ଡ ବା ମାସ ଚିହ୍ନଟ ହେଲା କି?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'pa', 'CBE ਦੇ ਦੌਰਾਨ, ਕੀ ਤੁਹਾਡੀ ਛਾਤੀ ਵਿੱਚ ਕੋਈ ਗੰਢ ਜਾਂ ਪੁੰਜ ਪਾਇਆ ਗਿਆ ਸੀ?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'ta', 'CBE இன் போது, உங்கள் மார்பகத்தில் ஏதேனும் கட்டி அல்லது நிறை கண்டறியப்பட்டதா?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q30, 'te', 'CBE సమయంలో ఏదైనా ముద్ద లేదా మాస్ గుర్తించబడిందా?');
 INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q30, 'Yes', 0);
 SET @opt_id_Q30_0 = LAST_INSERT_ID();
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q30_0, 'en', 'Yes');
@@ -2102,7 +2102,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q30_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q30_1, 'te', 'కాదు');
 -- Question Q31
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q30, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q30, NULL);
 SET @id_Q31 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q31, 'en', 'If Yes, specify location:');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q31, 'hi', 'यदि हाँ, स्थान बताइए:');
@@ -2155,7 +2155,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q31_2, 'ta', 'இருபுறமும்');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q31_2, 'te', 'రెండు');
 -- Question Q32
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q30, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q30, NULL);
 SET @id_Q32 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q32, 'en', 'Size (approximate if known):');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q32, 'hi', 'आकार (यदि ज्ञात हो तो अनुमानित):');
@@ -2208,7 +2208,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q32_2, 'ta', 'தோராயமாக 2 செ.மீ க்கும் அதிகமாக');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q32_2, 'te', '2 సెం.మీ కంటే ఎక్కువ');
 -- Question Q33
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q30, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q30, NULL);
 SET @id_Q33 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q33, 'en', 'Consistency:');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q33, 'hi', 'संगति (Consistency):');
@@ -2261,7 +2261,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q33_2, 'ta', 'கடினமான');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q33_2, 'te', 'కఠినంగా');
 -- Question Q34
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', NULL, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', NULL, 'Yes');
 SET @id_Q34 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q34, 'en', 'Did you experience breast pain or tenderness during examination?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q34, 'hi', 'क्या आपने परीक्षण के दौरान स्तन में दर्द या कोमलता महसूस की?');
@@ -2301,7 +2301,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q34_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q34_1, 'te', 'కాదు');
 -- Question Q35
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Breast Examination (BE)', 'option', @id_Q34, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 2: Clinical Breast Examination (CBE)', 'option', @id_Q34, NULL);
 SET @id_Q35 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q35, 'en', 'If Yes, was it localized (one spot) or generalized (spread across a wider area)?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q35, 'hi', 'यदि हाँ, क्या यह स्थानीय (एक जगह) था या सामान्यीकृत (एक विस्तृत क्षेत्र में फैला हुआ)?');
@@ -2341,9 +2341,9 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q35_1, 'ta', 'பொதுமைப்படுத்தப்பட்டது (பரந்த பகுதியில் பரவியது)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q35_1, 'te', 'విస్తృత ప్రాంతం (సామాన్యంగా)');
 -- Question Q38
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond BE', 'option', NULL, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond CBE', 'option', NULL, 'Yes');
 SET @id_Q38 = LAST_INSERT_ID();
-INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q38, 'en', 'Have you undergone a mammogram?');
+INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q38, 'en', 'Have you undergone mammography?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q38, 'hi', 'क्या आपने मैमोग्राम करवाया है?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q38, 'bn', 'আপনি একটি ম্যামোগ্রাম সহ্য করা হয়েছে?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q38, 'gu', 'શું તમે મેમોગ્રામ કરાવ્યું છે?');
@@ -2381,7 +2381,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q38_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q38_1, 'te', 'కాదు');
 -- Question Q39
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond BE', 'option', @id_Q38, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond CBE', 'option', @id_Q38, NULL);
 SET @id_Q39 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q39, 'en', 'Which of these best describes your breast density?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q39, 'hi', 'इनमें से कौन सा आपके स्तन घनत्व का सबसे अच्छा वर्णन करता है?');
@@ -2394,9 +2394,9 @@ INSERT INTO question_translations (question_id, language_code, question_text) VA
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q39, 'pa', 'ਇਹਨਾਂ ਵਿੱਚੋਂ ਕਿਹੜਾ ਤੁਹਾਡੀ ਛਾਤੀ ਦੀ ਘਣਤਾ ਦਾ ਸਭ ਤੋਂ ਵਧੀਆ ਵਰਣਨ ਕਰਦਾ ਹੈ?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q39, 'ta', 'இவற்றில் எது உங்கள் மார்பக அடர்த்தியை சிறப்பாக விவரிக்கிறது?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q39, 'te', 'మీ స్తన సాంద్రత ఏది బాగా వివరిస్తుంది?');
-INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'A: Almost entirely fatty (The breasts are almost all fat, with very little fibrous and glandular tissue. This makes it easy to see through the breast and find abnormal changes on a mammogram.)', 0);
+INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'A: Almost entirely fatty (The breasts are almost all fat, with very little fibrous and glandular tissue. This makes it easy to see through the breast and find abnormal changes on mammography.)', 0);
 SET @opt_id_Q39_0 = LAST_INSERT_ID();
-INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'en', 'A: Almost entirely fatty (The breasts are almost all fat, with very little fibrous and glandular tissue. This makes it easy to see through the breast and find abnormal changes on a mammogram.)');
+INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'en', 'A: Almost entirely fatty (The breasts are almost all fat, with very little fibrous and glandular tissue. This makes it easy to see through the breast and find abnormal changes on mammography.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'hi', 'A: लगभग पूरी तरह वसाह्रित (स्तन लगभग पूरी तरह वसा से बने होते हैं, फाइब्रस और ग्रंथि ऊतक बहुत कम होता है। यह मैमोग्राम पर असामान्य परिवर्तनों को देखना आसान बनाता है.)[...]');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'bn', 'A: প্রায় সম্পূর্ণরূপে মোটা (স্তনগুলি প্রায় সম্পূর্ণ মোটা, খুব কম তন্তুযুক্ত এবং গ্রন্থিযুক্ত টিস্যু সহ। এর ফলে স্তনের মধ্য দিয়ে দেখা এবং ম্যামোগ্রামে অস্বাভাবিক পরিবর্তনগুলি খুঁজে পাওয়া সহজ হয়।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'gu', 'A: લગભગ સંપૂર્ણપણે ચરબીયુક્ત (સ્તનો લગભગ બધા જ ચરબીવાળા હોય છે, જેમાં ખૂબ ઓછા તંતુમય અને ગ્રંથીયુકત પેશીઓ હોય છે. આનાથી સ્તનમાંથી જોવાનું અને મેમોગ્રામ પર અસામાન્ય ફેરફારો શોધવાનું સરળ બને છે.)');
@@ -2407,9 +2407,9 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'pa', 'A: ਲਗਭਗ ਪੂਰੀ ਤਰ੍ਹਾਂ ਚਰਬੀ (ਛਾਤੀਆਂ ਲਗਭਗ ਸਾਰੀਆਂ ਚਰਬੀ ਵਾਲੀਆਂ ਹਨ, ਬਹੁਤ ਘੱਟ ਰੇਸ਼ੇਦਾਰ ਅਤੇ ਗ੍ਰੰਥੀ ਵਾਲੇ ਟਿਸ਼ੂ ਦੇ ਨਾਲ। ਇਸ ਨਾਲ ਛਾਤੀ ਵਿੱਚੋਂ ਦੇਖਣਾ ਅਤੇ ਮੈਮੋਗ੍ਰਾਮ ''ਤੇ ਅਸਧਾਰਨ ਤਬਦੀਲੀਆਂ ਦਾ ਪਤਾ ਲਗਾਉਣਾ ਆਸਾਨ ਹੋ ਜਾਂਦਾ ਹੈ।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'ta', 'A: கிட்டத்தட்ட முழுக்க முழுக்க கொழுப்பு (மார்பகங்கள் கிட்டத்தட்ட அனைத்தும் கொழுப்பாக இருக்கும், மிகக் குறைந்த நார்ச்சத்து மற்றும் சுரப்பி திசுக்கள் இருக்கும்.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_0, 'te', 'A: దాదాపు పూర్తిగా కొవ్వుగా ఉంటుంది (రొమ్ములు దాదాపుగా కొవ్వుగా ఉంటాయి, చాలా తక్కువ పీచు మరియు గ్రంధి కణజాలం ఉంటాయి. ఇది రొమ్ము ద్వారా చూడటం మరియు మామోగ్రామ్‌లో అసాధారణ మార్పులను కనుగొనడం సులభం చేస్తుంది.)');
-INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'B: Scattered fibroglandular densities (There are some scattered areas of fibrous and glandular tissue, but the majority of the breast is fatty. A small mass would be visible on a mammogram.)', 1);
+INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'B: Scattered fibroglandular densities (There are some scattered areas of fibrous and glandular tissue, but the majority of the breast is fatty. A small mass would be visible on mammography.)', 1);
 SET @opt_id_Q39_1 = LAST_INSERT_ID();
-INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'en', 'B: Scattered fibroglandular densities (There are some scattered areas of fibrous and glandular tissue, but the majority of the breast is fatty. A small mass would be visible on a mammogram.)');
+INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'en', 'B: Scattered fibroglandular densities (There are some scattered areas of fibrous and glandular tissue, but the majority of the breast is fatty. A small mass would be visible on mammography.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'hi', 'B: विखंडित फाइब्रोग्रंथीय घनत्व (कुछ विकेन्द्रित फाइब्रस और ग्रंथि ऊतक हैं, पर अधिकांश स्तन वसाह्रित है। छोटी गांठ मैमोग्राम पर दिखाई दे सकती है.)[...]');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'bn', 'B: বিক্ষিপ্ত ফাইব্রোগ্ল্যান্ডুলার ঘনত্ব (তন্তুযুক্ত এবং গ্রন্থিযুক্ত টিস্যুর কিছু বিক্ষিপ্ত অংশ রয়েছে তবে স্তনের বেশিরভাগ অংশই চর্বিযুক্ত। ম্যামোগ্রামে একটি ছোট ভর দৃশ্যমান হবে।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'gu', 'B: છૂટાછવાયા ફાઇબ્રોગ્લેન્ડ્યુલર ડેન્સિટીઝ (તંતુમય અને ગ્રંથીયુકત પેશીઓના કેટલાક છૂટાછવાયા વિસ્તારો છે, પરંતુ સ્તનનો મોટાભાગનો ભાગ ચરબીયુક્ત છે. મેમોગ્રામ પર એક નાનો સમૂહ દેખાશે.)');
@@ -2420,9 +2420,9 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'pa', 'B: ਖਿੰਡੇ ਹੋਏ ਫਾਈਬਰੋਗਲੈਂਡੂਲਰ ਘਣਤਾ (ਰੇਸ਼ੇਦਾਰ ਅਤੇ ਗ੍ਰੰਥੀ ਟਿਸ਼ੂ ਦੇ ਕੁਝ ਖਿੰਡੇ ਹੋਏ ਖੇਤਰ ਹਨ, ਪਰ ਛਾਤੀ ਦਾ ਜ਼ਿਆਦਾਤਰ ਹਿੱਸਾ ਚਰਬੀ ਵਾਲਾ ਹੈ। ਮੈਮੋਗ੍ਰਾਮ ''ਤੇ ਇੱਕ ਛੋਟਾ ਜਿਹਾ ਪੁੰਜ ਦਿਖਾਈ ਦੇਵੇਗਾ।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'ta', 'B: சிதறிய ஃபைப்ரோக்லாண்டுலர் அடர்த்தி (நார்ச்சத்து மற்றும் சுரப்பி திசுக்களின் சில சிதறிய பகுதிகள் உள்ளன, ஆனால் மார்பகத்தின் பெரும்பகுதி கொழுப்பாக உள்ளது. மேமோகிராமில் ஒரு சிறிய கட்டி தெரியும்.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_1, 'te', 'B: చెల్లాచెదురుగా ఉన్న ఫైబ్రోగ్లాండులర్ సాంద్రతలు (కొన్ని చెల్లాచెదురుగా ఉన్న ప్రాంతాలలో పీచు మరియు గ్రంధి కణజాలం ఉన్నాయి, కానీ రొమ్ములో ఎక్కువ భాగం కొవ్వుగా ఉంటుంది. మామోగ్రామ్‌లో ఒక చిన్న ద్రవ్యరాశి కనిపిస్తుంది.)');
-INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'C: Heterogeneously dense (There are many areas of fibrous and glandular tissue, which makes it hard to find small masses on a mammogram. This may obscure small cancers.)', 2);
+INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'C: Heterogeneously dense (There are many areas of fibrous and glandular tissue, which makes it hard to find small masses on mammography. This may obscure small cancers.)', 2);
 SET @opt_id_Q39_2 = LAST_INSERT_ID();
-INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'en', 'C: Heterogeneously dense (There are many areas of fibrous and glandular tissue, which makes it hard to find small masses on a mammogram. This may obscure small cancers.)');
+INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'en', 'C: Heterogeneously dense (There are many areas of fibrous and glandular tissue, which makes it hard to find small masses on mammography. This may obscure small cancers.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'hi', 'C: असमान रूप से घना (कई क्षेत्रों में फाइब्रस और ग्रंथि ऊतक हैं, जो मैमोग्राम पर छोटी गांठों को ढक सकते हैं.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'bn', 'C: ভিন্ন ভিন্ন ঘনত্ব (অনেক জায়গায় তন্তুযুক্ত এবং গ্রন্থিযুক্ত টিস্যু থাকে, যার ফলে ম্যামোগ্রামে ছোট ভর খুঁজে পাওয়া কঠিন হয়ে পড়ে। এটি ছোট ক্যান্সারগুলিকে অস্পষ্ট করে তুলতে পারে।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'gu', 'C: વિજાતીય રીતે ગાઢ (તંતુમય અને ગ્રંથીયુકત પેશીઓના ઘણા વિસ્તારો છે, જેના કારણે મેમોગ્રામ પર નાના સમૂહ શોધવા મુશ્કેલ બને છે. આ નાના કેન્સરને અસ્પષ્ટ કરી શકે છે.)');
@@ -2433,9 +2433,9 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'pa', 'C: ਵਿਭਿੰਨ ਤੌਰ ''ਤੇ ਸੰਘਣਾ (ਰੇਸ਼ੇਦਾਰ ਅਤੇ ਗ੍ਰੰਥੀ ਵਾਲੇ ਟਿਸ਼ੂ ਦੇ ਬਹੁਤ ਸਾਰੇ ਖੇਤਰ ਹੁੰਦੇ ਹਨ, ਜਿਸ ਕਾਰਨ ਮੈਮੋਗ੍ਰਾਮ ''ਤੇ ਛੋਟੇ ਪੁੰਜ ਲੱਭਣਾ ਮੁਸ਼ਕਲ ਹੋ ਜਾਂਦਾ ਹੈ। ਇਹ ਛੋਟੇ ਕੈਂਸਰਾਂ ਨੂੰ ਅਸਪਸ਼ਟ ਕਰ ਸਕਦਾ ਹੈ।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'ta', 'C: பன்முகத்தன்மை கொண்ட அடர்த்தியானது (நார்ச்சத்து மற்றும் சுரப்பி திசுக்களின் பல பகுதிகள் உள்ளன, இது மேமோகிராமில் சிறிய நிறைகளைக் கண்டறிவதை கடினமாக்குகிறது. இது சிறிய புற்றுநோய்களை மறைக்கக்கூடும்.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_2, 'te', 'C: వైవిధ్యంగా దట్టంగా ఉంటుంది (పీచు మరియు గ్రంధి కణజాలం యొక్క అనేక ప్రాంతాలు ఉన్నాయి, దీని వలన మామోగ్రామ్‌లో చిన్న ద్రవ్యరాశిని కనుగొనడం కష్టమవుతుంది. ఇది చిన్న క్యాన్సర్‌లను అస్పష్టం చేయవచ్చు.)');
-INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'D: Extremely dense (The breasts are almost entirely made of dense, fibrous, and glandular tissue. This can make it very difficult to see through the breast on a mammogram. This is also associated with a higher risk of breast cancer.)', 3);
+INSERT INTO question_options (question_id, option_value, sort_order) VALUES (@id_Q39, 'D: Extremely dense (The breasts are almost entirely made of dense, fibrous, and glandular tissue. This can make it very difficult to see through the breast on mammography. This is also associated with a higher risk of breast cancer.)', 3);
 SET @opt_id_Q39_3 = LAST_INSERT_ID();
-INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_3, 'en', 'D: Extremely dense (The breasts are almost entirely made of dense, fibrous, and glandular tissue. This can make it very difficult to see through the breast on a mammogram. This is also associated with a higher risk of breast cancer.)');
+INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_3, 'en', 'D: Extremely dense (The breasts are almost entirely made of dense, fibrous, and glandular tissue. This can make it very difficult to see through the breast on mammography. This is also associated with a higher risk of breast cancer.)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_3, 'hi', 'D: अत्यधिक घना (स्तन लगभग पूरी तरह से घने, रेशेदार और ग्रंथियुक्त ऊतक से बने होते हैं। इससे मैमोग्राम पर स्तन के आर-पार देखना बहुत कठिन हो सकता है। यह स्तन कैंसर के उच्च जोखिम से भी जुड़ा है।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_3, 'bn', 'D: অত্যন্ত ঘন (স্তনগুলি প্রায় সম্পূর্ণরূপে ঘন, তন্তুযুক্ত এবং গ্রন্থিযুক্ত টিস্যু দিয়ে তৈরি। এর ফলে ম্যামোগ্রামে স্তনের মধ্য দিয়ে দেখা খুব কঠিন হয়ে পড়ে। এটি স্তন ক্যান্সারের ঝুঁকির সাথেও যুক্ত।)');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_3, 'gu', 'D: અત્યંત ગાઢ (સ્તનો લગભગ સંપૂર્ણપણે ગાઢ, તંતુમય અને ગ્રંથીયુકત પેશીઓથી બનેલા હોય છે. આનાથી મેમોગ્રામ પર સ્તનમાંથી બહાર નીકળવું ખૂબ મુશ્કેલ બની શકે છે. આ સ્તન કેન્સરના ઊંચા જોખમ સાથે પણ સંકળાયેલું છે.)');
@@ -2460,7 +2460,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_4, 'ta', 'E: எனக்குத் தெரியாது / எனக்குத் தெரியவில்லை.');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q39_4, 'te', 'E: నాకు తెలియదు / నాకు ఖచ్చితంగా తెలియదు');
 -- Question Q40
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond BE', 'option', NULL, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond CBE', 'option', NULL, 'Yes');
 SET @id_Q40 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q40, 'en', 'Have you had a breast biopsy?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q40, 'hi', 'क्या आपकी स्तन की बायोप्सी हुई है?');
@@ -2500,7 +2500,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q40_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q40_1, 'te', 'కాదు');
 -- Question Q41
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond BE', 'option', @id_Q40, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond CBE', 'option', @id_Q40, NULL);
 SET @id_Q41 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q41, 'en', 'Result of Biopsy (BIRAD Assessment)');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q41, 'hi', 'बायोप्सी का परिणाम (BIRAD आकलन)');
@@ -2566,7 +2566,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q41_3, 'ta', 'K (6): வீரியம்');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q41_3, 'te', 'K (6): మాలిగ్నెంట్');
 -- Question Q42
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond BE', 'option', NULL, 'Yes');
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond CBE', 'option', NULL, 'Yes');
 SET @id_Q42 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q42, 'en', 'Have you ever been diagnosed with any type of cancer?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q42, 'hi', 'क्या कभी आपको किसी प्रकार का कैंसर निदान किया गया है?');
@@ -2606,7 +2606,7 @@ INSERT INTO question_option_translations (option_id, language_code, option_label
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q42_1, 'ta', 'இல்லை');
 INSERT INTO question_option_translations (option_id, language_code, option_label) VALUES (@opt_id_Q42_1, 'te', 'కాదు');
 -- Question Q43
-INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond BE', 'option', @id_Q42, NULL);
+INSERT INTO questions (section, response_type, parent_question_id, trigger_answer) VALUES ('Section 3: Beyond CBE', 'option', @id_Q42, NULL);
 SET @id_Q43 = LAST_INSERT_ID();
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q43, 'en', 'Please specify which types of cancer?');
 INSERT INTO question_translations (question_id, language_code, question_text) VALUES (@id_Q43, 'hi', 'कृपया बताइए किस प्रकार का कैंसर था?');

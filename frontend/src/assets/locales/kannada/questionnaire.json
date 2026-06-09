@@ -272,7 +272,7 @@
       ]
     },
     {
-      "title": "Section 2: Breast Examination (BE)",
+      "title": "Section 2: Clinical Breast Examination (CBE)",
       "questions": [
         {
           "key": "Q27",
@@ -365,7 +365,7 @@
       ]
     },
     {
-      "title": "Section 3: Beyond BE",
+      "title": "Section 3: Beyond CBE",
       "questions": [
         {
           "key": "Q38",
@@ -629,7 +629,7 @@
       ]
     },
     "Q27": {
-      "question": "ನೀವು ಎಂದಾದರೂ ಸ್ತನ ಪರೀಕ್ಷೆ (BE) ಮಾಡಿಸಿಕೊಂಡಿದ್ದೀರಾ?",
+      "question": "ನೀವು ಎಂದಾದರೂ ಸ್ತನ ಪರೀಕ್ಷೆ (CBE) ಮಾಡಿಸಿಕೊಂಡಿದ್ದೀರಾ?",
       "answers": [
         "ಹೌದು",
         "ಇಲ್ಲ"

@@ -97,12 +97,12 @@ breast-cancer-image-dataset/
     consent/                  ← Signed consent form photos (captured before subject registration)
     {clinic_id}/
       {subject_id}/
-        mammogram/            ← CC Left/Right, MLO Left/Right DICOM images
+        mammogram/            ← Mammography CC Left/Right, MLO Left/Right DICOM images
         mammogram-report/     ← Mammography reading/report PDFs
-        ultrasound/           ← Sonogram DICOM/images
-        ultrasound-report/    ← Sonogram reading/report PDFs
+        ultrasound/           ← Breast Ultrasound (USG Breast) DICOM/images
+        ultrasound-report/    ← Breast Ultrasound (USG Breast) reading/report PDFs
         biopsy/               ← Biopsy report PDFs
-        annotation/           ← Annotated mammogram DICOMs (per view)
+        annotation/           ← Annotated mammography DICOMs (per view)
 ```
 
 ### File Naming Convention

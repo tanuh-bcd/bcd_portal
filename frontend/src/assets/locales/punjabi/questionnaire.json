@@ -272,7 +272,7 @@
       ]
     },
     {
-      "title": "Section 2: Breast Examination (BE)",
+      "title": "Section 2: Clinical Breast Examination (CBE)",
       "questions": [
         {
           "key": "Q27",
@@ -365,7 +365,7 @@
       ]
     },
     {
-      "title": "Section 3: Beyond BE",
+      "title": "Section 3: Beyond CBE",
       "questions": [
         {
           "key": "Q38",
@@ -629,7 +629,7 @@
       ]
     },
     "Q27": {
-      "question": "ਕੀ ਤੁਸੀਂ ਕਦੇ ਛਾਤੀ ਦੀ ਜਾਂਚ (BE) ਕਰਵਾਈ ਹੈ?",
+      "question": "ਕੀ ਤੁਸੀਂ ਕਦੇ ਛਾਤੀ ਦੀ ਜਾਂਚ (CBE) ਕਰਵਾਈ ਹੈ?",
       "answers": [
         "ਹਾਂ",
         "ਨੰ"
@@ -653,7 +653,7 @@
       ]
     },
     "Q30": {
-      "question": "BE ਦੇ ਦੌਰਾਨ, ਕੀ ਤੁਹਾਡੀ ਛਾਤੀ ਵਿੱਚ ਕੋਈ ਗੰਢ ਜਾਂ ਪੁੰਜ ਪਾਇਆ ਗਿਆ ਸੀ?",
+      "question": "CBE ਦੇ ਦੌਰਾਨ, ਕੀ ਤੁਹਾਡੀ ਛਾਤੀ ਵਿੱਚ ਕੋਈ ਗੰਢ ਜਾਂ ਪੁੰਜ ਪਾਇਆ ਗਿਆ ਸੀ?",
       "answers": [
         "ਹਾਂ",
         "ਨੰ"

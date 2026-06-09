@@ -497,10 +497,10 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
         </div>
 
-        {/* Mammogram Upload — Left on left, Right on right */}
+        {/* Mammography Upload — Left on left, Right on right */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <span style={styles.cardHeaderIcon}>&#128248;</span> Mammogram Views
+            <span style={styles.cardHeaderIcon}>&#128248;</span> Mammography Views
             {getAttachmentByType('mammo_cc_right') &&
              getAttachmentByType('mammo_cc_left') &&
              getAttachmentByType('mammo_mlo_right') &&
@@ -556,8 +556,8 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={styles.cardBody}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <ResumableUpload label="Sonogram" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} />
-              <ResumableUpload label="Sonogram Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} />
+              <ResumableUpload label="Breast Ultrasound (USG Breast)" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} />
+              <ResumableUpload label="Breast Ultrasound (USG Breast) Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} />
               <ResumableUpload label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="biopsy_reading" sessionId={sessionId} existing={getAttachmentByType('biopsy_reading')} />
             </div>
           </div>
@@ -566,10 +566,10 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
         {/* Annotations */}
         <div style={styles.card}>
           <div style={{ ...styles.cardHeader, background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)' }}>
-            <span style={styles.cardHeaderIcon}>&#9998;</span> Mammogram Annotations
+            <span style={styles.cardHeaderIcon}>&#9998;</span> Mammography Annotations
           </div>
           <div style={styles.cardBody}>
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>Upload annotated images for each mammogram view</div>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>Upload annotated images for each mammography view</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Left Breast</div>

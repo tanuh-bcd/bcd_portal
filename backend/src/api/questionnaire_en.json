@@ -272,7 +272,7 @@
       ]
     },
     {
-      "title": "Section 2: Breast Examination (BE)",
+      "title": "Section 2: Clinical Breast Examination (CBE)",
       "questions": [
         {
           "key": "Q27",
@@ -365,7 +365,7 @@
       ]
     },
     {
-      "title": "Section 3: Beyond BE",
+      "title": "Section 3: Beyond CBE",
       "questions": [
         {
           "key": "Q38",
@@ -629,14 +629,14 @@
       ]
     },
     "Q27": {
-      "question": "Have you ever undergone a Breast Examination (BE)?",
+      "question": "Have you ever undergone a Clinical Breast Examination (CBE)?",
       "answers": [
         "Yes",
         "No"
       ]
     },
     "Q28": {
-      "question": "When was the last BE performed?",
+      "question": "When was the last CBE performed?",
       "answers": [
         "Within 1 year",
         "1–3 years",
@@ -644,7 +644,7 @@
       ]
     },
     "Q29": {
-      "question": "What was the result of BE?",
+      "question": "What was the result of CBE?",
       "answers": [
         "Normal – No abnormal findings",
         "Benign – Non-cancerous features (e.g., fibroadenoma, cyst)",
@@ -653,7 +653,7 @@
       ]
     },
     "Q30": {
-      "question": "During BE, was any lump or mass detected in your breast?",
+      "question": "During CBE, was any lump or mass detected in your breast?",
       "answers": [
         "Yes",
         "No"
@@ -698,7 +698,7 @@
       ]
     },
     "Q36": {
-      "question": "After the BE, were you advised for further investigation or follow-up?",
+      "question": "After the CBE, were you advised for further investigation or follow-up?",
       "answers": [
         "Yes",
         "No"
@@ -708,13 +708,13 @@
       "question": "If Yes, please specify what was recommended next:",
       "answers": [
         "Ultrasound",
-        "Mammogram",
+        "Mammography",
         "Biopsy",
         "Other"
       ]
     },
     "Q38": {
-      "question": "Have you undergone a mammogram?",
+      "question": "Have you undergone mammography?",
       "answers": [
         "Yes",
         "No"

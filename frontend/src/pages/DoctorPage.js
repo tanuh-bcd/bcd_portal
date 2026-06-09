@@ -201,10 +201,10 @@ const DoctorPage = ({ isEmbedded = false }) => {
                 <th style={sortableThStyle} onClick={() => handleSort('date')}>Date{sortArrow('date')}</th>
                 <th style={thCenterStyle}>Risk</th>
                 <th style={sortableThStyle} onClick={() => handleSort('assessment')}>Assessment{sortArrow('assessment')}</th>
-                <th style={thCenterStyle}>Mammogram</th>
-                <th style={thCenterStyle}>Mammogram Report</th>
-                <th style={thCenterStyle}>Sonogram</th>
-                <th style={thCenterStyle}>Sonogram Report</th>
+                <th style={thCenterStyle}>Mammography</th>
+                <th style={thCenterStyle}>Mammography Report</th>
+                <th style={thCenterStyle}>Breast Ultrasound (USG Breast)</th>
+                <th style={thCenterStyle}>Breast Ultrasound (USG Breast) Report</th>
                 <th style={thCenterStyle}>Biopsy</th>
                 <th style={thCenterStyle}>Annotations</th>
                 <th style={thCenterStyle}>Actions</th>
@@ -262,7 +262,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
             </tbody>
           </table>
           <div style={{ marginTop: 10, fontSize: 12, color: '#666', textAlign: 'right' }}>
-            <span style={{ color: '#0d6efd', fontWeight: 600 }}>SMR</span> — SonoMammogram Report
+            <span style={{ color: '#0d6efd', fontWeight: 600 }}>SMR</span> — Breast Ultrasound (USG Breast) Report
           </div>
         </div>
 
