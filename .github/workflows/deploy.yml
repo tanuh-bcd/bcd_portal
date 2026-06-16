@@ -1,0 +1,99 @@
+name: Deploy to GCP VM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: bcd-prototypes
+  GCP_REGION: asia-south1
+  AR_REPO: bcd-portal
+  VM_ZONE: asia-south1-c
+  VM_INSTANCE: instance-20260521-104425
+  WIF_PROVIDER: projects/135552380858/locations/global/workloadIdentityPools/github-actions/providers/github-bcd-portal
+  SERVICE_ACCOUNT: tanuh-bcd-portal@bcd-prototypes.iam.gserviceaccount.com
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP via WIF
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Fetch frontend build vars from Secret Manager
+        id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@v2
+        with:
+          secrets: |-
+            REACT_APP_WEBSITE_URL:bcd-prototypes/bcd-REACT_APP_WEBSITE_URL
+            REACT_APP_LINKEDIN_URL:bcd-prototypes/bcd-REACT_APP_LINKEDIN_URL
+            REACT_APP_TWITTER_URL:bcd-prototypes/bcd-REACT_APP_TWITTER_URL
+            REACT_APP_YOUTUBE_URL:bcd-prototypes/bcd-REACT_APP_YOUTUBE_URL
+            REACT_APP_MIXPANEL_TOKEN:bcd-prototypes/bcd-REACT_APP_MIXPANEL_TOKEN
+
+      - name: Build and push backend image
+        run: |
+          IMAGE=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/backend:${{ github.sha }}
+          IMAGE_LATEST=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/backend:latest
+          docker build -t $IMAGE -t $IMAGE_LATEST -f backend/Dockerfile .
+          docker push $IMAGE
+          docker push $IMAGE_LATEST
+
+      - name: Build and push frontend image
+        run: |
+          IMAGE=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/frontend:${{ github.sha }}
+          IMAGE_LATEST=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/frontend:latest
+          docker build \
+            --build-arg REACT_APP_API_URL="" \
+            --build-arg REACT_APP_WEBSITE_URL="${{ steps.secrets.outputs.REACT_APP_WEBSITE_URL }}" \
+            --build-arg REACT_APP_LINKEDIN_URL="${{ steps.secrets.outputs.REACT_APP_LINKEDIN_URL }}" \
+            --build-arg REACT_APP_TWITTER_URL="${{ steps.secrets.outputs.REACT_APP_TWITTER_URL }}" \
+            --build-arg REACT_APP_YOUTUBE_URL="${{ steps.secrets.outputs.REACT_APP_YOUTUBE_URL }}" \
+            --build-arg REACT_APP_MIXPANEL_TOKEN="${{ steps.secrets.outputs.REACT_APP_MIXPANEL_TOKEN }}" \
+            -t $IMAGE -t $IMAGE_LATEST \
+            -f frontend/Dockerfile frontend
+          docker push $IMAGE
+          docker push $IMAGE_LATEST
+
+      - name: Deploy to VM
+        uses: google-github-actions/ssh-compute@v1
+        with:
+          instance_name: ${{ env.VM_INSTANCE }}
+          zone: ${{ env.VM_ZONE }}
+          ssh_private_key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          command: |
+            cd ~/bcd_portal
+
+            # Authenticate Docker to pull from Artifact Registry
+            gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+            # Pull latest images
+            docker compose -f docker-compose.prod.yml pull
+
+            # Restart with new images
+            docker compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Clean up old images
+            docker image prune -f
+
+            # Health check
+            sleep 10
+            curl -sf http://localhost:8000/api/health || echo "WARNING: Backend health check failed"

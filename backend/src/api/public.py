@@ -92,10 +92,7 @@ async def upload_public_consent(
     upload_date = datetime.datetime.utcnow().strftime("%Y%m%d")
     blob_name = f"tanuh-data-capture/consent/{session_id}_consent_{upload_date}.{extension}"
 
-    if settings.GOOGLE_APPLICATION_CREDENTIALS and settings.GOOGLE_APPLICATION_CREDENTIALS.strip():
-        client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
-    else:
-        client = storage.Client()
+    client = storage.Client()
 
     bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
     blob = bucket.blob(blob_name)

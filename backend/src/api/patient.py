@@ -74,19 +74,13 @@ def upload_to_gcs(file_content, destination_blob_name):
     if not settings.GCP_STORAGE_BUCKET:
         raise Exception("GCP_STORAGE_BUCKET not configured")
 
-    if settings.GOOGLE_APPLICATION_CREDENTIALS and settings.GOOGLE_APPLICATION_CREDENTIALS.strip():
-        storage_client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
-    else:
-        storage_client = storage.Client()
-
+    storage_client = storage.Client()
     bucket = storage_client.bucket(settings.GCP_STORAGE_BUCKET)
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_string(file_content, content_type="application/octet-stream")
     return f"gs://{settings.GCP_STORAGE_BUCKET}/{destination_blob_name}"
 
 def _get_storage_client():
-    if settings.GOOGLE_APPLICATION_CREDENTIALS and settings.GOOGLE_APPLICATION_CREDENTIALS.strip():
-        return storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
     return storage.Client()
 
 

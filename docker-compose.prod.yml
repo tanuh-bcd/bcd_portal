@@ -1,13 +1,9 @@
 services:
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    image: asia-south1-docker.pkg.dev/bcd-prototypes/bcd-portal/backend:latest
     container_name: bcd-backend
     ports:
       - "8000:8000"
-    env_file:
-      - .env
     networks:
       - bcdnet
     restart: always
@@ -21,11 +17,7 @@ services:
           cpus: "0.5"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        REACT_APP_API_URL: ""
+    image: asia-south1-docker.pkg.dev/bcd-prototypes/bcd-portal/frontend:latest
     container_name: bcd-frontend
     ports:
       - "80:80"

@@ -13,14 +13,11 @@ def _get_connector():
     global _connector
     if _connector is None:
         from google.cloud.sql.connector import Connector
-        from google.oauth2 import service_account
+        import google.auth
 
-        credentials = None
-        if settings.GOOGLE_APPLICATION_CREDENTIALS:
-            credentials = service_account.Credentials.from_service_account_file(
-                settings.GOOGLE_APPLICATION_CREDENTIALS,
-                scopes=["https://www.googleapis.com/auth/cloud-platform"],
-            )
+        credentials, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
         _connector = Connector(credentials=credentials)
     return _connector
 

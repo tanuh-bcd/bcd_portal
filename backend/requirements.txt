@@ -12,6 +12,7 @@ pydantic[email]
 google-cloud-storage
 cloud-sql-python-connector[pymysql]
 google-auth
+google-cloud-secret-manager
 pytz
 pytest
 httpx
