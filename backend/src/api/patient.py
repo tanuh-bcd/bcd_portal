@@ -131,10 +131,18 @@ def get_view_url(
     if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
-    assessment = db.query(DoctorAssessment).filter(
-        DoctorAssessment.id == attachment.assessment_id,
-        DoctorAssessment.hospital_id == hospital_id
-    ).first()
+    is_super_viewer = current_user.get("is_super_viewer", False) or \
+        current_user.get("email", "").lower().endswith("@tanuh.ai")
+
+    if is_super_viewer:
+        assessment = db.query(DoctorAssessment).filter(
+            DoctorAssessment.id == attachment.assessment_id
+        ).first()
+    else:
+        assessment = db.query(DoctorAssessment).filter(
+            DoctorAssessment.id == attachment.assessment_id,
+            DoctorAssessment.hospital_id == hospital_id
+        ).first()
     if not assessment:
         raise HTTPException(status_code=403, detail="Not authorized to view this file")
 
@@ -176,10 +184,18 @@ def view_file(
     if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
-    assessment = db.query(DoctorAssessment).filter(
-        DoctorAssessment.id == attachment.assessment_id,
-        DoctorAssessment.hospital_id == hospital_id
-    ).first()
+    is_super_viewer = current_user.get("is_super_viewer", False) or \
+        current_user.get("email", "").lower().endswith("@tanuh.ai")
+
+    if is_super_viewer:
+        assessment = db.query(DoctorAssessment).filter(
+            DoctorAssessment.id == attachment.assessment_id
+        ).first()
+    else:
+        assessment = db.query(DoctorAssessment).filter(
+            DoctorAssessment.id == attachment.assessment_id,
+            DoctorAssessment.hospital_id == hospital_id
+        ).first()
     if not assessment:
         raise HTTPException(status_code=403, detail="Not authorized to view this file")
 
