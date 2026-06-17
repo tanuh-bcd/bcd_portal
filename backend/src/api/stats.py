@@ -31,10 +31,9 @@ RISK_CASE = """
 
 @router.get("/")
 def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Depends(get_db)):
+    EXCLUDED_NAMES = ('Test', 'Tanuh Foundation')
     hospital_rows = app_db.query(Hospital.name, Hospital.short_name).filter(
-        Hospital.name != 'Test',
-        ~Hospital.email.like('%@tanuh.ai'),
-        ~Hospital.name.ilike('%tanuh%')
+        ~Hospital.name.in_(EXCLUDED_NAMES)
     ).all()
     valid_hospitals = [h.name for h in hospital_rows]
     hospital_short_names = {h.name: h.short_name or h.name for h in hospital_rows}
@@ -134,12 +133,12 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
     ]
 
     inst_res = app_db.execute(text(
-        "SELECT COUNT(*) FROM hospitals WHERE name != 'Test' AND email NOT LIKE '%@tanuh.ai' AND name NOT LIKE '%tanuh%'"
+        "SELECT COUNT(*) FROM hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation')"
     )).fetchone()
     institutions_empanelled = inst_res[0] if inst_res else 0
 
     states_res = app_db.execute(text(
-        "SELECT COUNT(DISTINCT state) FROM hospitals WHERE name != 'Test' AND email NOT LIKE '%@tanuh.ai' AND name NOT LIKE '%tanuh%' AND state IS NOT NULL AND state != ''"
+        "SELECT COUNT(DISTINCT state) FROM hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation') AND state IS NOT NULL AND state != ''"
     )).fetchone()
     states_count = states_res[0] if states_res else 0
 
