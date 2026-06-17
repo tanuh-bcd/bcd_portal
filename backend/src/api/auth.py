@@ -44,9 +44,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return token_data
 
+EXCLUDED_INSTITUTIONS = ('Test', 'Tanuh Foundation')
+
+
 @router.get("/hospitals", response_model=List[HospitalResponse])
-def get_hospitals(db: Session = Depends(get_db)):
-    return db.query(Hospital).all()
+def get_hospitals(questionnaire: bool = False, db: Session = Depends(get_db)):
+    query = db.query(Hospital)
+    if questionnaire:
+        query = query.filter(~Hospital.name.in_(EXCLUDED_INSTITUTIONS))
+    return query.all()
 
 @router.post("/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):

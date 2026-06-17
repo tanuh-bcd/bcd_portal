@@ -98,6 +98,15 @@ def get_patient_sessions(
     order_clause = _build_order_clause(sort)
 
     if is_super_viewer:
+        valid_names = [
+            h.name for h in
+            app_db.query(Hospital.name).filter(
+                ~Hospital.name.in_(('Test', 'Tanuh Foundation'))
+            ).all()
+        ]
+        if not valid_names:
+            return []
+
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
                    pid.answer AS patient_id, s.risk_category,
@@ -108,7 +117,7 @@ def get_patient_sessions(
                 FROM session_data_table
                 WHERE question IN ('Institute Name', 'Institute Name:',
                                    'Enter the Hospital ID(If any, else leave):', 'Q45')
-                  AND answer NOT IN ('Test', 'Tanuh Foundation')
+                  AND answer IN :valid_names
                 GROUP BY session_id
             ) hosp ON s.session_id = hosp.session_id
             LEFT JOIN (
@@ -120,7 +129,7 @@ def get_patient_sessions(
             ) pid ON s.session_id = pid.session_id
             WHERE s.snehita_lifetime_risk IS NOT NULL
             ORDER BY {order_clause}
-        """)).fetchall()
+        """), {"valid_names": tuple(valid_names)}).fetchall()
     else:
         hospital_id = current_user.get("hospital_id")
         if not hospital_id:

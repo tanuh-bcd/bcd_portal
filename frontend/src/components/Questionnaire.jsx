@@ -64,7 +64,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
   // Fetch hospitals for Q45 dropdown
   useEffect(() => {
     const apiUrl = process.env.REACT_APP_API_URL || '';
-    fetch(`${apiUrl}/api/v1/auth/hospitals`)
+    fetch(`${apiUrl}/api/v1/auth/hospitals?questionnaire=true`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHospitals(data); })
       .catch(() => {});
