@@ -117,9 +117,9 @@ const ResetPasswordPage = () => {
           <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Reset Password</h2>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="hospitalName">Hospital Name</label>
+              <label htmlFor="hospitalName">Institution Name</label>
               <select id="hospitalName" name="hospitalName" value={formData.hospitalName} onChange={handleChange} style={inputStyle} disabled={loading}>
-                <option value="">{loading ? 'Loading hospitals...' : 'Select Hospital'}</option>
+                <option value="">{loading ? 'Loading institutions...' : 'Select Institution'}</option>
                 {hospitals.map((hospital) => (
                   <option key={hospital.id} value={hospital.name}>{hospital.name}</option>
                 ))}

@@ -60,6 +60,7 @@ const LoginPage = () => {
         localStorage.setItem('hospitalName', formData.hospitalName);
         localStorage.setItem('userEmail', formData.email);
         localStorage.setItem('userName', userName);
+        localStorage.setItem('isSuperViewer', data.is_super_viewer ? 'true' : 'false');
 
         const roleLower = formData.role.toLowerCase();
         if (roleLower === 'admin') {
@@ -124,7 +125,7 @@ const LoginPage = () => {
           <h2>Enter credentials</h2>
           <form onSubmit={handleSubmit} className="login-form">
             <div className="login-field">
-              <label htmlFor="hospitalName">Hospital Name</label>
+              <label htmlFor="hospitalName">Institution Name</label>
               <select
                 id="hospitalName"
                 name="hospitalName"
@@ -132,7 +133,7 @@ const LoginPage = () => {
                 onChange={handleChange}
                 disabled={loading}
               >
-                <option value="">{loading ? 'Loading hospitals...' : 'Select Hospital'}</option>
+                <option value="">{loading ? 'Loading institutions...' : 'Select Institution'}</option>
                 {hospitals.map((hospital) => (
                   <option key={hospital.id} value={hospital.name}>
                     {hospital.name}

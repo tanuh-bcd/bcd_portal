@@ -22,6 +22,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     full_name: Optional[str] = None
+    is_super_viewer: bool = False
 
 class TokenData(BaseModel):
     email: Optional[str] = None
@@ -147,6 +148,7 @@ class DoctorAssessmentResponse(BaseModel):
 class PatientSessionListItem(BaseModel):
     id: str
     patient_id: Optional[str] = None
+    hospital_name: Optional[str] = None
     consent_scanned_url: Optional[str] = None
     consent_timestamp: Optional[datetime.datetime] = None
     snehita_risk: Optional[str] = None

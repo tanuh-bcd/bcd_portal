@@ -93,28 +93,54 @@ def get_patient_sessions(
     app_db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    hospital_id = current_user.get("hospital_id")
-    if not hospital_id:
-        raise HTTPException(status_code=400, detail="User hospital ID not found")
-
-    hospital_name = _get_hospital_name(app_db, hospital_id)
-    if not hospital_name:
-        raise HTTPException(status_code=400, detail="Hospital not found")
-
+    is_super_viewer = current_user.get("is_super_viewer", False)
     order_clause = _build_order_clause(sort)
 
-    rows = q_db.execute(text(f"""
-        SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
-               pid.answer AS patient_id, s.risk_category
-        FROM session_table s
-        JOIN session_data_table sd ON s.session_id = sd.session_id
-        LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
-          AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
-        WHERE sd.question IN :q1
-          AND sd.answer = :hospital_name
-          AND s.snehita_lifetime_risk IS NOT NULL
-        ORDER BY {order_clause}
-    """), {"q1": INSTITUTE_QUESTIONS, "hospital_name": hospital_name}).fetchall()
+    if is_super_viewer:
+        rows = q_db.execute(text(f"""
+            SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
+                   pid.answer AS patient_id, s.risk_category,
+                   hosp.answer AS hospital_name
+            FROM session_table s
+            LEFT JOIN (
+                SELECT session_id, MIN(answer) AS answer
+                FROM session_data_table
+                WHERE question IN ('Institute Name', 'Institute Name:',
+                                   'Enter the Hospital ID(If any, else leave):', 'Q45')
+                GROUP BY session_id
+            ) hosp ON s.session_id = hosp.session_id
+            LEFT JOIN (
+                SELECT session_id, MIN(answer) AS answer
+                FROM session_data_table
+                WHERE question IN ('Enter your Patient ID(if any, else leave):',
+                                   'Enter your subject ID:', 'Q44')
+                GROUP BY session_id
+            ) pid ON s.session_id = pid.session_id
+            WHERE s.snehita_lifetime_risk IS NOT NULL
+            ORDER BY {order_clause}
+        """)).fetchall()
+    else:
+        hospital_id = current_user.get("hospital_id")
+        if not hospital_id:
+            raise HTTPException(status_code=400, detail="User hospital ID not found")
+
+        hospital_name = _get_hospital_name(app_db, hospital_id)
+        if not hospital_name:
+            raise HTTPException(status_code=400, detail="Hospital not found")
+
+        rows = q_db.execute(text(f"""
+            SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
+                   pid.answer AS patient_id, s.risk_category,
+                   NULL AS hospital_name
+            FROM session_table s
+            JOIN session_data_table sd ON s.session_id = sd.session_id
+            LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
+              AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
+            WHERE sd.question IN :q1
+              AND sd.answer = :hospital_name
+              AND s.snehita_lifetime_risk IS NOT NULL
+            ORDER BY {order_clause}
+        """), {"q1": INSTITUTE_QUESTIONS, "hospital_name": hospital_name}).fetchall()
 
     result = []
     for row in rows:
@@ -127,6 +153,7 @@ def get_patient_sessions(
         result.append({
             "id": session_id,
             "patient_id": row[3] or "",
+            "hospital_name": row[5] or None,
             "consent_scanned_url": None,
             "consent_timestamp": row[1],
             "snehita_risk": row[2],

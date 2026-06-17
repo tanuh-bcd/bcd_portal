@@ -14,6 +14,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
+  const isSuperViewer = localStorage.getItem('isSuperViewer') === 'true';
 
   useEffect(() => {
     if (!isEmbedded) {
@@ -107,6 +108,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
     localStorage.removeItem('hospitalName');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
+    localStorage.removeItem('isSuperViewer');
     navigate('/login');
   };
 
@@ -169,7 +171,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
         </div>
         <input
           type="text"
-          placeholder="Search by Subject ID..."
+          placeholder={isSuperViewer ? 'Search by Subject ID or Hospital...' : 'Search by Subject ID...'}
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           style={{ width: 260, padding: '8px 14px', borderRadius: 8, border: '1.5px solid #c8e0e2', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
@@ -183,7 +185,9 @@ const DoctorPage = ({ isEmbedded = false }) => {
         const filtered = sessions.filter(s => {
           if (!searchTerm) return true;
           const term = searchTerm.toLowerCase();
-          return (s.patient_id || '').toLowerCase().includes(term) || (s.id || '').toLowerCase().includes(term);
+          return (s.patient_id || '').toLowerCase().includes(term)
+            || (s.id || '').toLowerCase().includes(term)
+            || (isSuperViewer && (s.hospital_name || '').toLowerCase().includes(term));
         });
         const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
         const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -198,6 +202,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
             <thead>
               <tr style={headerRowStyle}>
                 <th style={thCenterStyle}>Subject ID</th>
+                {isSuperViewer && <th style={thCenterStyle}>Hospital</th>}
                 <th style={sortableThStyle} onClick={() => handleSort('date')}>Date{sortArrow('date')}</th>
                 <th style={thCenterStyle}>Risk</th>
                 <th style={sortableThStyle} onClick={() => handleSort('assessment')}>Assessment{sortArrow('assessment')}</th>
@@ -215,6 +220,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
               {paginated.map((session) => (
                 <tr key={session.id} style={rowStyle}>
                   <td style={{ ...tdStyle, textAlign: 'center' }}>{session.patient_id || session.id?.substring(0, 8)}</td>
+                  {isSuperViewer && <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.hospital_name || '-'}</td>}
                   <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.consent_timestamp ? new Date(session.consent_timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
                   <td style={{ ...tdStyle, textAlign: 'center' }}>
                     {session.risk_category ? (
@@ -258,7 +264,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                       onClick={() => fetchSessionDetail(session.id)}
                       style={linkButtonStyle}
                     >
-                      {session.has_assessment ? 'Edit Assessment' : 'View Responses'}
+                      {!isSuperViewer && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
                     </button>
                   </td>
                 </tr>
@@ -333,31 +339,37 @@ const DoctorPage = ({ isEmbedded = false }) => {
                 </tbody>
               </table>
               
-              <DoctorAssessmentForm
-                sessionId={selectedSession.id}
-                initialData={selectedSession.assessment}
-                snehithaRisk={(() => {
-                  if (!selectedSession.responses) return null;
-                  const r = {};
-                  selectedSession.responses.forEach(resp => { r[resp.question] = resp.answer; });
-                  const age = parseInt(r['What is your current age? (Please enter a number - years)'] || r['Q1'] || '0') || 0;
-                  const aam = parseInt(r['What age were you when you had your first menstrual period? (Please enter a number)'] || r['Q10'] || '0') || 0;
-                  const irr = (r['Q12_Current'] === 'No' || r['Are your menstrual cycles regular? - Currently'] === 'No') ? 1 : 0;
-                  const bf = (r['Q17'] === 'greater than 24 months' || r['For how long did you breastfeed?'] === 'greater than 24 months') ? 1 : 0;
-                  const fh = (r['Q21'] === 'First Order (Mother, Sibling, Father)' || (r['Has anyone in your family been diagnosed with any type of cancer?'] || '').includes('First')) ? 1 : 0;
-                  const bx = (r['Q40'] === 'Yes' || r['Have you had a breast biopsy?'] === 'Yes') ? 1 : 0;
-                  const nul = (r['Q14'] === 'No' || r['Have you given birth to a child?'] === 'No') ? 1 : 0;
-                  const a25 = (r['Q16'] === '25 to 29') ? 1 : 0;
-                  const a30 = (r['Q16'] === 'After 30') ? 1 : 0;
-                  const ab = (nul || a25) ? 1 : 0;
-                  const lp = -0.940 + 0.027*age - 0.082*aam + 0.453*irr - 0.892*bf + 0.810*fh + 1.420*bx + 0.811*ab + 1.035*a30;
-                  return ((1 / (1 + Math.exp(-lp))) * 100).toFixed(2);
-                })()}
-                onSaveSuccess={() => {
-                  fetchSessions();
-                  setTimeout(() => setIsModalOpen(false), 2000);
-                }}
-              />
+              {isSuperViewer ? (
+                <div style={{ marginTop: 16, padding: '10px 16px', borderRadius: 6, backgroundColor: '#f0f4ff', border: '1px solid #c8d8f8', color: '#3a5a9e', fontSize: 13 }}>
+                  TANUH view — assessment editing is disabled for cross-hospital access.
+                </div>
+              ) : (
+                <DoctorAssessmentForm
+                  sessionId={selectedSession.id}
+                  initialData={selectedSession.assessment}
+                  snehithaRisk={(() => {
+                    if (!selectedSession.responses) return null;
+                    const r = {};
+                    selectedSession.responses.forEach(resp => { r[resp.question] = resp.answer; });
+                    const age = parseInt(r['What is your current age? (Please enter a number - years)'] || r['Q1'] || '0') || 0;
+                    const aam = parseInt(r['What age were you when you had your first menstrual period? (Please enter a number)'] || r['Q10'] || '0') || 0;
+                    const irr = (r['Q12_Current'] === 'No' || r['Are your menstrual cycles regular? - Currently'] === 'No') ? 1 : 0;
+                    const bf = (r['Q17'] === 'greater than 24 months' || r['For how long did you breastfeed?'] === 'greater than 24 months') ? 1 : 0;
+                    const fh = (r['Q21'] === 'First Order (Mother, Sibling, Father)' || (r['Has anyone in your family been diagnosed with any type of cancer?'] || '').includes('First')) ? 1 : 0;
+                    const bx = (r['Q40'] === 'Yes' || r['Have you had a breast biopsy?'] === 'Yes') ? 1 : 0;
+                    const nul = (r['Q14'] === 'No' || r['Have you given birth to a child?'] === 'No') ? 1 : 0;
+                    const a25 = (r['Q16'] === '25 to 29') ? 1 : 0;
+                    const a30 = (r['Q16'] === 'After 30') ? 1 : 0;
+                    const ab = (nul || a25) ? 1 : 0;
+                    const lp = -0.940 + 0.027*age - 0.082*aam + 0.453*irr - 0.892*bf + 0.810*fh + 1.420*bx + 0.811*ab + 1.035*a30;
+                    return ((1 / (1 + Math.exp(-lp))) * 100).toFixed(2);
+                  })()}
+                  onSaveSuccess={() => {
+                    fetchSessions();
+                    setTimeout(() => setIsModalOpen(false), 2000);
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>

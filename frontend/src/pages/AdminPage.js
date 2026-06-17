@@ -260,7 +260,7 @@ const AdminContent = ({ hospitalName }) => {
 
   const handleCreateHospital = async () => {
     if (!hospitalForm.name || !hospitalForm.contactPerson || !hospitalForm.email || !hospitalForm.state) {
-      alert('Error: Hospital Name, Contact Person, Email, and State are required.');
+      alert('Error: Institution Name, Contact Person, Email, and State are required.');
       return;
     }
     if (!isValidEmail(hospitalForm.email)) {
@@ -287,7 +287,7 @@ const AdminContent = ({ hospitalName }) => {
       });
       
       if (response.ok) {
-        alert('Hospital account created successfully!');
+        alert('Institution account created successfully!');
         setHospitalForm({ name: '', contactPerson: '', email: '', address: '', pincode: '', state: '' });
         fetchHospitals(); // Refresh hospital list
       } else {
@@ -299,7 +299,7 @@ const AdminContent = ({ hospitalName }) => {
           if (Array.isArray(detail)) {
             message = detail.map(d => d.msg || JSON.stringify(d)).join('; ');
           } else {
-            message = detail || 'Failed to create hospital';
+            message = detail || 'Failed to create institution';
           }
           alert(`Error: ${message}`);
         } else {
@@ -379,7 +379,7 @@ const AdminContent = ({ hospitalName }) => {
       {/* 1. Create Clinician Account */}
       <div style={accordionStyle}>
         <div style={accordionHeaderStyle} onClick={() => toggleSection('doctor')}>
-          1. Create a clinician account for the hospital
+          1. Create a clinician account for the institution
           <span>{expandedSection === 'doctor' ? '−' : '+'}</span>
         </div>
         {expandedSection === 'doctor' && (
@@ -414,13 +414,13 @@ const AdminContent = ({ hospitalName }) => {
               </div>
             </div>
             <div style={formGroupStyle}>
-              <label style={labelStyle}>Hospital</label>
+              <label style={labelStyle}>Institution</label>
               <select
                 style={inputStyle}
                 value={doctorForm.hospitalId}
                 onChange={(e) => setDoctorForm({...doctorForm, hospitalId: e.target.value})}
               >
-                <option value="">Select Hospital</option>
+                <option value="">Select Institution</option>
                 {hospitals.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
               </select>
             </div>
@@ -438,7 +438,7 @@ const AdminContent = ({ hospitalName }) => {
       {/* 2. Create Staff Account */}
       <div style={accordionStyle}>
         <div style={accordionHeaderStyle} onClick={() => toggleSection('staff')}>
-          2. Create a staff account for the hospital
+          2. Create a staff account for the institution
           <span>{expandedSection === 'staff' ? '−' : '+'}</span>
         </div>
         {expandedSection === 'staff' && (
@@ -473,13 +473,13 @@ const AdminContent = ({ hospitalName }) => {
               </div>
             </div>
             <div style={formGroupStyle}>
-              <label style={labelStyle}>Hospital</label>
+              <label style={labelStyle}>Institution</label>
               <select
                 style={inputStyle}
                 value={staffForm.hospitalId}
                 onChange={(e) => setStaffForm({...staffForm, hospitalId: e.target.value})}
               >
-                <option value="">Select Hospital</option>
+                <option value="">Select Institution</option>
                 {hospitals.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
               </select>
             </div>
@@ -494,17 +494,17 @@ const AdminContent = ({ hospitalName }) => {
         )}
       </div>
 
-      {/* 3. Create another hospital account */}
+      {/* 3. Create another institution account */}
       {hospitalName === 'Test' && (
         <div style={accordionStyle}>
           <div style={accordionHeaderStyle} onClick={() => toggleSection('hospital')}>
-            3. Create another hospital account
+            3. Create another institution account
             <span>{expandedSection === 'hospital' ? '−' : '+'}</span>
           </div>
           {expandedSection === 'hospital' && (
             <div style={accordionContentStyle}>
               <div style={formGroupStyle}>
-                <label style={labelStyle}>Hospital Name</label>
+                <label style={labelStyle}>Institution Name</label>
                 <input 
                   style={inputStyle} 
                   value={hospitalForm.name}
@@ -566,7 +566,7 @@ const AdminContent = ({ hospitalName }) => {
                 disabled={loading}
                 onClick={handleCreateHospital}
               >
-                {loading ? 'Creating...' : 'Create Hospital Account'}
+                {loading ? 'Creating...' : 'Create Institution Account'}
               </button>
             </div>
           )}
@@ -577,7 +577,7 @@ const AdminContent = ({ hospitalName }) => {
       {hospitalName === 'Test' && (
         <div style={accordionStyle}>
           <div style={accordionHeaderStyle} onClick={() => toggleSection('admin-user')}>
-            4. Create admin account for another hospital
+            4. Create admin account for another institution
             <span>{expandedSection === 'admin-user' ? '−' : '+'}</span>
           </div>
           {expandedSection === 'admin-user' && (
@@ -612,13 +612,13 @@ const AdminContent = ({ hospitalName }) => {
                 </div>
               </div>
               <div style={formGroupStyle}>
-                <label style={labelStyle}>Hospital</label>
-                <select 
-                  style={inputStyle} 
+                <label style={labelStyle}>Institution</label>
+                <select
+                  style={inputStyle}
                   value={adminForm.hospitalId}
                   onChange={(e) => setAdminForm({...adminForm, hospitalId: e.target.value})}
                 >
-                  <option value="">Select Hospital</option>
+                  <option value="">Select Institution</option>
                   {hospitals.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                 </select>
               </div>

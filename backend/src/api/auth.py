@@ -26,16 +26,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         email: str = payload.get("sub")
         hospital_id: int = payload.get("hospital_id")
         role: str = payload.get("role")
+        is_super_viewer: bool = payload.get("is_super_viewer", False)
         if email is None:
             raise credentials_exception
-        
+
         user = db.query(User).filter(User.email == email, User.hospital_id == hospital_id).first()
         if not user:
             user = db.query(User).filter(User.email == email).first()
         if not user:
             raise credentials_exception
-            
-        token_data = {"email": email, "hospital_id": hospital_id, "role": role, "id": user.id}
+
+        token_data = {"email": email, "hospital_id": hospital_id, "role": role, "id": user.id,
+                      "is_super_viewer": is_super_viewer}
     except JWTError:
         raise credentials_exception
     except Exception:
@@ -84,10 +86,13 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         )
 
     # 4. Create Token
+    is_super_viewer = user.email.lower().endswith("@tanuh.ai")
     access_token = create_access_token(
-        data={"sub": user.email, "hospital_id": user.hospital_id, "role": role.name}
+        data={"sub": user.email, "hospital_id": user.hospital_id, "role": role.name,
+              "is_super_viewer": is_super_viewer}
     )
-    return {"access_token": access_token, "token_type": "bearer", "full_name": user.full_name or ""}
+    return {"access_token": access_token, "token_type": "bearer", "full_name": user.full_name or "",
+            "is_super_viewer": is_super_viewer}
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
