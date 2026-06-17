@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Eye } from 'lucide-react';
 
-const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, onComplete, onView }) => {
+const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, onComplete, onView, readOnly = false }) => {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -112,6 +112,40 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
 
   const hasExisting = !!existing;
   const fileInputRef = useRef(null);
+
+  if (readOnly) {
+    return (
+      <div style={{
+        border: '1px solid #e0e7eb',
+        borderRadius: 12,
+        padding: '12px 16px',
+        background: '#fafefe',
+      }}>
+        <div style={{ fontSize: 13, color: '#14868C', fontWeight: 600, marginBottom: 4 }}>{label}</div>
+        {hasExisting ? (
+          <div style={{ fontSize: 12, color: '#333', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{existing.file_name}</span>
+            {onView && (
+              <button
+                type="button"
+                onClick={() => onView(existing)}
+                style={{
+                  background: 'none', border: '1px solid #14868C', borderRadius: 4,
+                  color: '#14868C', cursor: 'pointer', padding: '2px 6px',
+                  display: 'flex', alignItems: 'center', gap: 3,
+                  fontSize: 11, fontWeight: 600, flexShrink: 0, fontFamily: 'inherit',
+                }}
+              >
+                <Eye size={12} /> View
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: '#999' }}>No file uploaded</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={{

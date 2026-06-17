@@ -13,8 +13,18 @@ const DoctorPage = ({ isEmbedded = false }) => {
   const [sortStack, setSortStack] = useState([{ key: 'date', dir: 'desc' }]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedInstitutions, setExpandedInstitutions] = useState({});
+  const [institutionPages, setInstitutionPages] = useState({});
   const PAGE_SIZE = 20;
   const isSuperViewer = localStorage.getItem('isSuperViewer') === 'true';
+
+  const toggleInstitution = (name) => {
+    setExpandedInstitutions(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const setInstitutionPage = (name, page) => {
+    setInstitutionPages(prev => ({ ...prev, [name]: page }));
+  };
 
   useEffect(() => {
     if (!isEmbedded) {
@@ -153,29 +163,163 @@ const DoctorPage = ({ isEmbedded = false }) => {
     return ` ${arrow}${sortStack.length > 1 ? pos : ''}`;
   };
 
+  const renderSessionTable = (sessionList, showHospitalCol) => (
+    <div style={tableContainerStyle}>
+      <table style={tableStyle}>
+        <thead>
+          <tr style={headerRowStyle}>
+            <th style={thCenterStyle}>Subject ID</th>
+            {showHospitalCol && <th style={thCenterStyle}>Hospital</th>}
+            <th style={sortableThStyle} onClick={() => handleSort('date')}>Date{sortArrow('date')}</th>
+            <th style={thCenterStyle}>Risk</th>
+            <th style={sortableThStyle} onClick={() => handleSort('assessment')}>Assessment{sortArrow('assessment')}</th>
+            <th style={thCenterStyle}>Mammography</th>
+            <th style={thCenterStyle}>Mammography Report</th>
+            <th style={thCenterStyle}>Breast Ultrasound (USG Breast)</th>
+            <th style={thCenterStyle}>Breast Ultrasound (USG Breast) Report</th>
+            <th style={thCenterStyle}>Biopsy</th>
+            <th style={thCenterStyle}>Annotations</th>
+            <th style={thCenterStyle}>Additional Docs</th>
+            <th style={thCenterStyle}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sessionList.map((session) => (
+            <tr key={session.id} style={rowStyle}>
+              <td style={{ ...tdStyle, textAlign: 'center' }}>{session.patient_id || session.id?.substring(0, 8)}</td>
+              {showHospitalCol && <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.hospital_name || '-'}</td>}
+              <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.consent_timestamp ? new Date(session.consent_timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
+              <td style={{ ...tdStyle, textAlign: 'center' }}>
+                {session.risk_category ? (
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '4px 12px',
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    backgroundColor: RISK_COLORS[session.risk_category] || '#eee',
+                    color: '#111',
+                  }}>{session.risk_category.replace(' Risk', '')}</span>
+                ) : '-'}
+              </td>
+              <td style={statusCellStyle(session.has_assessment)}>
+                {session.has_assessment ? 'Yes' : 'No'}
+              </td>
+              <td style={statusCellStyle(session.has_mammo_dicom)}>
+                {session.has_mammo_dicom ? 'Yes' : 'No'}
+              </td>
+              <td style={smrCellStyle(session.has_mammo_reading)}>
+                {session.has_mammo_reading === 'SMR' ? 'Yes (SMR)' : session.has_mammo_reading === 'Yes' ? 'Yes' : 'No'}
+              </td>
+              <td style={smrCellStyle(session.has_us_video)}>
+                {session.has_us_video === 'SMR' ? 'Yes (SMR)' : session.has_us_video === 'Yes' ? 'Yes' : 'No'}
+              </td>
+              <td style={smrCellStyle(session.has_us_reading)}>
+                {session.has_us_reading === 'SMR' ? 'Yes (SMR)' : session.has_us_reading === 'Yes' ? 'Yes' : 'No'}
+              </td>
+              <td style={statusCellStyle(session.has_biopsy)}>
+                {session.has_biopsy ? 'Yes' : 'No'}
+              </td>
+              <td style={statusCellStyle(session.has_annotations)}>
+                {session.has_annotations ? 'Yes' : 'No'}
+              </td>
+              <td style={statusCellStyle(session.has_additional_docs)}>
+                {session.has_additional_docs ? 'Yes' : 'No'}
+              </td>
+              <td style={{ ...tdStyle, textAlign: 'center' }}>
+                <button
+                  onClick={() => fetchSessionDetail(session.id)}
+                  style={linkButtonStyle}
+                >
+                  {!isSuperViewer && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ marginTop: 10, fontSize: 12, color: '#666', textAlign: 'right' }}>
+        <span style={{ color: '#0d6efd', fontWeight: 600 }}>SMR</span> — Breast Ultrasound (USG Breast) Report
+      </div>
+    </div>
+  );
+
+  const renderPagination = (totalItems, curPage, onPageChange) => {
+    const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+    if (totalPages <= 1) return null;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 16 }}>
+        <button
+          onClick={() => onPageChange(Math.max(1, curPage - 1))}
+          disabled={curPage === 1}
+          style={{ ...paginationBtnStyle, opacity: curPage === 1 ? 0.4 : 1 }}
+        >Prev</button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter(p => p === 1 || p === totalPages || Math.abs(p - curPage) <= 2)
+          .reduce((acc, p, idx, arr) => {
+            if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+            acc.push(p);
+            return acc;
+          }, [])
+          .map((p, i) =>
+            p === '...' ? <span key={`dot-${i}`} style={{ color: '#999', fontSize: 13 }}>...</span> :
+            <button
+              key={p}
+              onClick={() => onPageChange(p)}
+              style={{ ...paginationBtnStyle, background: curPage === p ? '#14868C' : '#fff', color: curPage === p ? '#fff' : '#14868C', borderColor: curPage === p ? '#14868C' : '#c8e0e2' }}
+            >{p}</button>
+          )}
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, curPage + 1))}
+          disabled={curPage === totalPages}
+          style={{ ...paginationBtnStyle, opacity: curPage === totalPages ? 0.4 : 1 }}
+        >Next</button>
+      </div>
+    );
+  };
+
   const content = (
     <div style={contentStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h2 style={{ color: '#333', margin: 0 }}>Subject List</h2>
-          {sortStack.map((s, i) => (
+          {!isSuperViewer && sortStack.map((s, i) => (
             <span key={i} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, backgroundColor: '#e8f7f8', color: '#14868C', fontWeight: 600 }}>
               {s.key}{s.dir === 'asc' ? '↑' : '↓'}
             </span>
           ))}
-          {sortStack.length > 1 && (
+          {!isSuperViewer && sortStack.length > 1 && (
             <button onClick={clearSort} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, border: '1px solid #ccc', background: '#fff', cursor: 'pointer', color: '#666' }}>
               Clear
             </button>
           )}
         </div>
-        <input
-          type="text"
-          placeholder={isSuperViewer ? 'Search by Subject ID or Hospital...' : 'Search by Subject ID...'}
-          value={searchTerm}
-          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-          style={{ width: 260, padding: '8px 14px', borderRadius: 8, border: '1.5px solid #c8e0e2', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {isSuperViewer && (
+            <>
+              <button
+                onClick={() => {
+                  const allNames = [...new Set(sessions.map(s => s.hospital_name || 'Unknown'))];
+                  const allExpanded = {};
+                  allNames.forEach(n => { allExpanded[n] = true; });
+                  setExpandedInstitutions(allExpanded);
+                }}
+                style={{ ...accordionToggleBtnStyle }}
+              >Expand All</button>
+              <button
+                onClick={() => setExpandedInstitutions({})}
+                style={{ ...accordionToggleBtnStyle }}
+              >Collapse All</button>
+            </>
+          )}
+          <input
+            type="text"
+            placeholder={isSuperViewer ? 'Search by Subject ID or Institution...' : 'Search by Subject ID...'}
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); setInstitutionPages({}); }}
+            style={{ width: 260, padding: '8px 14px', borderRadius: 8, border: '1.5px solid #c8e0e2', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+          />
+        </div>
       </div>
 
       {loading && <p>Loading sessions...</p>}
@@ -189,123 +333,80 @@ const DoctorPage = ({ isEmbedded = false }) => {
             || (s.id || '').toLowerCase().includes(term)
             || (isSuperViewer && (s.hospital_name || '').toLowerCase().includes(term));
         });
-        const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-        const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
         if (!loading && !error && sessions.length === 0) return <p>No sessions found.</p>;
         if (!loading && !error && filtered.length === 0) return <p>No subjects match "{searchTerm}".</p>;
 
-        return !loading && !error && filtered.length > 0 && (
-          <><div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>Showing {paginated.length} of {filtered.length} subjects {searchTerm && `(filtered from ${sessions.length})`}</div>
-        <div style={tableContainerStyle}>
-          <table style={tableStyle}>
-            <thead>
-              <tr style={headerRowStyle}>
-                <th style={thCenterStyle}>Subject ID</th>
-                {isSuperViewer && <th style={thCenterStyle}>Hospital</th>}
-                <th style={sortableThStyle} onClick={() => handleSort('date')}>Date{sortArrow('date')}</th>
-                <th style={thCenterStyle}>Risk</th>
-                <th style={sortableThStyle} onClick={() => handleSort('assessment')}>Assessment{sortArrow('assessment')}</th>
-                <th style={thCenterStyle}>Mammography</th>
-                <th style={thCenterStyle}>Mammography Report</th>
-                <th style={thCenterStyle}>Breast Ultrasound (USG Breast)</th>
-                <th style={thCenterStyle}>Breast Ultrasound (USG Breast) Report</th>
-                <th style={thCenterStyle}>Biopsy</th>
-                <th style={thCenterStyle}>Annotations</th>
-                <th style={thCenterStyle}>Additional Docs</th>
-                <th style={thCenterStyle}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((session) => (
-                <tr key={session.id} style={rowStyle}>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>{session.patient_id || session.id?.substring(0, 8)}</td>
-                  {isSuperViewer && <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.hospital_name || '-'}</td>}
-                  <td style={{ ...tdStyle, textAlign: 'center', fontSize: 12 }}>{session.consent_timestamp ? new Date(session.consent_timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>
-                    {session.risk_category ? (
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '4px 12px',
-                        borderRadius: 12,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: RISK_COLORS[session.risk_category] || '#eee',
-                        color: '#111',
-                      }}>{session.risk_category.replace(' Risk', '')}</span>
-                    ) : '-'}
-                  </td>
-                  <td style={statusCellStyle(session.has_assessment)}>
-                    {session.has_assessment ? 'Yes' : 'No'}
-                  </td>
-                  <td style={statusCellStyle(session.has_mammo_dicom)}>
-                    {session.has_mammo_dicom ? 'Yes' : 'No'}
-                  </td>
-                  <td style={smrCellStyle(session.has_mammo_reading)}>
-                    {session.has_mammo_reading === 'SMR' ? 'Yes (SMR)' : session.has_mammo_reading === 'Yes' ? 'Yes' : 'No'}
-                  </td>
-                  <td style={smrCellStyle(session.has_us_video)}>
-                    {session.has_us_video === 'SMR' ? 'Yes (SMR)' : session.has_us_video === 'Yes' ? 'Yes' : 'No'}
-                  </td>
-                  <td style={smrCellStyle(session.has_us_reading)}>
-                    {session.has_us_reading === 'SMR' ? 'Yes (SMR)' : session.has_us_reading === 'Yes' ? 'Yes' : 'No'}
-                  </td>
-                  <td style={statusCellStyle(session.has_biopsy)}>
-                    {session.has_biopsy ? 'Yes' : 'No'}
-                  </td>
-                  <td style={statusCellStyle(session.has_annotations)}>
-                    {session.has_annotations ? 'Yes' : 'No'}
-                  </td>
-                  <td style={statusCellStyle(session.has_additional_docs)}>
-                    {session.has_additional_docs ? 'Yes' : 'No'}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>
-                    <button
-                      onClick={() => fetchSessionDetail(session.id)}
-                      style={linkButtonStyle}
-                    >
-                      {!isSuperViewer && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{ marginTop: 10, fontSize: 12, color: '#666', textAlign: 'right' }}>
-            <span style={{ color: '#0d6efd', fontWeight: 600 }}>SMR</span> — Breast Ultrasound (USG Breast) Report
-          </div>
-        </div>
+        if (!loading && !error && filtered.length > 0 && isSuperViewer) {
+          const grouped = {};
+          filtered.forEach(s => {
+            const key = s.hospital_name || 'Unknown';
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(s);
+          });
+          const institutionNames = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
 
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 16 }}>
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              style={{ ...paginationBtnStyle, opacity: currentPage === 1 ? 0.4 : 1 }}
-            >Prev</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) =>
-                p === '...' ? <span key={`dot-${i}`} style={{ color: '#999', fontSize: 13 }}>...</span> :
-                <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  style={{ ...paginationBtnStyle, background: currentPage === p ? '#14868C' : '#fff', color: currentPage === p ? '#fff' : '#14868C', borderColor: currentPage === p ? '#14868C' : '#c8e0e2' }}
-                >{p}</button>
-              )}
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              style={{ ...paginationBtnStyle, opacity: currentPage === totalPages ? 0.4 : 1 }}
-            >Next</button>
-          </div>
-        )}
-        </>);
+          return (
+            <>
+              <div style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>
+                {institutionNames.length} institution{institutionNames.length !== 1 ? 's' : ''}, {filtered.length} total subjects
+                {searchTerm && ` (filtered from ${sessions.length})`}
+              </div>
+              {institutionNames.map(instName => {
+                const instSessions = grouped[instName];
+                const assessmentCount = instSessions.filter(s => s.has_assessment).length;
+                const isExpanded = expandedInstitutions[instName] || false;
+                const instPage = institutionPages[instName] || 1;
+                const paginated = instSessions.slice((instPage - 1) * PAGE_SIZE, instPage * PAGE_SIZE);
+
+                return (
+                  <div key={instName} style={accordionCardStyle}>
+                    <div
+                      style={accordionHeaderStyle}
+                      onClick={() => toggleInstitution(instName)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: 16, color: '#14868C', width: 20, textAlign: 'center' }}>
+                          {isExpanded ? '▼' : '▶'}
+                        </span>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#333' }}>{instName}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={accordionBadgeStyle('#e8f7f8', '#14868C')}>
+                          {instSessions.length} subject{instSessions.length !== 1 ? 's' : ''}
+                        </span>
+                        <span style={accordionBadgeStyle(assessmentCount > 0 ? '#e6f9e6' : '#fef2f2', assessmentCount > 0 ? '#16a34a' : '#dc2626')}>
+                          {assessmentCount} assessment{assessmentCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div style={{ padding: '0 16px 16px' }}>
+                        {renderSessionTable(paginated, false)}
+                        {renderPagination(instSessions.length, instPage, (p) => setInstitutionPage(instName, p))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          );
+        }
+
+        if (!loading && !error && filtered.length > 0 && !isSuperViewer) {
+          const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+          const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+          return (
+            <>
+              <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>Showing {paginated.length} of {filtered.length} subjects {searchTerm && `(filtered from ${sessions.length})`}</div>
+              {renderSessionTable(paginated, false)}
+              {renderPagination(filtered.length, currentPage, setCurrentPage)}
+            </>
+          );
+        }
+
+        return null;
       })()}
 
       {isModalOpen && selectedSession && (
@@ -340,9 +441,34 @@ const DoctorPage = ({ isEmbedded = false }) => {
               </table>
               
               {isSuperViewer ? (
-                <div style={{ marginTop: 16, padding: '10px 16px', borderRadius: 6, backgroundColor: '#f0f4ff', border: '1px solid #c8d8f8', color: '#3a5a9e', fontSize: 13 }}>
-                  TANUH view — assessment editing is disabled for cross-hospital access.
-                </div>
+                selectedSession.assessment ? (
+                  <DoctorAssessmentForm
+                    sessionId={selectedSession.id}
+                    initialData={selectedSession.assessment}
+                    readOnly={true}
+                    snehithaRisk={(() => {
+                      if (!selectedSession.responses) return null;
+                      const r = {};
+                      selectedSession.responses.forEach(resp => { r[resp.question] = resp.answer; });
+                      const age = parseInt(r['What is your current age? (Please enter a number - years)'] || r['Q1'] || '0') || 0;
+                      const aam = parseInt(r['What age were you when you had your first menstrual period? (Please enter a number)'] || r['Q10'] || '0') || 0;
+                      const irr = (r['Q12_Current'] === 'No' || r['Are your menstrual cycles regular? - Currently'] === 'No') ? 1 : 0;
+                      const bf = (r['Q17'] === 'greater than 24 months' || r['For how long did you breastfeed?'] === 'greater than 24 months') ? 1 : 0;
+                      const fh = (r['Q21'] === 'First Order (Mother, Sibling, Father)' || (r['Has anyone in your family been diagnosed with any type of cancer?'] || '').includes('First')) ? 1 : 0;
+                      const bx = (r['Q40'] === 'Yes' || r['Have you had a breast biopsy?'] === 'Yes') ? 1 : 0;
+                      const nul = (r['Q14'] === 'No' || r['Have you given birth to a child?'] === 'No') ? 1 : 0;
+                      const a25 = (r['Q16'] === '25 to 29') ? 1 : 0;
+                      const a30 = (r['Q16'] === 'After 30') ? 1 : 0;
+                      const ab = (nul || a25) ? 1 : 0;
+                      const lp = -0.940 + 0.027*age - 0.082*aam + 0.453*irr - 0.892*bf + 0.810*fh + 1.420*bx + 0.811*ab + 1.035*a30;
+                      return ((1 / (1 + Math.exp(-lp))) * 100).toFixed(2);
+                    })()}
+                  />
+                ) : (
+                  <div style={{ marginTop: 16, padding: '10px 16px', borderRadius: 6, backgroundColor: '#f0f4ff', border: '1px solid #c8d8f8', color: '#3a5a9e', fontSize: 13 }}>
+                    No assessment has been submitted for this subject yet.
+                  </div>
+                )
               ) : (
                 <DoctorAssessmentForm
                   sessionId={selectedSession.id}
@@ -553,6 +679,46 @@ const qaThStyle = {
 const qaTdStyle = {
   padding: '10px',
   borderBottom: '1px solid #eee'
+};
+
+const accordionCardStyle = {
+  border: '1px solid #e0e7eb',
+  borderRadius: 10,
+  marginBottom: 10,
+  overflow: 'hidden',
+  backgroundColor: '#fff',
+};
+
+const accordionHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '14px 16px',
+  cursor: 'pointer',
+  backgroundColor: '#f8fafb',
+  borderBottom: '1px solid #e0e7eb',
+  userSelect: 'none',
+};
+
+const accordionBadgeStyle = (bg, color) => ({
+  fontSize: 12,
+  padding: '4px 12px',
+  borderRadius: 12,
+  backgroundColor: bg,
+  color: color,
+  fontWeight: 600,
+});
+
+const accordionToggleBtnStyle = {
+  fontSize: 12,
+  padding: '6px 14px',
+  borderRadius: 6,
+  border: '1px solid #c8e0e2',
+  background: '#fff',
+  color: '#14868C',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
 };
 
 export default DoctorPage;

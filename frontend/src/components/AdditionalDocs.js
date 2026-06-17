@@ -17,7 +17,7 @@ function getCategoryLabel(fileType) {
   return 'Document';
 }
 
-const AdditionalDocs = ({ sessionId, existingAttachments = [], onView }) => {
+const AdditionalDocs = ({ sessionId, existingAttachments = [], onView, readOnly = false }) => {
   const [slots, setSlots] = useState([]);
 
   const nextSuffix = (prefix) => {
@@ -86,7 +86,7 @@ const AdditionalDocs = ({ sessionId, existingAttachments = [], onView }) => {
         </div>
       )}
 
-      {slots.map(slot => (
+      {!readOnly && slots.map(slot => (
         <div key={slot.id} style={{
           marginBottom: 12, padding: 12, borderRadius: 10,
           border: '1.5px dashed #c8e0e2', background: '#fafefe',
@@ -120,21 +120,27 @@ const AdditionalDocs = ({ sessionId, existingAttachments = [], onView }) => {
         </div>
       ))}
 
-      <button
-        type="button"
-        onClick={addSlot}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '10px 16px', borderRadius: 8,
-          border: '1.5px dashed #14868C', background: '#fafefe',
-          color: '#14868C', fontWeight: 600, fontSize: 13,
-          cursor: 'pointer', fontFamily: 'inherit', width: '100%',
-          justifyContent: 'center',
-        }}
-      >
-        <Plus size={15} />
-        Add Document
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          onClick={addSlot}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '10px 16px', borderRadius: 8,
+            border: '1.5px dashed #14868C', background: '#fafefe',
+            color: '#14868C', fontWeight: 600, fontSize: 13,
+            cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+            justifyContent: 'center',
+          }}
+        >
+          <Plus size={15} />
+          Add Document
+        </button>
+      )}
+
+      {readOnly && existingAttachments.length === 0 && (
+        <div style={{ fontSize: 12, color: '#999' }}>No additional documents uploaded</div>
+      )}
     </div>
   );
 };

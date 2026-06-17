@@ -205,18 +205,18 @@ const styles = {
   }),
 };
 
-const Toggle = ({ label, checked, onChange }) => (
+const Toggle = ({ label, checked, onChange, disabled }) => (
   <div
-    style={{ ...styles.toggle, ...(checked ? styles.toggleActive : {}) }}
-    onClick={() => onChange(!checked)}
+    style={{ ...styles.toggle, ...(checked ? styles.toggleActive : {}), ...(disabled ? { cursor: 'default', opacity: 0.8 } : {}) }}
+    onClick={() => !disabled && onChange(!checked)}
   >
     <div style={styles.toggleDot(checked)}>{checked ? '✓' : ''}</div>
     <span>{label}</span>
   </div>
 );
 
-const BreastPanel = ({ side, data, onChange }) => {
-  const set = (key, val) => onChange({ ...data, [key]: val });
+const BreastPanel = ({ side, data, onChange, readOnly }) => {
+  const set = (key, val) => !readOnly && onChange({ ...data, [key]: val });
   const sideLabel = side === 'right' ? 'Right' : 'Left';
 
   return (
@@ -228,24 +228,24 @@ const BreastPanel = ({ side, data, onChange }) => {
       {/* BIRADS + Density at top (required) */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 12 }}>
-          <label style={{ ...styles.label, color: '#14868C', fontWeight: 600 }}>BIRADS Category <span style={{ color: '#dc3545' }}>*</span></label>
-          <select style={{ ...styles.select, borderColor: !data.birads ? '#dc3545' : '#d0d7de' }} value={data.birads || ''} onChange={(e) => { const v = e.target.value; onChange({ ...data, birads: v, birads_4_sub: v === '4' ? (data.birads_4_sub || '') : '' }); }}>
+          <label style={{ ...styles.label, color: '#14868C', fontWeight: 600 }}>BIRADS Category {!readOnly && <span style={{ color: '#dc3545' }}>*</span>}</label>
+          <select disabled={readOnly} style={{ ...styles.select, borderColor: !readOnly && !data.birads ? '#dc3545' : '#d0d7de' }} value={data.birads || ''} onChange={(e) => { const v = e.target.value; onChange({ ...data, birads: v, birads_4_sub: v === '4' ? (data.birads_4_sub || '') : '' }); }}>
             <option value="">Select BIRADS</option>
             {BIRADS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         {data.birads === '4' && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ ...styles.label, color: '#14868C', fontWeight: 600 }}>BIRADS 4 Sub-category <span style={{ color: '#dc3545' }}>*</span></label>
-            <select style={styles.select} value={data.birads_4_sub || ''} onChange={(e) => set('birads_4_sub', e.target.value)}>
+            <label style={{ ...styles.label, color: '#14868C', fontWeight: 600 }}>BIRADS 4 Sub-category {!readOnly && <span style={{ color: '#dc3545' }}>*</span>}</label>
+            <select disabled={readOnly} style={styles.select} value={data.birads_4_sub || ''} onChange={(e) => set('birads_4_sub', e.target.value)}>
               <option value="">Select sub-category</option>
               {BIRADS_4_SUB.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         )}
         <div>
-          <label style={{ ...styles.label, color: '#14868C', fontWeight: 600 }}>ACR Breast Density <span style={{ color: '#dc3545' }}>*</span></label>
-          <select style={{ ...styles.select, borderColor: !data.density ? '#dc3545' : '#d0d7de' }} value={data.density || ''} onChange={(e) => set('density', e.target.value)}>
+          <label style={{ ...styles.label, color: '#14868C', fontWeight: 600 }}>ACR Breast Density {!readOnly && <span style={{ color: '#dc3545' }}>*</span>}</label>
+          <select disabled={readOnly} style={{ ...styles.select, borderColor: !readOnly && !data.density ? '#dc3545' : '#d0d7de' }} value={data.density || ''} onChange={(e) => set('density', e.target.value)}>
             <option value="">Select Density</option>
             {DENSITY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
@@ -257,28 +257,28 @@ const BreastPanel = ({ side, data, onChange }) => {
         Composition
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-        <Toggle label="Presence of any masses" checked={data.masses} onChange={(v) => set('masses', v)} />
+        <Toggle label="Presence of any masses" checked={data.masses} onChange={(v) => set('masses', v)} disabled={readOnly} />
         {data.masses && (
           <div style={styles.condBox}>
             <div style={styles.row}>
               <div style={styles.field}>
                 <label style={styles.label}>Location</label>
-                <input style={styles.input} placeholder="e.g. Upper outer quadrant" value={data.mass_location} onChange={(e) => set('mass_location', e.target.value)} />
+                <input disabled={readOnly} style={styles.input} placeholder="e.g. Upper outer quadrant" value={data.mass_location} onChange={(e) => set('mass_location', e.target.value)} />
               </div>
               <div style={styles.field}>
                 <label style={styles.label}>Description</label>
-                <input style={styles.input} placeholder="Size, shape, margins..." value={data.mass_description} onChange={(e) => set('mass_description', e.target.value)} />
+                <input disabled={readOnly} style={styles.input} placeholder="Size, shape, margins..." value={data.mass_description} onChange={(e) => set('mass_description', e.target.value)} />
               </div>
             </div>
           </div>
         )}
 
-        <Toggle label="Presence of calcification" checked={data.calcification} onChange={(v) => set('calcification', v)} />
+        <Toggle label="Presence of calcification" checked={data.calcification} onChange={(v) => set('calcification', v)} disabled={readOnly} />
         {data.calcification && (
           <div style={styles.condBox}>
             <div style={{ display: 'flex', gap: 12 }}>
-              <Toggle label="Benign" checked={data.calcification_type === 'benign'} onChange={() => set('calcification_type', 'benign')} />
-              <Toggle label="Suspicious" checked={data.calcification_type === 'suspicious'} onChange={() => set('calcification_type', 'suspicious')} />
+              <Toggle label="Benign" checked={data.calcification_type === 'benign'} onChange={() => set('calcification_type', 'benign')} disabled={readOnly} />
+              <Toggle label="Suspicious" checked={data.calcification_type === 'suspicious'} onChange={() => set('calcification_type', 'suspicious')} disabled={readOnly} />
             </div>
           </div>
         )}
@@ -288,26 +288,26 @@ const BreastPanel = ({ side, data, onChange }) => {
         Associated Features
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-        <Toggle label="Skin thickening" checked={data.skin_thickening} onChange={(v) => set('skin_thickening', v)} />
-        <Toggle label="Nipple retraction" checked={data.nipple_retraction} onChange={(v) => set('nipple_retraction', v)} />
-        <Toggle label="Architectural distortion" checked={data.architectural_distortion} onChange={(v) => set('architectural_distortion', v)} />
-        <Toggle label="Focal asymmetry" checked={data.focal_asymmetry} onChange={(v) => set('focal_asymmetry', v)} />
-        <Toggle label="Asymmetry" checked={data.asymmetry} onChange={(v) => set('asymmetry', v)} />
-        <Toggle label="Lymph nodes" checked={data.lymph_nodes} onChange={(v) => set('lymph_nodes', v)} />
+        <Toggle label="Skin thickening" checked={data.skin_thickening} onChange={(v) => set('skin_thickening', v)} disabled={readOnly} />
+        <Toggle label="Nipple retraction" checked={data.nipple_retraction} onChange={(v) => set('nipple_retraction', v)} disabled={readOnly} />
+        <Toggle label="Architectural distortion" checked={data.architectural_distortion} onChange={(v) => set('architectural_distortion', v)} disabled={readOnly} />
+        <Toggle label="Focal asymmetry" checked={data.focal_asymmetry} onChange={(v) => set('focal_asymmetry', v)} disabled={readOnly} />
+        <Toggle label="Asymmetry" checked={data.asymmetry} onChange={(v) => set('asymmetry', v)} disabled={readOnly} />
+        <Toggle label="Lymph nodes" checked={data.lymph_nodes} onChange={(v) => set('lymph_nodes', v)} disabled={readOnly} />
       </div>
       {data.lymph_nodes && (
         <div style={{ ...styles.condBox, marginBottom: 16, marginLeft: 0 }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Toggle label="Benign" checked={data.lymph_nodes_type === 'benign'} onChange={() => set('lymph_nodes_type', 'benign')} />
-            <Toggle label="Malignant" checked={data.lymph_nodes_type === 'malignant'} onChange={() => set('lymph_nodes_type', 'malignant')} />
-            <Toggle label="Indeterminate" checked={data.lymph_nodes_type === 'indeterminate'} onChange={() => set('lymph_nodes_type', 'indeterminate')} />
+            <Toggle label="Benign" checked={data.lymph_nodes_type === 'benign'} onChange={() => set('lymph_nodes_type', 'benign')} disabled={readOnly} />
+            <Toggle label="Malignant" checked={data.lymph_nodes_type === 'malignant'} onChange={() => set('lymph_nodes_type', 'malignant')} disabled={readOnly} />
+            <Toggle label="Indeterminate" checked={data.lymph_nodes_type === 'indeterminate'} onChange={() => set('lymph_nodes_type', 'indeterminate')} disabled={readOnly} />
           </div>
         </div>
       )}
 
       <div style={{ marginBottom: 8 }}>
         <label style={styles.label}>Comments</label>
-        <textarea style={{ ...styles.textarea, minHeight: 60 }} value={data.comments || ''} onChange={(e) => set('comments', e.target.value)} placeholder={`Additional comments for ${sideLabel.toLowerCase()} breast...`} />
+        <textarea disabled={readOnly} style={{ ...styles.textarea, minHeight: 60 }} value={data.comments || ''} onChange={(e) => set('comments', e.target.value)} placeholder={`Additional comments for ${sideLabel.toLowerCase()} breast...`} />
       </div>
     </div>
   );
@@ -320,7 +320,7 @@ const RISK_CLASSES = [
   { value: 'High Risk', label: 'High Risk', color: '#fb7185' },
 ];
 
-const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaRisk }) => {
+const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaRisk, readOnly = false }) => {
   const [activeBreast, setActiveBreast] = useState('right');
   const [rightBreast, setRightBreast] = useState({ ...EMPTY_BREAST });
   const [leftBreast, setLeftBreast] = useState({ ...EMPTY_BREAST });
@@ -437,10 +437,10 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
             <span style={styles.cardHeaderIcon}>&#128203;</span> Questionnaire Review
           </div>
           <div style={styles.cardBody}>
-            <Toggle label="Questionnaire responses are correct" checked={questionnaireCorrect} onChange={setQuestionnaireCorrect} />
+            <Toggle label="Questionnaire responses are correct" checked={questionnaireCorrect} onChange={setQuestionnaireCorrect} disabled={readOnly} />
             <div style={{ marginTop: 12 }}>
               <label style={styles.label}>Feedback (optional)</label>
-              <textarea style={styles.textarea} value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Any corrections or notes about the questionnaire..." />
+              <textarea disabled={readOnly} style={styles.textarea} value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Any corrections or notes about the questionnaire..." />
             </div>
           </div>
         </div>
@@ -483,10 +483,10 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <label style={styles.label}>Clinician's Risk Classification</label>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {RISK_CLASSES.map(rc => (
-                  <div key={rc.value} onClick={() => setDoctorRiskClass(rc.value)} style={{
+                  <div key={rc.value} onClick={() => !readOnly && setDoctorRiskClass(rc.value)} style={{
                     ...styles.toggle,
                     ...(doctorRiskClass === rc.value ? { background: rc.color, borderColor: '#333', fontWeight: 600, color: '#111' } : {}),
-                    cursor: 'pointer', flex: '1 1 120px', justifyContent: 'center', minHeight: 44,
+                    cursor: readOnly ? 'default' : 'pointer', flex: '1 1 120px', justifyContent: 'center', minHeight: 44,
                   }}>
                     {rc.label}
                   </div>
@@ -496,6 +496,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
             <div>
               <label style={styles.label}>Case Notes (subjective description)</label>
               <textarea
+                disabled={readOnly}
                 style={{ ...styles.textarea, minHeight: 100 }}
                 value={doctorCaseNotes}
                 onChange={(e) => setDoctorCaseNotes(e.target.value)}
@@ -523,15 +524,15 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} />
-                  <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} />
+                  <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} readOnly={readOnly} />
+                  <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} readOnly={readOnly} />
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} />
-                  <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} />
+                  <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} readOnly={readOnly} />
+                  <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} readOnly={readOnly} />
                 </div>
               </div>
             </div>
@@ -545,15 +546,15 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
             <div style={{ ...styles.cardBody, borderRight: '2px solid #e8f4f5' }}>
-              <BreastPanel side="left" data={leftBreast} onChange={setLeftBreast} />
+              <BreastPanel side="left" data={leftBreast} onChange={setLeftBreast} readOnly={readOnly} />
             </div>
             <div style={styles.cardBody}>
-              <BreastPanel side="right" data={rightBreast} onChange={setRightBreast} />
+              <BreastPanel side="right" data={rightBreast} onChange={setRightBreast} readOnly={readOnly} />
             </div>
           </div>
           <div style={{ ...styles.cardBody, borderTop: '2px solid #e8f4f5' }}>
             <label style={styles.label}>Mammography Report</label>
-            <ResumableUpload label="Upload Mammography Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="mammo_reading" sessionId={sessionId} existing={getAttachmentByType('mammo_reading')} onView={setViewingAttachment} />
+            <ResumableUpload label="Upload Mammography Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="mammo_reading" sessionId={sessionId} existing={getAttachmentByType('mammo_reading')} onView={setViewingAttachment} readOnly={readOnly} />
           </div>
         </div>
 
@@ -564,9 +565,9 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={styles.cardBody}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <ResumableUpload label="Breast Ultrasound (USG Breast)" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} onView={setViewingAttachment} />
-              <ResumableUpload label="Breast Ultrasound (USG Breast) Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} onView={setViewingAttachment} />
-              <ResumableUpload label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="biopsy_reading" sessionId={sessionId} existing={getAttachmentByType('biopsy_reading')} onView={setViewingAttachment} />
+              <ResumableUpload label="Breast Ultrasound (USG Breast)" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} onView={setViewingAttachment} readOnly={readOnly} />
+              <ResumableUpload label="Breast Ultrasound (USG Breast) Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} onView={setViewingAttachment} readOnly={readOnly} />
+              <ResumableUpload label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="biopsy_reading" sessionId={sessionId} existing={getAttachmentByType('biopsy_reading')} onView={setViewingAttachment} readOnly={readOnly} />
             </div>
           </div>
         </div>
@@ -582,15 +583,15 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_left" sessionId={sessionId} existing={getAttachmentByType('annot_cc_left')} onView={setViewingAttachment} />
-                  <ResumableUpload label="MLO Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_left" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_left')} onView={setViewingAttachment} />
+                  <ResumableUpload label="CC Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_left" sessionId={sessionId} existing={getAttachmentByType('annot_cc_left')} onView={setViewingAttachment} readOnly={readOnly} />
+                  <ResumableUpload label="MLO Left Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_left" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_left')} onView={setViewingAttachment} readOnly={readOnly} />
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_right" sessionId={sessionId} existing={getAttachmentByType('annot_cc_right')} onView={setViewingAttachment} />
-                  <ResumableUpload label="MLO Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_right" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_right')} onView={setViewingAttachment} />
+                  <ResumableUpload label="CC Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_cc_right" sessionId={sessionId} existing={getAttachmentByType('annot_cc_right')} onView={setViewingAttachment} readOnly={readOnly} />
+                  <ResumableUpload label="MLO Right Annotation" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom" fileType="annot_mlo_right" sessionId={sessionId} existing={getAttachmentByType('annot_mlo_right')} onView={setViewingAttachment} readOnly={readOnly} />
                 </div>
               </div>
             </div>
@@ -603,11 +604,12 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
             <span style={styles.cardHeaderIcon}>&#128196;</span> Additional Documents
           </div>
           <div style={styles.cardBody}>
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>Upload whatever is available — none of these are mandatory</div>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>{readOnly ? 'Uploaded documents' : 'Upload whatever is available — none of these are mandatory'}</div>
             <AdditionalDocs
               sessionId={sessionId}
               existingAttachments={getAttachmentsByPrefix('additional_')}
               onView={setViewingAttachment}
+              readOnly={readOnly}
             />
           </div>
         </div>
@@ -619,6 +621,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={styles.cardBody}>
             <textarea
+              disabled={readOnly}
               style={{ ...styles.textarea, minHeight: 100 }}
               value={recommendation}
               onChange={(e) => setRecommendation(e.target.value)}
@@ -642,17 +645,19 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{
-            ...styles.submitBtn,
-            opacity: isSubmitting ? 0.7 : 1,
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {isSubmitting ? 'Saving...' : (initialData ? 'Update Assessment' : 'Save Assessment')}
-        </button>
+        {!readOnly && (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            style={{
+              ...styles.submitBtn,
+              opacity: isSubmitting ? 0.7 : 1,
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isSubmitting ? 'Saving...' : (initialData ? 'Update Assessment' : 'Save Assessment')}
+          </button>
+        )}
       </form>
 
       {viewingAttachment && (
