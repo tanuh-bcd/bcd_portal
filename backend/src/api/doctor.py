@@ -103,11 +103,12 @@ def get_patient_sessions(
                    pid.answer AS patient_id, s.risk_category,
                    hosp.answer AS hospital_name
             FROM session_table s
-            LEFT JOIN (
+            JOIN (
                 SELECT session_id, MIN(answer) AS answer
                 FROM session_data_table
                 WHERE question IN ('Institute Name', 'Institute Name:',
                                    'Enter the Hospital ID(If any, else leave):', 'Q45')
+                  AND answer NOT IN ('Test', 'Tanuh Foundation')
                 GROUP BY session_id
             ) hosp ON s.session_id = hosp.session_id
             LEFT JOIN (
