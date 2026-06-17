@@ -44,7 +44,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return token_data
 
-EXCLUDED_INSTITUTIONS = ('Test', 'Tanuh Foundation')
+EXCLUDED_INSTITUTIONS = ('Tanuh Foundation',)
 
 
 @router.get("/hospitals", response_model=List[HospitalResponse])
