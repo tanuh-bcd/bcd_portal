@@ -80,21 +80,12 @@ jobs:
           user: ashwinrajkumar
           ssh_private_key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           command: |
+            set -e
             cd ~/bcd_portal
-
-            # Authenticate Docker to pull from Artifact Registry
             gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
-
-            # Pull latest images
             docker compose -f docker-compose.prod.yml pull
-
-            # Restart with new images
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d
-
-            # Clean up old images
             docker image prune -f
-
-            # Health check
             sleep 10
-            curl -sf http://localhost:8000/api/health || echo "WARNING: Backend health check failed"
+            curl -sf http://localhost:8000/api/health

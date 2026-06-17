@@ -46,7 +46,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
 @router.get("/hospitals", response_model=List[HospitalResponse])
 def get_hospitals(db: Session = Depends(get_db)):
-    return db.query(Hospital).filter(Hospital.name != 'Test').all()
+    return db.query(Hospital).all()
 
 @router.post("/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
