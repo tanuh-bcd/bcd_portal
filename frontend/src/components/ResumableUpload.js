@@ -39,7 +39,10 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
         body: formData,
       });
 
-      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+      if (!urlRes.ok) {
+        const errBody = await urlRes.json().catch(() => ({}));
+        throw new Error(errBody.detail || `Failed to get upload URL (${urlRes.status})`);
+      }
       const { upload_url, gcs_url } = await urlRes.json();
 
       await new Promise((resolve, reject) => {

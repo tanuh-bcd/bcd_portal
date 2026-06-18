@@ -95,23 +95,30 @@ def generate_upload_url(
     if not hospital_id:
         raise HTTPException(status_code=400, detail="User hospital ID not found")
 
+    if not settings.GCP_STORAGE_BUCKET:
+        raise HTTPException(status_code=500, detail="GCP_STORAGE_BUCKET not configured")
+
     ist_now = get_ist_now()
     blob_path = build_blob_path(hospital_id, session_id, file_type, file_name, ist_now)
 
-    client = _get_storage_client()
-    bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
-    blob = bucket.blob(blob_path)
+    try:
+        client = _get_storage_client()
+        bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+        blob = bucket.blob(blob_path)
 
-    signed_url = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(hours=1),
-        method="PUT",
-        content_type="application/octet-stream",
-    )
+        upload_url = blob.create_resumable_upload_session(
+            content_type="application/octet-stream",
+        )
+    except Exception as e:
+        print(f"Failed to create upload session: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not generate upload URL: {str(e)}"
+        )
 
     gcs_url = f"gs://{settings.GCP_STORAGE_BUCKET}/{blob_path}"
     return {
-        "upload_url": signed_url,
+        "upload_url": upload_url,
         "gcs_url": gcs_url,
         "blob_path": blob_path,
     }
