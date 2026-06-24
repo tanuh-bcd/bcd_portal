@@ -2,6 +2,7 @@ services:
   backend:
     image: asia-south1-docker.pkg.dev/bcd-prototypes/bcd-portal/backend:latest
     container_name: bcd-backend
+    env_file: .env
     ports:
       - "8000:8000"
     networks:

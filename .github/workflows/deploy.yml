@@ -82,6 +82,7 @@ jobs:
           command: |
             set -e
             cd ~/bcd_portal
+            git pull --rebase origin main
             gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml down
