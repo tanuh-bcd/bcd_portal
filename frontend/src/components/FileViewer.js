@@ -51,9 +51,11 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
-  const fileType = getFileType(fileName, mimeType);
+  const initialFileType = getFileType(fileName, mimeType);
+  const [resolvedFileType, setResolvedFileType] = useState(initialFileType);
 
   useEffect(() => {
+    let createdUrl = null;
     const fetchFile = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -66,16 +68,36 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
           throw new Error(detail || `Server error (${res.status})`);
         }
 
-        if (fileType === 'dicom') {
-          const arrayBuffer = await res.arrayBuffer();
+        const arrayBuffer = await res.arrayBuffer();
+        const byteArray = new Uint8Array(arrayBuffer);
+
+        // Check if the file is a DICOM file by magic bytes at offset 128
+        const isDicom = byteArray.length >= 132 &&
+          byteArray[128] === 0x44 && // 'D'
+          byteArray[129] === 0x49 && // 'I'
+          byteArray[130] === 0x43 && // 'C'
+          byteArray[131] === 0x4d;   // 'M'
+
+        if (isDicom) {
+          setResolvedFileType('dicom');
           setDicomBuffer(arrayBuffer);
-        } else if (fileType === 'docx') {
-          const arrayBuffer = await res.arrayBuffer();
+        } else if (initialFileType === 'docx') {
           const result = await mammoth.convertToHtml({ arrayBuffer });
           setDocxHtml(result.value);
+        } else if (initialFileType === 'pdf') {
+          const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+          createdUrl = URL.createObjectURL(blob);
+          setBlobUrl(createdUrl);
+        } else if (initialFileType === 'image' || (mimeType && mimeType.startsWith('image/'))) {
+          setResolvedFileType('image');
+          const blob = new Blob([arrayBuffer], { type: mimeType || 'image/jpeg' });
+          createdUrl = URL.createObjectURL(blob);
+          setBlobUrl(createdUrl);
         } else {
-          const blob = await res.blob();
-          setBlobUrl(URL.createObjectURL(blob));
+          setResolvedFileType('unknown');
+          const blob = new Blob([arrayBuffer], { type: mimeType || 'application/octet-stream' });
+          createdUrl = URL.createObjectURL(blob);
+          setBlobUrl(createdUrl);
         }
       } catch (err) {
         setError(err.message);
@@ -86,9 +108,9 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
     fetchFile();
 
     return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [attachmentId, fileType]);
+  }, [attachmentId, initialFileType, mimeType]);
 
   useEffect(() => {
     if (!dicomBuffer) return;
@@ -224,7 +246,7 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
   }, []);
 
   const handleMouseDown = (e) => {
-    if (fileType === 'pdf' || fileType === 'docx') return;
+    if (resolvedFileType === 'pdf' || resolvedFileType === 'docx') return;
     setDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
@@ -275,7 +297,7 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
             </div>
           )}
 
-          {!loading && !error && blobUrl && fileType === 'pdf' && (
+          {!loading && !error && blobUrl && resolvedFileType === 'pdf' && (
             <iframe
               src={blobUrl}
               title={fileName}
@@ -283,7 +305,7 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
             />
           )}
 
-          {!loading && !error && blobUrl && (fileType === 'image' || fileType === 'dicom') && (
+          {!loading && !error && blobUrl && (resolvedFileType === 'image' || resolvedFileType === 'dicom') && (
             <div style={{
               width: '100%', height: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -303,7 +325,7 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
             </div>
           )}
 
-          {!error && dicomBuffer && fileType === 'dicom' && (
+          {!error && dicomBuffer && resolvedFileType === 'dicom' && (
             <div style={{
               width: '100%', height: '100%',
               display: loading ? 'none' : 'flex',
@@ -324,7 +346,7 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
             </div>
           )}
 
-          {!loading && !error && docxHtml && fileType === 'docx' && (
+          {!loading && !error && docxHtml && resolvedFileType === 'docx' && (
             <div style={{
               width: '100%', height: '100%', overflow: 'auto',
               background: '#fff', padding: '40px 60px',
@@ -341,7 +363,7 @@ const FileViewer = ({ attachmentId, fileName, mimeType, fileTypeKey, onClose }) 
             </div>
           )}
 
-          {!loading && !error && blobUrl && fileType === 'unknown' && (
+          {!loading && !error && blobUrl && resolvedFileType === 'unknown' && (
             <div style={styles.center}>
               <div style={{ color: '#666', fontSize: 14, textAlign: 'center' }}>
                 Preview not available for this file type.

@@ -236,6 +236,33 @@ def view_file(
     content = blob.download_as_bytes()
     mime = attachment.mime_type or "application/octet-stream"
 
+    # Check if the file is a DICOM file by magic bytes at offset 128
+    if len(content) >= 132 and content[128:132] == b'DICM':
+        try:
+            import pydicom
+            import io
+            
+            ds = pydicom.dcmread(io.BytesIO(content))
+            transfer_syntax = ds.file_meta.TransferSyntaxUID
+            
+            # If the transfer syntax is compressed (not Implicit/Explicit VR Little/Big Endian)
+            # decompress it on the fly!
+            is_compressed = transfer_syntax not in (
+                "1.2.840.10008.1.2",      # Implicit VR Little Endian
+                "1.2.840.10008.1.2.1",    # Explicit VR Little Endian
+                "1.2.840.10008.1.2.2",    # Explicit VR Big Endian
+            )
+            if is_compressed:
+                ds.decompress()
+                ds.file_meta.TransferSyntaxUID = "1.2.840.10008.1.2"
+                out_buf = io.BytesIO()
+                ds.save_as(out_buf)
+                content = out_buf.getvalue()
+                mime = "application/dicom"
+        except Exception as e:
+            # Fallback to serving the original file if decompression fails
+            pass
+
     return Response(
         content=content,
         media_type=mime,

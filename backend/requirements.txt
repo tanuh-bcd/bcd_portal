@@ -16,3 +16,7 @@ google-cloud-secret-manager
 pytz
 pytest
 httpx
+pydicom
+pylibjpeg
+pylibjpeg-openjpeg
+pillow
