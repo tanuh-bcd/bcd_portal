@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import './Stats.css';
 import RiskTable from './RiskTable';
+import IndiaMap from './IndiaMap';
 
 const AnimatedCounter = ({ value, duration = 1500 }) => {
   const [count, setCount] = useState(0);
@@ -146,6 +147,8 @@ const Stats = () => {
           <div className="big-number"><AnimatedCounter value={data.statesCount || 0} /></div>
         </div>
       </div>
+
+      <IndiaMap />
 
       <div className="charts-grid">
         <div className="chart-card full-width">

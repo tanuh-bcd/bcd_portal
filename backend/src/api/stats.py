@@ -1,3 +1,7 @@
+import logging
+import urllib.request
+import json
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -5,6 +9,41 @@ from ..db.session import get_questionnaire_db, get_db
 from ..models.models import Hospital
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+PINCODE_COORDS = {
+    "636007": (11.6687, 78.1543, "Salem"),
+    "562160": (12.6324, 77.1836, "Ramanagara"),
+    "570004": (12.2959, 76.6479, "Mysuru"),
+    "533201": (16.5776, 81.9974, "Amalapuram"),
+    "532484": (18.3969, 83.8450, "Srikakulam"),
+    "636004": (11.6804, 78.1371, "Salem"),
+    "500063": (17.4062, 78.4738, "Hyderabad"),
+}
+
+_geocode_cache = {}
+
+
+def _geocode_pincode(pincode, state=""):
+    if pincode in PINCODE_COORDS:
+        return PINCODE_COORDS[pincode]
+    if pincode in _geocode_cache:
+        return _geocode_cache[pincode]
+    try:
+        query = urllib.request.quote(f"{pincode}, {state}, India" if state else f"{pincode}, India")
+        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1&addressdetails=1"
+        req = urllib.request.Request(url, headers={"User-Agent": "BCD-Portal/1.0"})
+        resp = urllib.request.urlopen(req, timeout=5)
+        data = json.loads(resp.read())
+        if data:
+            addr = data[0].get("address", {})
+            city = addr.get("city") or addr.get("town") or addr.get("county") or addr.get("state_district", "")
+            result = (float(data[0]["lat"]), float(data[0]["lon"]), city)
+            _geocode_cache[pincode] = result
+            return result
+    except Exception as e:
+        logger.warning("Geocode failed for pincode %s: %s", pincode, e)
+    return None
 
 INSTITUTE_QUESTIONS = ('Institute Name', 'Institute Name:', 'Enter the Hospital ID(If any, else leave):', 'Q45')
 AGE_QUESTIONS = ('What is your current age? (Please enter a number - years)', 'Q1')
@@ -151,3 +190,44 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
         "ageBins": age_bins,
         "monthBins": month_bins,
     }
+
+
+@router.get("/hospital-locations")
+def get_hospital_locations(
+    app_db: Session = Depends(get_db),
+    db: Session = Depends(get_questionnaire_db),
+):
+    EXCLUDED = ("Test", "Tanuh Foundation")
+    hospitals = app_db.query(Hospital).filter(~Hospital.name.in_(EXCLUDED)).all()
+    valid_names = [h.name for h in hospitals]
+    if not valid_names:
+        return []
+
+    subject_rows = db.execute(text("""
+        SELECT sd.answer AS institute, COUNT(DISTINCT s.session_id) AS subjects
+        FROM session_table s
+        JOIN session_data_table sd ON s.session_id = sd.session_id
+        WHERE sd.question IN :inst_questions
+          AND sd.answer IN :valid_names
+          AND s.snehita_lifetime_risk IS NOT NULL
+        GROUP BY sd.answer
+    """), {"inst_questions": INSTITUTE_QUESTIONS, "valid_names": tuple(valid_names)}).fetchall()
+    subject_counts = {r[0]: int(r[1]) for r in subject_rows}
+
+    locations = []
+    for h in hospitals:
+        result = _geocode_pincode(h.pincode or "", h.state or "")
+        if not result:
+            continue
+        city = result[2] if len(result) > 2 else ""
+        locations.append({
+            "id": h.id,
+            "name": h.name,
+            "short_name": h.short_name or h.name,
+            "city": city,
+            "state": h.state or "",
+            "latitude": result[0],
+            "longitude": result[1],
+            "subjects": subject_counts.get(h.name, 0),
+        })
+    return locations

@@ -30,15 +30,19 @@ def _build_engine(db_name):
 
 def _build_connector_engine(db_name):
     connector = _get_connector()
+    use_iam = not settings.MYSQL_PASSWORD
 
     def getconn():
-        return connector.connect(
-            settings.CLOUD_SQL_CONNECTION_NAME,
-            "pymysql",
-            user=settings.MYSQL_USER,
-            db=db_name,
-            enable_iam_auth=True,
-        )
+        conn_kwargs = {
+            "instance_connection_string": settings.CLOUD_SQL_CONNECTION_NAME,
+            "driver": "pymysql",
+            "user": settings.MYSQL_USER,
+            "db": db_name,
+            "enable_iam_auth": use_iam,
+        }
+        if not use_iam:
+            conn_kwargs["password"] = settings.MYSQL_PASSWORD
+        return connector.connect(**conn_kwargs)
 
     return create_engine(
         "mysql+pymysql://",
