@@ -62,6 +62,7 @@ const IndiaMap = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tooltip, setTooltip] = useState(null);
+  const [activeMarker, setActiveMarker] = useState(null);
   const wrapRef = useRef(null);
   const API_URL = process.env.REACT_APP_API_URL || '';
 
@@ -102,7 +103,28 @@ const IndiaMap = () => {
     });
   }, []);
 
-  const handleMarkerLeave = useCallback(() => setTooltip(null), []);
+  const handleMarkerLeave = useCallback(() => {
+    setTooltip(null);
+    setActiveMarker(null);
+  }, []);
+
+  const handleMarkerClick = useCallback((group, idx, e) => {
+    e.stopPropagation();
+    if (activeMarker === idx) {
+      setTooltip(null);
+      setActiveMarker(null);
+    } else {
+      handleMarkerEnter(group, e);
+      setActiveMarker(idx);
+    }
+  }, [activeMarker, handleMarkerEnter]);
+
+  const handleWrapClick = useCallback((e) => {
+    if (!e.target.classList.contains('marker-dot')) {
+      setTooltip(null);
+      setActiveMarker(null);
+    }
+  }, []);
 
   if (loading) return <div className="india-map-loading">Loading map...</div>;
   if (error) return <div className="india-map-error">{error}</div>;
@@ -130,7 +152,7 @@ const IndiaMap = () => {
         <h3>Partner hospitals by location</h3>
         <p className="india-map-hint">Hover, tap, or focus a point to view the collaboration site and current submission count.</p>
       </div>
-      <div className="public-map-wrap" ref={wrapRef}>
+      <div className="public-map-wrap" ref={wrapRef} onClick={handleWrapClick}>
         <svg
           className="india-map"
           viewBox={mapData.viewBox || '0 0 640 720'}
@@ -172,6 +194,7 @@ const IndiaMap = () => {
                       aria-label={`${m.state}: ${count} hospital${count > 1 ? 's' : ''}`}
                       onMouseEnter={(e) => handleMarkerEnter(m, e)}
                       onMouseLeave={handleMarkerLeave}
+                      onClick={(e) => handleMarkerClick(m, i, e)}
                       onFocus={(e) => handleMarkerEnter(m, e)}
                       onBlur={handleMarkerLeave}
                     />
