@@ -148,9 +148,9 @@ const IndiaMap = () => {
   return (
     <div className="india-map-section">
       <div className="india-map-header">
-        <span className="india-map-label">INDIA FOOTPRINT</span>
-        <h3>Partner hospitals by location</h3>
-        <p className="india-map-hint">Hover, tap, or focus a point to view the collaboration site and current submission count.</p>
+        {/* <span className="india-map-label">INDIA FOOTPRINT</span> */}
+        <h3>Medical Partner Locations</h3>
+        {/* <p className="india-map-hint">Hover, tap, or focus a point to view the collaboration site and current submission count.</p> */}
       </div>
       <div className="public-map-wrap" ref={wrapRef} onClick={handleWrapClick}>
         <svg
