@@ -47,6 +47,15 @@ class Settings:
     SMTP_PASSWORD: str = _cfg("SMTP_PASSWORD")
     SMTP_FROM: str = _cfg("SMTP_FROM")
 
+    REMINDER_EMAIL_ENABLED: bool = _cfg("REMINDER_EMAIL_ENABLED", "false").lower() == "true"
+    REMINDER_RECIPIENT_EMAIL: str = _cfg("REMINDER_RECIPIENT_EMAIL", "")
+    REMINDER_QUARTERLY_TARGET: int = int(_cfg("REMINDER_QUARTERLY_TARGET", "200"))
+    REMINDER_INTERVAL_DAYS: int = int(_cfg("REMINDER_INTERVAL_DAYS", "14"))
+    REMINDER_PORTAL_URL: str = _cfg("REMINDER_PORTAL_URL", "https://bc-portal-dev.tanuh.ai/login")
+    REMINDER_SUPPORT_EMAIL: str = _cfg("REMINDER_SUPPORT_EMAIL", SMTP_USER)
+    REMINDER_REPLY_TO: str = _cfg("REMINDER_REPLY_TO", REMINDER_SUPPORT_EMAIL)
+    REMINDER_TIMEZONE: str = _cfg("REMINDER_TIMEZONE", "Asia/Kolkata")
+
     MYSQL_DB_QUESTIONNAIRE: str = _cfg("MYSQL_DB_QUESTIONNAIRE", "bcd_questionnaire")
 
 settings = Settings()

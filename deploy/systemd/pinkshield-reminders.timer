@@ -1,0 +1,11 @@
+[Unit]
+Description=Check daily for due PinkShield AI reminder emails
+
+[Timer]
+OnCalendar=*-*-* 09:00:00 Asia/Kolkata
+Persistent=true
+RandomizedDelaySec=300
+Unit=pinkshield-reminders.service
+
+[Install]
+WantedBy=timers.target

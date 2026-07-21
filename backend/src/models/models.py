@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP, text, Text, Enum, JSON, Index
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP, text, Text, Enum, JSON, Index, Date, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 from ..db.session import Base
 import enum
@@ -65,6 +65,34 @@ class EmailTemplateCc(Base):
     id = Column(Integer, primary_key=True, index=True)
     template_key = Column(String(50), ForeignKey("email_templates.template_key", ondelete="CASCADE"), nullable=False)
     cc_email = Column(String(255), nullable=False)
+
+class ReminderEmailLog(Base):
+    __tablename__ = "reminder_email_log"
+    __table_args__ = (
+        UniqueConstraint("hospital_id", "report_date", name="uq_reminder_hospital_report_date"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"), nullable=False, index=True)
+    recipient_email = Column(String(255), nullable=False)
+    report_date = Column(Date, nullable=False)
+    quarter_start = Column(Date, nullable=False)
+    quarter_end = Column(Date, nullable=False)
+    data_points = Column(Integer, nullable=False)
+    assessments_submitted = Column(Integer, nullable=False)
+    pending_submissions = Column(Integer, nullable=False)
+    quarterly_target = Column(Integer, nullable=False, default=200)
+    missing_questionnaire_sessions = Column(Integer, nullable=False, default=0)
+    incomplete_assessments = Column(Integer, nullable=False, default=0)
+    missing_mammogram_views = Column(Integer, nullable=False, default=0)
+    missing_mammogram_reports = Column(Integer, nullable=False, default=0)
+    mammogram_quality_flags = Column(Integer, nullable=False, default=0)
+    status = Column(String(20), nullable=False, default="pending")
+    error_message = Column(Text)
+    sent_at = Column(DateTime)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    hospital = relationship("Hospital")
 
 class Language(Base):
     __tablename__ = "languages"

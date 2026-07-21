@@ -1,5 +1,6 @@
 # Environments
 .env
+.env.reminder.local
 
 # Google Cloud Service Account Keys
 gcp-service-account.json
