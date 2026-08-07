@@ -214,3 +214,43 @@ class MachineResponse(MachineBase):
 
     class Config:
         from_attributes = True
+
+class UserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+class MRMCStudyCreate(BaseModel):
+    name: str
+    reader_user_ids: List[int]
+    arbiter_user_id: int
+
+class MRMCParticipantResponse(BaseModel):
+    user_id: int
+    full_name: str
+    is_reader: bool
+    is_arbiter: bool
+    assigned_count: int
+    submitted_count: int
+    kappa_score: Optional[float]
+
+    class Config:
+        from_attributes = True
+
+class MRMCStudyResponse(BaseModel):
+    id: int
+    name: str
+    created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+
+class ClinicianOption(BaseModel):
+    id: int
+    full_name: str
+
+    class Config:
+        from_attributes = True

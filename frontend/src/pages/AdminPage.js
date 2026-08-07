@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import PatientPage from './PatientPage';
 import DoctorPage from './DoctorPage';
+import MRMCStudyContent from './MRMCStudyContent';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('admin');
@@ -43,7 +44,8 @@ const AdminPage = () => {
   const tabs = [
     { id: 'patient', label: 'Subject View' },
     { id: 'doctor', label: 'Clinician View' },
-    { id: 'admin', label: 'Admin' }
+    { id: 'mrmc', label: 'MRMC Study' },
+    { id: 'admin', label: 'Admin' },
   ];
 
   const renderContent = () => {
@@ -54,6 +56,8 @@ const AdminPage = () => {
         return <DoctorPageContent />;
       case 'admin':
         return <div style={contentStyle}><AdminContent hospitalName={hospitalName} /></div>;
+      case 'mrmc':
+        return <div style={contentStyle}><MRMCStudyContent /></div>
       default:
         return null;
     }
@@ -437,6 +441,45 @@ const AdminContent = ({ hospitalName }) => {
     fontWeight: 'bold',
     marginTop: '10px'
   };
+
+  const newBadgeStyle = {
+    fontSize: '11px',
+    fontWeight: 'bold',
+    color: '#14868C',
+    backgroundColor: '#DCF3EF',
+    padding: '2px 8px',
+    borderRadius: '10px',
+    letterSpacing: '0.3px'
+  };
+
+  const kappaBadgeStyle = (score) => {
+    let bg = '#F1F3F5', color = '#495057';
+    if (score !== null) {
+      if (score >= 0.61) { bg = '#E3F5E9'; color = '#1E7E4B'; }
+      else if (score >= 0.21) { bg = '#FDF0DA'; color = '#B0691C'; }
+      else { bg = '#FBE3E1'; color = '#C4302B'; }
+    }
+    return {
+      display: 'inline-block',
+      padding: '3px 10px',
+      borderRadius: '6px',
+      fontSize: '13px',
+      fontWeight: 600,
+      backgroundColor: bg,
+      color
+    };
+  };
+
+  // TODO(backend): replace with GET /api/v1/admin/mrmc-studies/:id/readers once schema is finalized
+  const MOCK_READER_PANEL = [
+    { name: 'Dr. Sanjana Rao', role: 'Reader', assigned: 42, submitted: 28, kappa: 0.81 },
+    { name: 'Dr. Bharath Kumar', role: 'Reader', assigned: 42, submitted: 31, kappa: 0.58 },
+    { name: 'Dr. Anil Mehta', role: 'Arbiter', assigned: null, submitted: '6 adjudicated', kappa: null }
+  ];
+
+  // TODO(backend): replace with GET /api/v1/admin/users?role=clinician (or equivalent)
+  const MOCK_CLINICIANS = ['Dr. Sanjana Rao', 'Dr. Bharath Kumar', 'Dr. Priya Nair', 'Dr. Anil Mehta'];
+
 
   return (
     <div style={{ color: '#333' }}>
