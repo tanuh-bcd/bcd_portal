@@ -18,6 +18,7 @@ from .api import (
     model_weights,
     risk_thresholds,
 )
+from .api.Qualitycheck import qc_auth
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
