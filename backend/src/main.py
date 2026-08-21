@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 import time
 import logging
 from fastapi.middleware.cors import CORSMiddleware
+from .api.Qualitycheck import qc_radiologist
 from .core.config import settings
 from .api import (
     auth,
@@ -18,6 +19,7 @@ from .api import (
     model_weights,
     risk_thresholds,
 )
+from .api.Qualitycheck import qc_auth, qc_admin
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -61,6 +63,10 @@ app.include_router(reminders.router, prefix="/api/v1/reminders", tags=["reminder
 app.include_router(risk_categories.router, prefix="/api/v1/risk-categories", tags=["risk-categories"])
 app.include_router(model_weights.router, prefix="/api/v1/model-weights", tags=["model-weights"])
 app.include_router(risk_thresholds.router, prefix="/api/v1/risk-thresholds", tags=["risk-thresholds"])
+app.include_router(qc_auth.router, prefix="/api/v1/auth", tags=["qc-auth"])
+app.include_router(qc_admin.router, prefix="/api/v1/qc", tags=["qc-admin"])
+app.include_router(qc_radiologist.router, prefix="/api/v1/qc", tags=["QC Radiologist"])
+
 
 @app.get("/api/health")
 def health_check():

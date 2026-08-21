@@ -336,9 +336,6 @@ const MRMCTableDetails = ({ isEmbedded = false }) => {
           </tbody>
         </table>
       </>
-      <div style={{ marginTop: 10, fontSize: 12, color: '#666', textAlign: 'right' }}>
-        <span style={{ color: '#0d6efd', fontWeight: 600 }}>SMR</span> — Breast Ultrasound (USG Breast) Report
-      </div>
     </div>
   );
 
@@ -419,7 +416,7 @@ const MRMCTableDetails = ({ isEmbedded = false }) => {
                   const paginated = instSessions.slice((instPage - 1) * PAGE_SIZE, instPage * PAGE_SIZE);
                   return (
                     <>
-                      <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>{instSessions.length} subject{instSessions.length !== 1 ? 's' : ''}</div>
+                      {/* <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>{instSessions.length} subject{instSessions.length !== 1 ? 's' : ''}</div> */}
                       {renderSessionTable(paginated, false)}
                       {renderPagination(instSessions.length, instPage, (p) => setInstitutionPage(h.hospital_name, p))}
                     </>
@@ -455,7 +452,7 @@ const MRMCTableDetails = ({ isEmbedded = false }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             type="text"
-            placeholder={isSuperViewer ? 'Search by Subject ID or Institution...' : 'Search by Subject ID...'}
+            placeholder={isSuperViewer ? 'Search here...' : 'Search by Subject ID...'}
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             style={{ width: 260, padding: '8px 14px', borderRadius: 8, border: '1.5px solid #c8e0e2', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
@@ -487,7 +484,7 @@ const MRMCTableDetails = ({ isEmbedded = false }) => {
 
           return (
             <>
-              <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>Showing {paginated.length} of {filtered.length} subjects {searchTerm && `(filtered from ${sessions.length})`}</div>
+              {/* <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>Showing {paginated.length} of {filtered.length} subjects {searchTerm && `(filtered from ${sessions.length})`}</div> */}
               {renderSessionTable(paginated, false)}
               {renderPagination(filtered.length, currentPage, setCurrentPage)}
             </>

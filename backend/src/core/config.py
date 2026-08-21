@@ -104,5 +104,15 @@ class Settings:
     CRON_SHARED_SECRET: str = _cfg("CRON_SHARED_SECRET")
 
     MYSQL_DB_QUESTIONNAIRE: str = _cfg("MYSQL_DB_QUESTIONNAIRE", "bcd_questionnaire")
+    MYSQL_DB_QC: str = _cfg("MYSQL_DB_QC", "qc_bcd_portal")
+
+    @property
+    def QC_DATABASE_URL(self) -> str:
+        password = urllib.parse.quote_plus(self.MYSQL_PASSWORD) if self.MYSQL_PASSWORD else ""
+        url = f"mysql+pymysql://{self.MYSQL_USER}:{password}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB_QC}"
+        if self.MYSQL_QUERY:
+            url += f"?{self.MYSQL_QUERY}"
+        return url
+
 
 settings = Settings()
