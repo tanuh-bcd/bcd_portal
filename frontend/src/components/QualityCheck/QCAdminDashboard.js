@@ -3,31 +3,204 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Layout from '../Layout';
 
+const pageWrapStyle = {
+  backgroundColor: '#ffffff',
+  minHeight: '100vh',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px',
+  padding: '16px 20px',
+  boxSizing: 'border-box'
+};
+
 const tabContainerStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   backgroundColor: 'white',
   borderBottom: '1px solid #ddd',
-  padding: '0 20px',
-  borderRadius: '8px 8px 0 0'
+  boxSizing: 'border-box',
 };
 
 const tabButtonStyle = {
-  padding: '15px 30px',
+  padding: '1px 30px',
   fontSize: '16px',
   background: 'none',
   border: 'none',
   borderBottom: '3px solid #14868C',
   color: '#14868C',
-  fontWeight: 'bold'
+  fontWeight: 'bold',
 };
 
-const cardStyle = {
-  border: '1px solid #B7E0D8',
+// --- Dashboard row: sidebar + main content ---
+const dashboardRowStyle = {
+  display: 'flex',
+  gap: '16px',
+  alignItems: 'flex-start',
+  width: '100%'
+};
+
+const sidebarStyle = {
+  flex: '0 0 280px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px'
+};
+
+const mainContentStyle = {
+  flex: 1,
+  minWidth: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px'
+};
+
+// --- Sidebar cards ---
+const sidebarCardStyle = {
+  border: '1px solid #dee2e6',
   borderRadius: '8px',
-  backgroundColor: '#F3FAF8',
-  margin: '10px'
+  backgroundColor: '#ffffff',
+  padding: '18px 20px',
+  boxSizing: 'border-box'
+};
+
+const sidebarCardTitleStyle = {
+  fontWeight: 700,
+  fontSize: '14px',
+  color: '#1a1a1a',
+  marginBottom: '14px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px'
+};
+
+const donutWrapStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  position: 'relative'
+};
+
+const donutCenterTextStyle = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  textAlign: 'center'
+};
+
+const donutValueStyle = {
+  fontSize: '18px',
+  fontWeight: 700,
+  color: '#1a1a1a'
+};
+
+const donutSubStyle = {
+  fontSize: '10px',
+  color: '#888',
+  marginTop: '2px'
+};
+
+const miniStatsRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginTop: '16px',
+  paddingTop: '14px',
+  borderTop: '1px solid #eee'
+};
+
+const miniStatColStyle = { textAlign: 'left' };
+
+const miniStatLabelStyle = {
+  fontSize: '11px',
+  color: '#888',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.3px'
+};
+
+const miniStatValueStyle = (color) => ({
+  fontSize: '20px',
+  fontWeight: 700,
+  color,
+  marginTop: '2px'
+});
+
+const riskBarRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  marginBottom: '12px'
+};
+
+const riskBarLabelWrapStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  flex: '0 0 120px',
+  fontSize: '12px',
+  color: '#444'
+};
+
+const riskDotStyle = (color) => ({
+  width: '8px',
+  height: '8px',
+  borderRadius: '50%',
+  backgroundColor: color,
+  flexShrink: 0
+});
+
+const riskBarTrackStyle = {
+  flex: 1,
+  height: '8px',
+  backgroundColor: '#f1f3f5',
+  borderRadius: '4px',
+  overflow: 'hidden'
+};
+
+const riskBarCountStyle = {
+  fontSize: '12px',
+  color: '#555',
+  fontWeight: 600,
+  minWidth: '18px',
+  textAlign: 'right'
+};
+
+// --- Pie chart (Subjects: assigned vs unassigned) ---
+const PIE_ASSIGNED_COLOR = '#f1c40f';
+const PIE_UNASSIGNED_COLOR = '#6ee7b7';
+
+const pieWrapStyle = {
+  display: 'flex',
+  justifyContent: 'center'
+};
+
+const legendRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginTop: '10px',
+  fontSize: '12.5px',
+  color: '#444'
+};
+
+const legendLabelWrapStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px'
+};
+
+const legendCountStyle = {
+  fontWeight: 700,
+  color: '#1a1a1a'
+};
+
+// --- Existing styles below (unchanged) ---
+const cardStyle = {
+  border: '1px solid #dee2e6',
+  borderRadius: '8px',
+  backgroundColor: '#ffffff',
+  width: '100%',
+  boxSizing: 'border-box'
 };
 
 const cardHeaderStyle = {
@@ -35,7 +208,12 @@ const cardHeaderStyle = {
   fontWeight: 'bold',
   fontSize: '17px',
   color: '#1a1a1a',
-  borderRadius: '8px 8px 0 0'
+  borderRadius: '8px 8px 0 0',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  cursor: 'pointer',
+  userSelect: 'none'
 };
 
 const fieldWrapStyle = { padding: '0 20px 20px' };
@@ -172,7 +350,7 @@ const ddOptionStyle = {
 };
 
 const ddOptionHoverStyle = {
-  backgroundColor: '#F3FAF8'
+  backgroundColor: '#f0f0f0'
 };
 
 const ddEmptyStyle = {
@@ -188,7 +366,7 @@ const qcThStyle = {
   color: '#495057',
   fontWeight: '600',
   whiteSpace: 'nowrap',
-  backgroundColor: '#fff',
+  backgroundColor: '#DAF3F4',
   borderRight: '1px solid #dee2e6',
   borderBottom: '1px solid #dee2e6',
 };
@@ -207,12 +385,139 @@ const RISK_COLORS = {
   'High Risk': '#fb7185'
 };
 
+const RISK_ORDER = ['Baseline Risk', 'Evident Risk', 'Significant Risk', 'High Risk'];
+
 const statusCellStyle = (isTrue) => ({
   padding: '10px 12px',
   textAlign: 'left',
   color: isTrue ? 'green' : 'red',
   fontWeight: 'bold',
+  borderRight: '1px solid #dee2e6',
 });
+
+const tableSectionStyle = {
+  width: '100%',
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px'
+};
+
+const sectionLabelStyle = {
+  fontWeight: 600,
+  fontSize: '20px',
+  color: '#14868C',
+  padding: '8px 5px'
+};
+
+// --- Small donut chart (SVG, no external deps) ---
+const DonutGauge = ({ completed, total, size = 150, stroke = 24, color = 'rgb(253, 224, 71)' }) => {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = total > 0 ? Math.min(1, completed / total) : 0;
+  const offset = circumference * (1 - pct);
+
+  return (
+    <div style={{ ...donutWrapStyle, width: size, height: size, margin: '0 auto' }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#fb923c"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+        />
+      </svg>
+      <div style={donutCenterTextStyle}>
+        <div style={donutValueStyle}>{completed} / {total}</div>
+        <div style={donutSubStyle}>Completed</div>
+      </div>
+    </div>
+  );
+};
+
+const polarToCartesian = (cx, cy, r, angleDeg) => {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+};
+
+const describeArc = (cx, cy, r, startAngle, endAngle) => {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
+};
+
+const SubjectsPie = ({ assigned, total, size = 140 }) => {
+  const pct = total > 0 ? Math.min(100, (assigned / total) * 100) : 0;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2;
+
+  const assignedAngle = (pct / 100) * 360;
+  const labelR = r * 0.68;
+
+  const assignedMid = assignedAngle / 2;
+  const unassignedMid = assignedAngle + (360 - assignedAngle) / 2;
+
+  const assignedLabelPos = polarToCartesian(cx, cy, labelR, assignedMid);
+  const unassignedLabelPos = polarToCartesian(cx, cy, labelR, unassignedMid);
+
+  const assignedPct = Math.round(pct);
+  const unassignedPct = 100 - assignedPct;
+
+  return (
+    <div style={{ ...pieWrapStyle, width: size, margin: '0 auto' }}>
+      <svg width={size} height={size}>
+        {total > 0 && assignedAngle < 360 && (
+          <path d={describeArc(cx, cy, r, assignedAngle, 360)} fill={PIE_UNASSIGNED_COLOR} />
+        )}
+        {total > 0 && assignedAngle > 0 && (
+          <path d={describeArc(cx, cy, r, 0, assignedAngle)} fill={PIE_ASSIGNED_COLOR} />
+        )}
+        {total > 0 && pct > 0 && (
+          <text
+            x={assignedLabelPos.x}
+            y={assignedLabelPos.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={assignedPct < 12 ? '9' : '11'}
+            fontWeight="700"
+            fill="#5c4a00"
+          >
+            {assignedPct}%
+          </text>
+        )}
+        {total > 0 && pct < 100 && (
+          <text
+            x={unassignedLabelPos.x}
+            y={unassignedLabelPos.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={unassignedPct < 12 ? '9' : '11'}
+            fontWeight="700"
+            fill="#0f5132"
+          >
+            {unassignedPct}%
+          </text>
+        )}
+      </svg>
+    </div>
+  );
+};
 
 const SearchableDropdown = ({
   options,
@@ -251,7 +556,7 @@ const SearchableDropdown = ({
       : selected === getValue(opt);
 
   const handleSelect = (opt) => {
-    if (getDisabled(opt)) return;   // NEW - block selection
+    if (getDisabled(opt)) return;
     if (multiple) {
       const val = getValue(opt);
       const next = selected.includes(val)
@@ -264,36 +569,6 @@ const SearchableDropdown = ({
       setQuery('');
     }
   };
-
-  // in the option render:
-  {
-    filtered.map((opt, idx) => {
-      const val = getValue(opt);
-      const selectedFlag = isSelected(opt);
-      const disabled = getDisabled(opt);   // NEW
-      return (
-        <div
-          key={val}
-          style={{
-            ...ddOptionStyle,
-            ...(hoverIdx === idx && !disabled ? ddOptionHoverStyle : {}),
-            ...(selectedFlag && !multiple ? { backgroundColor: '#E6F4F1' } : {}),
-            ...(disabled ? { opacity: 0.45, cursor: 'not-allowed', backgroundColor: '#f5f5f5' } : {})
-          }}
-          onMouseEnter={() => !disabled && setHoverIdx(idx)}
-          onMouseLeave={() => setHoverIdx(-1)}
-          onClick={() => handleSelect(opt)}
-        >
-          {multiple && (
-            <input type="checkbox" checked={selectedFlag} readOnly disabled={disabled} style={{ cursor: disabled ? 'not-allowed' : 'pointer' }} />
-          )}
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {getLabel(opt)}{disabled ? ' (Already Assigned)' : ''}
-          </span>
-        </div>
-      );
-    })
-  }
 
   const triggerLabel = () => {
     if (loading) return 'Loading...';
@@ -429,6 +704,8 @@ const QCAdminDashboard = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [adminDetailLoading, setAdminDetailLoading] = useState(false);
   const [totalSubjects, setTotalSubjects] = useState(0);
+
+  const [isCreateExpanded, setIsCreateExpanded] = useState(true);
 
   const fetchAdminSubjectDetail = async (sessionId, radiologistId) => {
     setAdminDetailLoading(true);
@@ -587,220 +864,342 @@ const QCAdminDashboard = () => {
     .filter((s) => selectedSubjects.includes(String(s.qc_id)))
     .map((s) => s.display_id);
 
+  const totalAssigned = allAssignments.length;
+  const totalCompleted = allAssignments.filter((a) => a.qc_status === 'Completed').length;
+  const totalPending = totalAssigned - totalCompleted;
+  const acceptanceRate = totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 0;
+
+  // risk category breakdown for sidebar bar chart
+  const riskCounts = allAssignments.reduce((acc, a) => {
+    if (a.risk_category) acc[a.risk_category] = (acc[a.risk_category] || 0) + 1;
+    return acc;
+  }, {});
+  const riskMax = Math.max(1, ...RISK_ORDER.map((k) => riskCounts[k] || 0));
+
+  // NEW - subjects assigned vs unassigned for pie chart
+  const assignedSubjectsCount = subjects.filter((s) => s.is_assigned).length;
+  const unassignedSubjectsCount = Math.max(0, totalSubjects - assignedSubjectsCount);
+
   return (
     <Layout userRole={qcRole} handleLogout={handleLogout} fullWidth={true}>
-      <div style={tabContainerStyle}>
-        <button style={tabButtonStyle}>QC Admin</button>
-        <span style={{ fontSize: '14px', color: '#666' }}>
-          {qcUserName ? `Logged in as ${qcUserName}` : ''}
-        </span>
-      </div>
+      <div style={pageWrapStyle}>
+        <div style={tabContainerStyle}>
+          <button style={tabButtonStyle}>QC Admin</button>
+          <span style={{ fontSize: '14px', color: '#666' }}>
+            {qcUserName ? `Logged in as ${qcUserName}` : ''}
+          </span>
+        </div>
 
-      <div style={{ marginTop: '20px' ,backgroundColor: '#F3FAF8',padding: '20px', borderRadius: '8px'}}>
-        <div style={cardStyle}>
-          <div style={cardHeaderStyle}>Create New Study</div>
-          <div style={fieldWrapStyle}>
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Full Name</label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Dr. Jane Doe"
-                autoComplete="off"
-                name="qc-assign-fullname"
-                style={ddTriggerStyle}
+        <div style={dashboardRowStyle}>
+          {/* Sidebar: progress donut + subjects pie + risk breakdown bars */}
+          <div style={sidebarStyle}>
+            <div style={sidebarCardStyle}>
+              <div style={sidebarCardTitleStyle}>Progress</div>
+              <DonutGauge
+                completed={allAssignmentsLoading ? 0 : totalCompleted}
+                total={allAssignmentsLoading ? 0 : totalAssigned}
               />
+              <div style={miniStatsRowStyle}>
+                <div style={miniStatColStyle}>
+                  <div style={miniStatLabelStyle}>Pending</div>
+                  <div style={miniStatValueStyle('#8A6D00')}>
+                    {allAssignmentsLoading ? '…' : totalPending}
+                  </div>
+                </div>
+                <div style={miniStatColStyle}>
+                  <div style={miniStatLabelStyle}>Acceptance</div>
+                  <div style={miniStatValueStyle('#1E7B34')}>
+                    {allAssignmentsLoading ? '…' : `${acceptanceRate}%`}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>User Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@example.com"
-                autoComplete="off"
-                name="qc-assign-email"
-                style={ddTriggerStyle}
+            {/* NEW - Subjects pie chart */}
+            <div style={sidebarCardStyle}>
+              <div style={sidebarCardTitleStyle}>Subjects</div>
+              <SubjectsPie
+                assigned={subjectsLoading ? 0 : assignedSubjectsCount}
+                total={subjectsLoading ? 0 : totalSubjects}
               />
-            </div>
-
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Password</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Set login password for this user"
-                  autoComplete="new-password"
-                  name="qc-assign-password"
-                  style={{ ...ddTriggerStyle, paddingRight: '38px' }}
-                />
-                <span
-                  onClick={() => setShowPassword((s) => !s)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    cursor: 'pointer',
-                    fontSize: '15px'
-                  }}
-                >
-                  {showPassword ? '🙈' : '👁️'}
+              <div style={legendRowStyle}>
+                <div style={legendLabelWrapStyle}>
+                  <span style={riskDotStyle(PIE_ASSIGNED_COLOR)} />
+                  <span>Assigned</span>
+                </div>
+                <span style={legendCountStyle}>
+                  {subjectsLoading
+                    ? '…'
+                    : `${assignedSubjectsCount} (${totalSubjects > 0 ? Math.round((assignedSubjectsCount / totalSubjects) * 100) : 0}%)`}
+                </span>
+              </div>
+              <div style={legendRowStyle}>
+                <div style={legendLabelWrapStyle}>
+                  <span style={riskDotStyle(PIE_UNASSIGNED_COLOR)} />
+                  <span>Unassigned</span>
+                </div>
+                <span style={legendCountStyle}>
+                  {subjectsLoading
+                    ? '…'
+                    : `${unassignedSubjectsCount} (${totalSubjects > 0 ? Math.round((unassignedSubjectsCount / totalSubjects) * 100) : 0}%)`}
+                </span>
+              </div>
+              <div style={{ ...legendRowStyle, marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
+                <span style={{ color: '#888' }}>Total Subjects</span>
+                <span style={legendCountStyle}>
+                  {subjectsLoading ? '…' : totalSubjects}
                 </span>
               </div>
             </div>
 
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Assign Subjects</label>
-              <SearchableDropdown
-                options={subjects}
-                getValue={(s) => String(s.qc_id)}
-                getLabel={(s) => s.display_id}
-                getDisabled={(s) => s.is_assigned}
-                multiple={true}
-                selected={selectedSubjects}
-                onChange={setSelectedSubjects}
-                placeholder="Select Subjects"
-                loading={subjectsLoading}
-                emptyText="No subjects found"
-              />
-              <div style={{ marginTop: '6px', fontSize: '12.5px', color: '#555' }}>
-                Total Subjects: {subjectsLoading ? '…' : totalSubjects}
+            <div style={sidebarCardStyle}>
+              <div style={sidebarCardTitleStyle}>Risk Breakdown</div>
+              {RISK_ORDER.map((label) => {
+                const count = riskCounts[label] || 0;
+                const widthPct = (count / riskMax) * 100;
+                return (
+                  <div key={label} style={riskBarRowStyle}>
+                    <div style={riskBarLabelWrapStyle}>
+                      <span style={riskDotStyle(RISK_COLORS[label])} />
+                      <span>{label.replace(' Risk', '')}</span>
+                    </div>
+                    <div style={riskBarTrackStyle}>
+                      <div
+                        style={{
+                          width: `${widthPct}%`,
+                          height: '100%',
+                          backgroundColor: RISK_COLORS[label],
+                          borderRadius: '4px',
+                          transition: 'width 0.4s ease'
+                        }}
+                      />
+                    </div>
+                    <span style={riskBarCountStyle}>{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Main content: create-study card + table */}
+          <div style={mainContentStyle}>
+            <div style={cardStyle}>
+              <div
+                style={cardHeaderStyle}
+                onClick={() => setIsCreateExpanded((v) => !v)}
+              >
+                <span style={{
+                  fontWeight: 600,
+                  fontSize: '20px',
+                  color: '#14868C',
+                }}>Create New Study</span>
+                <span style={{ fontSize: '20px', color: '#14868C' }}>
+                  {isCreateExpanded ? '-' : '+'}
+                </span>
               </div>
-              {selectedSubjects.length > 0 && (
-                <div style={{ marginTop: '8px', fontSize: '12.5px', color: '#555' }}>
-                  {selectedSubjects.length} selected: {selectedSubjectLabels.join(', ')}
+              {isCreateExpanded && (
+                <div style={fieldWrapStyle}>
+                  <div style={fieldGroupStyle}>
+                    <label style={labelStyle}>Full Name</label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Dr. Jane Doe"
+                      autoComplete="off"
+                      name="qc-assign-fullname"
+                      style={ddTriggerStyle}
+                    />
+                  </div>
+
+                  <div style={fieldGroupStyle}>
+                    <label style={labelStyle}>User Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="user@example.com"
+                      autoComplete="off"
+                      name="qc-assign-email"
+                      style={ddTriggerStyle}
+                    />
+                  </div>
+
+                  <div style={fieldGroupStyle}>
+                    <label style={labelStyle}>Password</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Set login password for this user"
+                        autoComplete="new-password"
+                        name="qc-assign-password"
+                        style={{ ...ddTriggerStyle, paddingRight: '38px' }}
+                      />
+                      <span
+                        onClick={() => setShowPassword((s) => !s)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          cursor: 'pointer',
+                          fontSize: '15px'
+                        }}
+                      >
+                        {showPassword ? '🙈' : '👁️'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={fieldGroupStyle}>
+                    <label style={labelStyle}>Assign Subjects</label>
+                    <SearchableDropdown
+                      options={subjects}
+                      getValue={(s) => String(s.qc_id)}
+                      getLabel={(s) => s.display_id}
+                      getDisabled={(s) => s.is_assigned}
+                      multiple={true}
+                      selected={selectedSubjects}
+                      onChange={setSelectedSubjects}
+                      placeholder="Select Subjects"
+                      loading={subjectsLoading}
+                      emptyText="No subjects found"
+                    />
+                    <div style={{ marginTop: '6px', fontSize: '12.5px', color: '#555' }}>
+                      Total Subjects: {subjectsLoading ? '…' : totalSubjects}
+                    </div>
+                    {selectedSubjects.length > 0 && (
+                      <div style={{ marginTop: '8px', fontSize: '12.5px', color: '#555' }}>
+                        {selectedSubjects.length} selected: {selectedSubjectLabels.join(', ')}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    style={{ ...buttonStyle, opacity: creating ? 0.7 : 1 }}
+                    onClick={handleCreateClick}
+                    disabled={creating}
+                  >
+                    Create New Study
+                  </button>
                 </div>
               )}
             </div>
 
-            <button
-              style={{ ...buttonStyle, opacity: creating ? 0.7 : 1 }}
-              onClick={handleCreateClick}
-              disabled={creating}
-            >
-              Create New Study
-            </button>
-          </div>
-        </div>
-      </div>
+            <div style={tableSectionStyle}>
+              <span style={sectionLabelStyle}>Admin Assigned History</span>
 
-      <div
-        style={{
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          overflowX: 'auto',
-          border: '1px solid #dee2e6',
-          borderRadius: '6px',
-        }}
-      >
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            minWidth: '1000px',
-            backgroundColor: '#fff',
-            border: '1px solid #dee2e6',
-          }}
-        >
-          <thead>
-            <tr>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Subject ID
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Radiologist
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Email
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Hospital
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Risk
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Assessment
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Status
-              </th>
-              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
-                Assigned At
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {allAssignments.map((a) => (
-              <tr
-                key={a.qc_assignment_id}
+              <div
                 style={{
-                  borderBottom: '1px solid #dee2e6',
+                  maxHeight: '80vh',
+                  overflowY: 'auto',
+                  overflowX: 'auto',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '6px',
+                  width: '100%',
+                  boxSizing: 'border-box'
                 }}
               >
-                <td style={qcTdStyle}>{a.display_id || a.id?.substring(0, 8)}</td>
-                <td style={qcTdStyle}>{a.radiologist_name || '—'}</td>
-                <td style={qcTdStyle}>{a.radiologist_email}</td>
-                <td style={{ ...qcTdStyle, fontSize: 12 }}>
-                  {a.qc_short_name || '-'}
-                </td>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    minWidth: '1000px',
+                    backgroundColor: '#fff',
+                    border: '1px solid #dee2e6',
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Subject ID
+                      </th>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Radiologist
+                      </th>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Email
+                      </th>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Hospital
+                      </th>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Risk
+                      </th>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Assessment
+                      </th>
+                      <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
 
-                <td style={qcTdStyle}>
-                  {a.risk_category ? (
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        padding: '4px 12px',
-                        borderRadius: 12,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        backgroundColor: RISK_COLORS[a.risk_category] || '#eee',
-                        color: '#111',
-                      }}
-                    >
-                      {a.risk_category.replace(' Risk', '')}
-                    </span>
-                  ) : (
-                    '-'
-                  )}
-                </td>
+                  <tbody>
+                    {allAssignments.map((a) => (
+                      <tr
+                        key={a.qc_assignment_id}
+                        style={{
+                          borderBottom: '1px solid #dee2e6',
+                        }}
+                      >
+                        <td style={qcTdStyle}>{a.display_id || a.id?.substring(0, 8)}</td>
+                        <td style={qcTdStyle}>{a.radiologist_name || '—'}</td>
+                        <td style={qcTdStyle}>{a.radiologist_email}</td>
+                        <td style={{ ...qcTdStyle, fontSize: 12 }}>
+                          {a.qc_short_name || '-'}
+                        </td>
 
-                <td style={statusCellStyle(a.has_assessment)}>
-                  {a.has_assessment ? 'Yes' : 'No'}
-                </td>
+                        <td style={qcTdStyle}>
+                          {a.risk_category ? (
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '4px 12px',
+                                borderRadius: 12,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                backgroundColor: RISK_COLORS[a.risk_category] || '#eee',
+                                color: '#111',
+                              }}
+                            >
+                              {a.risk_category.replace(' Risk', '')}
+                            </span>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
 
-                <td style={qcTdStyle}>
-                  <span
-                    style={{
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      backgroundColor:
-                        a.qc_status === 'Completed' ? '#DFF5E1' : '#FFF3D6',
-                      color:
-                        a.qc_status === 'Completed' ? '#1E7B34' : '#8A6D00',
-                    }}
-                  >
-                    {a.qc_status}
-                  </span>
-                </td>
+                        <td style={statusCellStyle(a.has_assessment)}>
+                          {a.has_assessment ? 'Yes' : 'No'}
+                        </td>
 
-                <td style={qcTdStyle}>
-                  {a.qc_assigned_at
-                    ? new Date(a.qc_assigned_at).toLocaleString()
-                    : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                        <td style={qcTdStyle}>
+                          <span
+                            style={{
+                              padding: '3px 10px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              backgroundColor:
+                                a.qc_status === 'Completed' ? '#DFF5E1' : '#FFF3D6',
+                              color:
+                                a.qc_status === 'Completed' ? '#1E7B34' : '#8A6D00',
+                            }}
+                          >
+                            {a.qc_status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {isAdminModalOpen && selectedAdminSubject && (
