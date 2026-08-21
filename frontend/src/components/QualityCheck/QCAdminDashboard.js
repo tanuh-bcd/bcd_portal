@@ -27,7 +27,7 @@ const cardStyle = {
   border: '1px solid #B7E0D8',
   borderRadius: '8px',
   backgroundColor: '#F3FAF8',
-  marginBottom: '30px'
+  margin: '10px'
 };
 
 const cardHeaderStyle = {
@@ -182,15 +182,43 @@ const ddEmptyStyle = {
   textAlign: 'center'
 };
 
-/**
- * Generic searchable dropdown.
- * - multiple=false: single select, click an option to choose + close.
- * - multiple=true: checkbox per option, stays open, selected values via array.
- */
+const qcThStyle = {
+  padding: '10px 12px',
+  textAlign: 'left',
+  color: '#495057',
+  fontWeight: '600',
+  whiteSpace: 'nowrap',
+  backgroundColor: '#fff',
+  borderRight: '1px solid #dee2e6',
+  borderBottom: '1px solid #dee2e6',
+};
+
+const qcTdStyle = {
+  padding: '10px 12px',
+  backgroundColor: '#fff',
+  borderRight: '1px solid #dee2e6',
+  borderBottom: '1px solid #dee2e6',
+};
+
+const RISK_COLORS = {
+  'Baseline Risk': '#6ee7b7',
+  'Evident Risk': '#fde047',
+  'Significant Risk': '#fb923c',
+  'High Risk': '#fb7185'
+};
+
+const statusCellStyle = (isTrue) => ({
+  padding: '10px 12px',
+  textAlign: 'left',
+  color: isTrue ? 'green' : 'red',
+  fontWeight: 'bold',
+});
+
 const SearchableDropdown = ({
   options,
   getValue,
   getLabel,
+  getDisabled = () => false,
   multiple = false,
   selected,
   onChange,
@@ -223,6 +251,7 @@ const SearchableDropdown = ({
       : selected === getValue(opt);
 
   const handleSelect = (opt) => {
+    if (getDisabled(opt)) return;   // NEW - block selection
     if (multiple) {
       const val = getValue(opt);
       const next = selected.includes(val)
@@ -235,6 +264,36 @@ const SearchableDropdown = ({
       setQuery('');
     }
   };
+
+  // in the option render:
+  {
+    filtered.map((opt, idx) => {
+      const val = getValue(opt);
+      const selectedFlag = isSelected(opt);
+      const disabled = getDisabled(opt);   // NEW
+      return (
+        <div
+          key={val}
+          style={{
+            ...ddOptionStyle,
+            ...(hoverIdx === idx && !disabled ? ddOptionHoverStyle : {}),
+            ...(selectedFlag && !multiple ? { backgroundColor: '#E6F4F1' } : {}),
+            ...(disabled ? { opacity: 0.45, cursor: 'not-allowed', backgroundColor: '#f5f5f5' } : {})
+          }}
+          onMouseEnter={() => !disabled && setHoverIdx(idx)}
+          onMouseLeave={() => setHoverIdx(-1)}
+          onClick={() => handleSelect(opt)}
+        >
+          {multiple && (
+            <input type="checkbox" checked={selectedFlag} readOnly disabled={disabled} style={{ cursor: disabled ? 'not-allowed' : 'pointer' }} />
+          )}
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {getLabel(opt)}{disabled ? ' (Already Assigned)' : ''}
+          </span>
+        </div>
+      );
+    })
+  }
 
   const triggerLabel = () => {
     if (loading) return 'Loading...';
@@ -279,15 +338,17 @@ const SearchableDropdown = ({
             {filtered.map((opt, idx) => {
               const val = getValue(opt);
               const selectedFlag = isSelected(opt);
+              const disabled = getDisabled(opt);
               return (
                 <div
                   key={val}
                   style={{
                     ...ddOptionStyle,
-                    ...(hoverIdx === idx ? ddOptionHoverStyle : {}),
-                    ...(selectedFlag && !multiple ? { backgroundColor: '#E6F4F1' } : {})
+                    ...(hoverIdx === idx && !disabled ? ddOptionHoverStyle : {}),
+                    ...(selectedFlag && !multiple ? { backgroundColor: '#E6F4F1' } : {}),
+                    ...(disabled ? { opacity: 0.45, cursor: 'not-allowed', backgroundColor: '#f5f5f5' } : {})
                   }}
-                  onMouseEnter={() => setHoverIdx(idx)}
+                  onMouseEnter={() => !disabled && setHoverIdx(idx)}
                   onMouseLeave={() => setHoverIdx(-1)}
                   onClick={() => handleSelect(opt)}
                 >
@@ -296,11 +357,12 @@ const SearchableDropdown = ({
                       type="checkbox"
                       checked={selectedFlag}
                       readOnly
-                      style={{ cursor: 'pointer' }}
+                      disabled={disabled}
+                      style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
                     />
                   )}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {getLabel(opt)}
+                    {getLabel(opt)}{disabled ? ' (Already Assigned)' : ''}
                   </span>
                 </div>
               );
@@ -349,23 +411,54 @@ const QCAdminDashboard = () => {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${localStorage.getItem('qcToken')}`
   };
-
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
-
   const [subjects, setSubjects] = useState([]);
   const [subjectsLoading, setSubjectsLoading] = useState(true);
-
   const [selectedUser, setSelectedUser] = useState('');
-  const [selectedSubjects, setSelectedSubjects] = useState([]); // now an array
-
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [allAssignments, setAllAssignments] = useState([]);
+  const [allAssignmentsLoading, setAllAssignmentsLoading] = useState(true);
+  const [selectedAdminSubject, setSelectedAdminSubject] = useState(null);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminDetailLoading, setAdminDetailLoading] = useState(false);
+  const [totalSubjects, setTotalSubjects] = useState(0);
+
+  const fetchAdminSubjectDetail = async (sessionId, radiologistId) => {
+    setAdminDetailLoading(true);
+    try {
+      const response = await fetch(
+        `${apiBase}/api/v1/qc/radiologist/${radiologistId}/subjects/${sessionId}`,
+        { headers: authHeaders }
+      );
+      if (response.status === 401) {
+        toast.error('Session expired, please log in again');
+        navigate('/qc-bcd-login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to fetch subject details');
+      const data = await response.json();
+      setSelectedAdminSubject(data);
+      setIsAdminModalOpen(true);
+    } catch (err) {
+      console.error('Failed to fetch subject details', err);
+      toast.error('An error occurred while loading subject details');
+    } finally {
+      setAdminDetailLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authChecked) return;
     fetchUsers();
     fetchSubjects();
+    fetchAllAssignments();
     // eslint-disable-next-line
   }, [authChecked]);
 
@@ -392,7 +485,7 @@ const QCAdminDashboard = () => {
   const fetchSubjects = async () => {
     setSubjectsLoading(true);
     try {
-      const response = await fetch(`${apiBase}/api/v1/qc/subjects`, { headers: authHeaders });
+      const response = await fetch(`${apiBase}/api/v1/qc/subjects-list`, { headers: authHeaders });
       if (response.status === 401) {
         toast.error('Session expired, please log in again');
         navigate('/qc-bcd-login');
@@ -400,7 +493,9 @@ const QCAdminDashboard = () => {
       }
       if (!response.ok) throw new Error('Failed to fetch subjects');
       const data = await response.json();
-      setSubjects(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data?.subjects) ? data.subjects : [];
+      setSubjects(list);
+      setTotalSubjects(typeof data?.total === 'number' ? data.total : list.length);
     } catch (err) {
       console.error('Failed to fetch subjects', err);
       toast.error('Failed to load subjects list');
@@ -409,49 +504,84 @@ const QCAdminDashboard = () => {
     }
   };
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const handleCreateClick = () => {
-    if (!selectedUser || selectedSubjects.length === 0) {
-      toast.error('Please select a user and at least one subject');
+    const trimmedEmail = email.trim();
+    const trimmedName = fullName.trim();
+
+    if (!trimmedName || !trimmedEmail || !password || selectedSubjects.length === 0) {
+      toast.error('Please enter full name, email, password, and select at least one subject');
       return;
     }
+
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     setShowConfirm(true);
   };
-const confirmCreate = async () => {
-  setCreating(true);
-  try {
-    const response = await fetch(`${apiBase}/api/v1/qc/assignments`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify({
-        assessment_ids: selectedSubjects.map(Number),
-        radiologist_id: Number(selectedUser),
-        assigned: 'yes'
-      })
-    });
-    const data = await response.json();
-    if (response.ok) {
-      const createdCount = data.created?.length || 0;
-      const skippedCount = data.skipped?.length || 0;
-      toast.success(
-        `${createdCount} stud${createdCount === 1 ? 'y' : 'ies'} created` +
-        (skippedCount ? `, ${skippedCount} already assigned` : '')
-      );
-      setSelectedUser('');
-      setSelectedSubjects([]);
-    } else {
-      toast.error(data.detail || 'Failed to create study');
+
+  const confirmCreate = async () => {
+    setCreating(true);
+    try {
+      const response = await fetch(`${apiBase}/api/v1/qc/assignments`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          assessment_ids: selectedSubjects.map(Number),
+          full_name: fullName.trim(),
+          email: email.trim(),
+          password: password,
+          role: 'QC Radiologist',
+          assigned: 'yes'
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const createdCount = data.created?.length || 0;
+        const skippedCount = data.skipped?.length || 0;
+        toast.success(
+          `${createdCount} stud${createdCount === 1 ? 'y' : 'ies'} created` +
+          (skippedCount ? `, ${skippedCount} already assigned` : '')
+        );
+        setFullName('');
+        setEmail('');
+        setPassword('');
+        setSelectedSubjects([]);
+        fetchAllAssignments();
+      } else {
+        toast.error(data.detail || 'Failed to create study');
+      }
+    } catch (err) {
+      console.error('Create study error', err);
+      toast.error('An error occurred while creating the study');
+    } finally {
+      setCreating(false);
+      setShowConfirm(false);
     }
-  } catch (err) {
-    console.error('Create study error', err);
-    toast.error('An error occurred while creating the study');
-  } finally {
-    setCreating(false);
-    setShowConfirm(false);
-  }
-};
-  if (!authChecked) {
-    return null;
-  }
+  };
+
+  const fetchAllAssignments = async () => {
+    setAllAssignmentsLoading(true);
+    try {
+      const response = await fetch(`${apiBase}/api/v1/qc/admin/all/assignments`, { headers: authHeaders });
+      if (response.status === 401) {
+        toast.error('Session expired, please log in again');
+        navigate('/qc-bcd-login');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to fetch assignments');
+      const data = await response.json();
+      setAllAssignments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch assignments', err);
+      toast.error('Failed to load assignments');
+    } finally {
+      setAllAssignmentsLoading(false);
+    }
+  };
 
   const selectedSubjectLabels = subjects
     .filter((s) => selectedSubjects.includes(String(s.qc_id)))
@@ -466,23 +596,62 @@ const confirmCreate = async () => {
         </span>
       </div>
 
-      <div style={{ marginTop: '20px' }}>
+      <div style={{ marginTop: '20px' ,backgroundColor: '#F3FAF8',padding: '20px', borderRadius: '8px'}}>
         <div style={cardStyle}>
           <div style={cardHeaderStyle}>Create New Study</div>
           <div style={fieldWrapStyle}>
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Assign User</label>
-              <SearchableDropdown
-                options={users}
-                getValue={(u) => String(u.qc_id)}
-                getLabel={(u) => u.qc_full_name || u.qc_email}
-                multiple={false}
-                selected={selectedUser}
-                onChange={setSelectedUser}
-                placeholder="Select User"
-                loading={usersLoading}
-                emptyText="No users found"
+              <label style={labelStyle}>Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Dr. Jane Doe"
+                autoComplete="off"
+                name="qc-assign-fullname"
+                style={ddTriggerStyle}
               />
+            </div>
+
+            <div style={fieldGroupStyle}>
+              <label style={labelStyle}>User Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="user@example.com"
+                autoComplete="off"
+                name="qc-assign-email"
+                style={ddTriggerStyle}
+              />
+            </div>
+
+            <div style={fieldGroupStyle}>
+              <label style={labelStyle}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Set login password for this user"
+                  autoComplete="new-password"
+                  name="qc-assign-password"
+                  style={{ ...ddTriggerStyle, paddingRight: '38px' }}
+                />
+                <span
+                  onClick={() => setShowPassword((s) => !s)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    cursor: 'pointer',
+                    fontSize: '15px'
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </span>
+              </div>
             </div>
 
             <div style={fieldGroupStyle}>
@@ -491,6 +660,7 @@ const confirmCreate = async () => {
                 options={subjects}
                 getValue={(s) => String(s.qc_id)}
                 getLabel={(s) => s.display_id}
+                getDisabled={(s) => s.is_assigned}
                 multiple={true}
                 selected={selectedSubjects}
                 onChange={setSelectedSubjects}
@@ -498,6 +668,9 @@ const confirmCreate = async () => {
                 loading={subjectsLoading}
                 emptyText="No subjects found"
               />
+              <div style={{ marginTop: '6px', fontSize: '12.5px', color: '#555' }}>
+                Total Subjects: {subjectsLoading ? '…' : totalSubjects}
+              </div>
               {selectedSubjects.length > 0 && (
                 <div style={{ marginTop: '8px', fontSize: '12.5px', color: '#555' }}>
                   {selectedSubjects.length} selected: {selectedSubjectLabels.join(', ')}
@@ -516,6 +689,160 @@ const confirmCreate = async () => {
         </div>
       </div>
 
+      <div
+        style={{
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          overflowX: 'auto',
+          border: '1px solid #dee2e6',
+          borderRadius: '6px',
+        }}
+      >
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            minWidth: '1000px',
+            backgroundColor: '#fff',
+            border: '1px solid #dee2e6',
+          }}
+        >
+          <thead>
+            <tr>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Subject ID
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Radiologist
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Email
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Hospital
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Risk
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Assessment
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Status
+              </th>
+              <th style={{ ...qcThStyle, position: 'sticky', top: 0, zIndex: 1 }}>
+                Assigned At
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {allAssignments.map((a) => (
+              <tr
+                key={a.qc_assignment_id}
+                style={{
+                  borderBottom: '1px solid #dee2e6',
+                }}
+              >
+                <td style={qcTdStyle}>{a.display_id || a.id?.substring(0, 8)}</td>
+                <td style={qcTdStyle}>{a.radiologist_name || '—'}</td>
+                <td style={qcTdStyle}>{a.radiologist_email}</td>
+                <td style={{ ...qcTdStyle, fontSize: 12 }}>
+                  {a.qc_short_name || '-'}
+                </td>
+
+                <td style={qcTdStyle}>
+                  {a.risk_category ? (
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        backgroundColor: RISK_COLORS[a.risk_category] || '#eee',
+                        color: '#111',
+                      }}
+                    >
+                      {a.risk_category.replace(' Risk', '')}
+                    </span>
+                  ) : (
+                    '-'
+                  )}
+                </td>
+
+                <td style={statusCellStyle(a.has_assessment)}>
+                  {a.has_assessment ? 'Yes' : 'No'}
+                </td>
+
+                <td style={qcTdStyle}>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      backgroundColor:
+                        a.qc_status === 'Completed' ? '#DFF5E1' : '#FFF3D6',
+                      color:
+                        a.qc_status === 'Completed' ? '#1E7B34' : '#8A6D00',
+                    }}
+                  >
+                    {a.qc_status}
+                  </span>
+                </td>
+
+                <td style={qcTdStyle}>
+                  {a.qc_assigned_at
+                    ? new Date(a.qc_assigned_at).toLocaleString()
+                    : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isAdminModalOpen && selectedAdminSubject && (
+        <div style={modalOverlayStyle} onClick={() => setIsAdminModalOpen(false)}>
+          <div
+            style={{ backgroundColor: '#fff', width: '80%', maxWidth: '90vw', maxHeight: '80vh', borderRadius: '8px', display: 'flex', flexDirection: 'column', boxShadow: '0 5px 15px rgba(0,0,0,0.3)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: '15px 20px', borderBottom: '1px solid #dee2e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Responses for Subject ID: {selectedAdminSubject.patient_id || selectedAdminSubject.id}</h3>
+              <button style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }} onClick={() => setIsAdminModalOpen(false)}>&times;</button>
+            </div>
+            <div style={{ padding: '20px', overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa' }}>Question</th>
+                    <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #dee2e6', backgroundColor: '#f8f9fa' }}>Answer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedAdminSubject.responses && selectedAdminSubject.responses.length > 0 ? (
+                    selectedAdminSubject.responses.map((resp) => (
+                      <tr key={resp.id}>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{resp.question}</td>
+                        <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{resp.answer}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr><td colSpan="2" style={{ padding: '10px', borderBottom: '1px solid #eee' }}>No responses found for this session.</td></tr>
+                  )}
+                </tbody>
+              </table>
+              {!selectedAdminSubject.assessment && (
+                <div style={{ marginTop: 16, padding: '10px 16px', borderRadius: 6, backgroundColor: '#f0f4ff', border: '1px solid #c8d8f8', color: '#3a5a9e', fontSize: 13 }}>
+                  No assessment has been submitted for this subject yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {showConfirm && (
         <div style={modalOverlayStyle}>
           <div style={modalStyle}>

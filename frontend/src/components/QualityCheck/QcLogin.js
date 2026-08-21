@@ -56,8 +56,13 @@ const QcLogin = () => {
         localStorage.setItem('qcRole', formData.role);
         localStorage.setItem('qcUserEmail', formData.email);
         localStorage.setItem('qcUserName', userName);
+        localStorage.setItem('qcUserId', String(data.qc_id));
 
-        navigate('/quality-check/dashboard');
+        if (formData.role === 'QC Radiologist') {
+          navigate('/qc-radiologist/dashboard');
+        } else {
+          navigate('/quality-check/dashboard');
+        }
       } else {
         const errorMsg = data.detail || 'Credentials wrong';
         toast.error(errorMsg);

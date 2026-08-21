@@ -38,10 +38,11 @@ def qc_login(login_data: QcLoginRequest, db: Session = Depends(get_qc_db)):
         data={"sub": user.qc_email, "role": role.qc_name, "is_qc_user": True}
     )
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "full_name": user.qc_full_name or ""
-    }
+    "access_token": access_token,
+    "token_type": "bearer",
+    "full_name": user.qc_full_name or "",
+    "qc_id": user.qc_id,
+}
 
 @router.get("/qc-roles", response_model=List[QcRoleResponse])
 def get_qc_roles(db: Session = Depends(get_qc_db)):

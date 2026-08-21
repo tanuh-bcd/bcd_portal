@@ -12,6 +12,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import QcLogin from './components/QualityCheck/QcLogin';
 import QCAdminDashboard from './components/QualityCheck/QCAdminDashboard';
+import QcRadiologistSubjects from './components/QualityCheck/QcRadiologistSubjects';
 
 const Stats = lazy(() => import('./components/Stats'));
 const Demo = lazy(() => import('./components/Demo'));
@@ -50,7 +51,8 @@ function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/patient" element={<PatientPage />} />
             <Route path="/doctor" element={<DoctorPage />} />
-             <Route path="quality-check/dashboard" element={<QCAdminDashboard />} />
+            <Route path="/quality-check/dashboard" element={<QCAdminDashboard />} />
+           <Route path="/qc-radiologist/dashboard" element={<QcRadiologistSubjects />} />
           </Routes>
         </Suspense>
         <Footer />

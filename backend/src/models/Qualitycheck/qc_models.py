@@ -15,6 +15,7 @@ class QcHospital(QcBase):
 
     qc_id = Column(String(20), primary_key=True)
     qc_name = Column(String(255), nullable=False)
+    qc_short_name = Column(String(50), nullable=True)  
 
 class QcUser(QcBase):
     __tablename__ = "qc_users"
@@ -51,7 +52,12 @@ class QcAssignment(QcBase):
     qc_id = Column(Integer, primary_key=True, autoincrement=True)
     qc_assessment_id = Column(Integer, ForeignKey("qc_doctor_assessments.qc_id"), nullable=False)
     qc_radiologist_id = Column(Integer, ForeignKey("qc_users.qc_id"), nullable=False)
+    qc_role_id = Column(Integer, ForeignKey("qc_roles.qc_id"), nullable=True)
     qc_assigned_by = Column(Integer, ForeignKey("qc_users.qc_id"), nullable=True)
-    qc_status = Column(Enum(QcAssignmentStatus), nullable=False, default=QcAssignmentStatus.pending)
+    qc_status = Column(
+        Enum(QcAssignmentStatus, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+        default=QcAssignmentStatus.pending,
+    )
     qc_assigned_at = Column(TIMESTAMP, nullable=True)
     qc_completed_at = Column(TIMESTAMP, nullable=True)

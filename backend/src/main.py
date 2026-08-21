@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 import time
 import logging
 from fastapi.middleware.cors import CORSMiddleware
+from .api.Qualitycheck import qc_radiologist
 from .core.config import settings
 from .api import (
     auth,
@@ -64,6 +65,7 @@ app.include_router(model_weights.router, prefix="/api/v1/model-weights", tags=["
 app.include_router(risk_thresholds.router, prefix="/api/v1/risk-thresholds", tags=["risk-thresholds"])
 app.include_router(qc_auth.router, prefix="/api/v1/auth", tags=["qc-auth"])
 app.include_router(qc_admin.router, prefix="/api/v1/qc", tags=["qc-admin"])
+app.include_router(qc_radiologist.router, prefix="/api/v1/qc", tags=["QC Radiologist"])
 
 
 @app.get("/api/health")
