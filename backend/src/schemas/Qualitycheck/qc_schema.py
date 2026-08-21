@@ -42,10 +42,17 @@ class QcSubjectResponse(BaseModel):
         from_attributes = True
 
 
-class QcAssignmentCreate(BaseModel):
-    assessment_id: int
-    radiologist_id: int
+from typing import List, Literal
 
+class QcAssignmentCreate(BaseModel):
+    assessment_ids: List[int]
+    radiologist_id: int
+    assigned: Literal["yes", "no"] = "no"
+
+
+class QcAssignmentBatchResponse(BaseModel):
+    created: List[QcAssignmentResponse]
+    skipped: List[int]
 
 class QcAssignmentResponse(BaseModel):
     qc_id: int

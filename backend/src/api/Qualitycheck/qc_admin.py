@@ -7,7 +7,7 @@ from typing import List
 from ...db.Qualitycheck.qc_session import get_qc_db
 from ...models.Qualitycheck.qc_models import QcUser, QcRole, QcDoctorAssessment, QcAssignment, QcAssignmentStatus
 from ...schemas.Qualitycheck.qc_schema import (
-    QcUserResponse, QcSubjectResponse, QcAssignmentCreate, QcAssignmentResponse
+    QcAssignmentBatchResponse, QcUserResponse, QcSubjectResponse, QcAssignmentCreate, QcAssignmentResponse
 )
 from ...core.config import settings
 
@@ -57,36 +57,58 @@ def get_qc_subjects(db: Session = Depends(get_qc_db), _current=Depends(get_curre
     ]
 
 
-@router.post("/assignments", response_model=QcAssignmentResponse)
-def create_assignment(
+@router.post("/assignments", response_model=QcAssignmentBatchResponse)
+def create_assignments(
     payload: QcAssignmentCreate,
     db: Session = Depends(get_qc_db),
     current=Depends(get_current_qc_user),
 ):
-    assessment = db.query(QcDoctorAssessment).filter(QcDoctorAssessment.qc_id == payload.assessment_id).first()
-    if not assessment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subject not found")
+    if not payload.assessment_ids:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No subjects selected")
 
     user = db.query(QcUser).filter(QcUser.qc_id == payload.radiologist_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    assessments = db.query(QcDoctorAssessment).filter(
+        QcDoctorAssessment.qc_id.in_(payload.assessment_ids)
+    ).all()
+    found_ids = {a.qc_id for a in assessments}
+    missing_ids = set(payload.assessment_ids) - found_ids
+    if missing_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Subjects not found: {sorted(missing_ids)}"
+        )
+
     existing = db.query(QcAssignment).filter(
-        QcAssignment.qc_assessment_id == payload.assessment_id,
+        QcAssignment.qc_assessment_id.in_(payload.assessment_ids),
         QcAssignment.qc_radiologist_id == payload.radiologist_id,
-    ).first()
-    if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already assigned to this user")
+    ).all()
+    already_assigned_ids = {e.qc_assessment_id for e in existing}
 
     assigned_by_user = db.query(QcUser).filter(QcUser.qc_email == current["email"]).first()
 
-    assignment = QcAssignment(
-        qc_assessment_id=payload.assessment_id,
-        qc_radiologist_id=payload.radiologist_id,
-        qc_assigned_by=assigned_by_user.qc_id if assigned_by_user else None,
-        qc_status=QcAssignmentStatus.pending,
-    )
-    db.add(assignment)
+    new_assignments = []
+    for assessment_id in payload.assessment_ids:
+        if assessment_id in already_assigned_ids:
+            continue
+        assignment = QcAssignment(
+            qc_assessment_id=assessment_id,
+            qc_radiologist_id=payload.radiologist_id,
+            qc_assigned_by=assigned_by_user.qc_id if assigned_by_user else None,
+            qc_status=QcAssignmentStatus.pending,
+        )
+        db.add(assignment)
+        new_assignments.append(assignment)
+
+    user.qc_assigned = payload.assigned == "yes"
+
     db.commit()
-    db.refresh(assignment)
-    return assignment
+    for a in new_assignments:
+        db.refresh(a)
+
+    return QcAssignmentBatchResponse(
+        created=[QcAssignmentResponse(qc_id=a.qc_id, qc_status=a.qc_status.value) for a in new_assignments],
+        skipped=sorted(already_assigned_ids),
+    )

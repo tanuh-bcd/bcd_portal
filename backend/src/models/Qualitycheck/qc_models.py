@@ -26,6 +26,7 @@ class QcUser(QcBase):
     qc_full_name = Column(String(255), nullable=True)
     qc_is_active = Column(Boolean, default=True)
     qc_hospital_id = Column(String(20), ForeignKey("qc_hospitals.qc_id"), nullable=True)
+    qc_assigned = Column(Boolean, nullable=False, default=False)
 
     role = relationship("QcRole")
 
