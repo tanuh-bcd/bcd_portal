@@ -84,16 +84,6 @@ const CustomTooltip = ({ active, payload, label }) => {
             <span className="value">{row.state}</span>
           </div>
 
-          <div className="tooltip-item">
-            <span className="name">Total Assessments:</span>
-            <span className="value">{row.assessment_count}</span>
-          </div>
-
-          <div className="tooltip-item">
-            <span className="name">Total Subjects:</span>
-            <span className="value">{row.subject_count}</span>
-          </div>
-
           <hr style={{ margin: "8px 0", border: "0", borderTop: "1px solid #e5e7eb" }} />
         </>
       )}
@@ -111,14 +101,24 @@ const CustomTooltip = ({ active, payload, label }) => {
       )}
 
       {payload.map((entry, i) => (
-        <div key={i} className="tooltip-item">
-          <span
-            className="dot"
-            style={{ backgroundColor: entry.color || entry.fill }}
-          />
-          <span className="name">{entry.name}:</span>
-          <span className="value">{entry.value}</span>
-        </div>
+        <React.Fragment key={i}>
+          <div className="tooltip-item">
+            <span
+              className="dot"
+              style={{ backgroundColor: entry.color || entry.fill }}
+            />
+            <span className="name">{entry.name}:</span>
+            <span className="value">{entry.value}</span>
+          </div>
+
+          {i === 0 && row.assessment_count !== undefined && (
+            <div className="tooltip-item">
+              <span className="dot" style={{ backgroundColor: 'transparent' }} />
+              <span className="name">Total Assessment:</span>
+              <span className="value">{row.assessment_count}</span>
+            </div>
+          )}
+        </React.Fragment>
       ))}
     </div>
   );
@@ -783,6 +783,202 @@ const InstituteOrbitCloud = ({ byHospital }) => {
   );
 };
 
+export const BiradsDensitySection = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_URL = process.env.REACT_APP_API_URL || '';
+
+  useEffect(() => {
+    const fetchMammoStats = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        if (!response.ok) throw new Error('Failed to load mammogram stats');
+        const json = await response.json();
+        setData(json);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMammoStats();
+  }, [API_URL]);
+
+  if (loading) return <div className="stats-loader">Loading BIRADS data...</div>;
+  if (error) return <div className="stats-error">Error: {error}</div>;
+  if (!data) return null;
+
+  return (
+    <div className="charts-grid" style={{ overflow: 'visible' }}>
+      <div className="chart-card full-width">
+        <div
+          className="birads-charts-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '3fr 2fr',
+            gap: '12px',
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* 60% */}
+          <div style={{ width: '100%', minWidth: 0 }}>
+            <BiradsStatsChart
+              title="BIRADS Category"
+              data={data.biradsCategory}
+              categoryKey="category"
+              yMax={300}
+              seriesName="Category"
+              getBarColor={(entry) => getZoneColor(Number(entry.category))}
+            />
+          </div>
+
+          {/* 40% */}
+          <div style={{ width: '100%', minWidth: 0 }}>
+            <BiradsStatsChart
+              title="Breast Density"
+              data={data.biradsDensity}
+              categoryKey="density"
+              yMax={200}
+              seriesName="Density"
+              getBarColor={(entry, idx) => getDensityColor(idx)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const CrDrModalitySection = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_URL = process.env.REACT_APP_API_URL || '';
+
+  useEffect(() => {
+    const fetchMammoStats = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        if (!response.ok) throw new Error('Failed to load mammogram stats');
+        const json = await response.json();
+        setData(json);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMammoStats();
+  }, [API_URL]);
+
+  if (loading) return <div className="stats-loader">Loading modality data...</div>;
+  if (error) return <div className="stats-error">Error: {error}</div>;
+  if (!data) return null;
+
+  const hospitalTypeBreakdown = (data.hospitalTypeBreakdown || []).map((entry) => ({
+    ...entry,
+    hospitals: filterExcludedEntities(entry.hospitals),
+  }));
+
+  return (
+    <div className="chart-card full-width">
+      <h3 style={{ color: '#14868C' }}>Machine Modality (CR / DR)</h3>
+      <div className="chart-wrapper pie-wrapper">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={hospitalTypeBreakdown.map((entry) => ({
+                ...entry,
+                displayName: CR_DR_LABELS[entry.name] || entry.name,
+              }))}
+              cx="50%" cy="50%" outerRadius="80%"
+              dataKey="value" nameKey="displayName"
+              labelLine={false}
+              label={CustomPieLabel}
+            >
+              {hospitalTypeBreakdown.map((entry, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              content={<CustomTooltip />}
+              wrapperStyle={{ left: '50%', top: 0, transform: 'translateX(-50%)' }}
+            />
+            <Legend verticalAlign="bottom" height={36} content={<CustomLegend />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+const RISK_ORDER = ['Baseline Risk', 'Evident Risk', 'Significant Risk', 'High Risk'];
+
+export const RiskPredictionSection = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const API_URL = process.env.REACT_APP_API_URL || '';
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/stats/`);
+        if (!response.ok) throw new Error('Failed to load stats');
+        const json = await response.json();
+        setData(json);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, [API_URL]);
+
+  if (loading) return <div className="stats-loader">Loading risk data...</div>;
+  if (error) return <div className="stats-error">Error: {error}</div>;
+  if (!data) return null;
+
+  const riskBins = (data.riskBins || [])
+    .map((bin) => {
+      if (bin.name === 'No Risk' || bin.name === 'Average Risk') return { ...bin, name: 'Baseline Risk' };
+      if (bin.name === 'Low Risk' || bin.name === 'Low-Intermediate Risk' || bin.name === 'Intermediate Risk') return { ...bin, name: 'Evident Risk' };
+      if (bin.name === 'Moderate Risk') return { ...bin, name: 'Significant Risk' };
+      return bin;
+    })
+    .sort((a, b) => RISK_ORDER.indexOf(a.name) - RISK_ORDER.indexOf(b.name));
+
+  return (
+    <div className="chart-card full-width">
+      <h3>Risk Prediction <a href="#risk-categories-table" style={{ color: '#e03944', fontWeight: 700, textDecoration: 'none' }}>*</a></h3>
+      <div className="chart-wrapper pie-wrapper">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={riskBins} cx="50%" cy="50%" outerRadius="80%" fill="#8884d8" dataKey="value" labelLine={false} label={CustomPieLabel}>
+              {riskBins.map((entry, index) => {
+                let cellColor = '#3498db';
+                if (entry.name === 'High Risk') cellColor = '#fb7185';
+                if (entry.name === 'Significant Risk') cellColor = '#fb923c';
+                if (entry.name === 'Evident Risk') cellColor = '#fde047';
+                if (entry.name === 'Baseline Risk') cellColor = '#6ee7b7';
+                return <Cell key={`cell-${index}`} fill={cellColor} />;
+              })}
+            </Pie>
+            <Tooltip />
+            <Legend verticalAlign="bottom" height={36} content={<CustomLegend />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
 const MammogramStats = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -814,10 +1010,12 @@ const MammogramStats = () => {
   const completionRate = data.completionRate || { viewsUploaded: 0, totalSubjects: 0, rate: 0 };
 
   const byHospital = mergeDuplicateInstitutes(filterExcludedEntities(data.byHospital));
-  const hospitalTypeBreakdown = (data.hospitalTypeBreakdown || []).map((entry) => ({
-    ...entry,
-    hospitals: filterExcludedEntities(entry.hospitals),
-  }));
+  const byHospitalMax = byHospital.reduce(
+    (max, h) => Math.max(max, h.subject_count || 0, h.report_count || 0),
+    0
+  );
+  const byHospitalYMax = Math.max(300, Math.ceil(byHospitalMax / 50) * 50);
+  const byHospitalYTicks = Array.from({ length: byHospitalYMax / 50 + 1 }, (_, i) => i * 50);
 
   return (
     <div style={{ marginTop: 20 }}>
@@ -841,80 +1039,16 @@ const MammogramStats = () => {
 
       <div className="charts-grid" style={{ overflow: 'visible' }}>
         <div className="chart-card full-width">
-          <h3 style={{ color: '#14868C' }}>Machine Modality (CR / DR)</h3>
-          <div className="chart-wrapper pie-wrapper">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={hospitalTypeBreakdown.map((entry) => ({
-                    ...entry,
-                    displayName: CR_DR_LABELS[entry.name] || entry.name,
-                  }))}
-                  cx="50%" cy="50%" outerRadius="80%"
-                  dataKey="value" nameKey="displayName"
-                  labelLine={false}
-                  label={CustomPieLabel}
-                >
-                  {hospitalTypeBreakdown.map((entry, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={<CustomTooltip />}
-                  wrapperStyle={{ left: '50%', top: 0, transform: 'translateX(-50%)' }}
-                />
-                <Legend verticalAlign="bottom" height={36} content={<CustomLegend />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        <div className="chart-card full-width">
-          <div
-            className="birads-charts-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '3fr 2fr',
-              gap: '12px',
-              width: '100%',
-              boxSizing: 'border-box',
-            }}
-          >
-            {/* 60% */}
-            <div style={{ width: '100%', minWidth: 0 }}>
-              <BiradsStatsChart
-                title="BIRADS Category"
-                data={data.biradsCategory}
-                categoryKey="category"
-                yMax={300}
-                seriesName="Category"
-                getBarColor={(entry) => getZoneColor(Number(entry.category))}
-              />
-            </div>
-
-            {/* 40% */}
-            <div style={{ width: '100%', minWidth: 0 }}>
-              <BiradsStatsChart
-                title="Breast Density"
-                data={data.biradsDensity}
-                categoryKey="density"
-                yMax={200}
-                seriesName="Density"
-                getBarColor={(entry, idx) => getDensityColor(idx)}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="chart-card full-width">
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <h3 style={{ margin: 0, color: '#14868C' }}>Mammogram Uploads by Institution</h3>
             <div style={{ display: 'flex', gap: 16, fontFamily: 'Poppins', fontSize: 12.5, color: '#6b7280' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#6ee7b7', display: 'inline-block' }} />
-                {byHospital.reduce((s, h) => s + (h.dicom_count || 0), 0)} DICOM views
+                <span style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fb923c', display: 'inline-block' }} />
+                {byHospital.reduce((s, h) => s + (h.subject_count || 0), 0)} total subjects
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#fb923c', display: 'inline-block' }} />
-                {byHospital.reduce((s, h) => s + (h.report_count || 0), 0)} reports
+                <span style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: '#6ee7b7', display: 'inline-block' }} />
+                {byHospital.reduce((s, h) => s + (h.report_count || 0), 0)} reports uploaded
               </span>
             </div>
           </div>
@@ -956,6 +1090,8 @@ const MammogramStats = () => {
                   <YAxis
                     axisLine={false}
                     tickLine={false}
+                    domain={[0, byHospitalYMax]}
+                    ticks={byHospitalYTicks}
                     tick={{
                       fontSize: 12,
                       fill: "#059669",
@@ -977,28 +1113,28 @@ const MammogramStats = () => {
                   />
 
                   <Bar
-                    dataKey="dicom_count"
-                    name="DICOM Views"
-                    fill="#6ee7b7"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={80}
-                    minPointSize={3}
-                  >
-                    {byHospital.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.dicom_count === 0 ? '#d1d5db' : '#6ee7b7'} />
-                    ))}
-                  </Bar>
-
-                  <Bar
-                    dataKey="report_count"
-                    name="Reports"
+                    dataKey="subject_count"
+                    name="Total Subjects"
                     fill="#fb923c"
                     radius={[4, 4, 0, 0]}
                     maxBarSize={80}
                     minPointSize={3}
                   >
                     {byHospital.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.report_count === 0 ? '#d1d5db' : '#fb923c'} />
+                      <Cell key={idx} fill={entry.subject_count === 0 ? '#d1d5db' : '#fb923c'} />
+                    ))}
+                  </Bar>
+
+                  <Bar
+                    dataKey="report_count"
+                    name="Reports Uploaded"
+                    fill="#6ee7b7"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={80}
+                    minPointSize={3}
+                  >
+                    {byHospital.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.report_count === 0 ? '#d1d5db' : '#6ee7b7'} />
                     ))}
                   </Bar>
                 </BarChart>

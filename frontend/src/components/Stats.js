@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Users as UsersIcon, Hospital as HospitalIcon, MapPin as MapPinIcon } from 'lucide-react';
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
+  ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 import './Stats.css';
 import RiskTable from './RiskTable';
 import IndiaMap from './IndiaMap';
-import MammogramStats from './mammogramStats';
+import MammogramStats, { BiradsDensitySection, CrDrModalitySection, RiskPredictionSection } from './mammogramStats';
 
 const AnimatedCounter = ({ value, duration = 1500 }) => {
   const [count, setCount] = useState(0);
@@ -85,14 +85,6 @@ const Stats = () => {
         const response = await fetch(`${API_URL}/api/v1/stats/`);
         if (!response.ok) throw new Error('Failed to load stats');
         const json = await response.json();
-        if (json.riskBins) {
-          json.riskBins = json.riskBins.map(bin => {
-            if (bin.name === 'No Risk' || bin.name === 'Average Risk') return { ...bin, name: 'Baseline Risk' };
-            if (bin.name === 'Low Risk' || bin.name === 'Low-Intermediate Risk' || bin.name === 'Intermediate Risk') return { ...bin, name: 'Evident Risk' };
-            if (bin.name === 'Moderate Risk') return { ...bin, name: 'Significant Risk' };
-            return bin;
-          });
-        }
         setData(json);
       } catch (err) {
         setError(err.message);
@@ -105,18 +97,6 @@ const Stats = () => {
 
   if (loading) return <div className="stats-loader">Loading Dashboard...</div>;
   if (error) return <div className="stats-error">Error: {error}</div>;
-
-  const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    return percent > 0 ? (
-      <text x={x} y={y} fill="#111" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" style={{ fontFamily: 'Poppins', fontWeight: '600' }}>
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    ) : null;
-  };
 
   return (
     <div className="stats-container fade-in">
@@ -150,29 +130,10 @@ const Stats = () => {
       </div>
 
       <IndiaMap />
+      <BiradsDensitySection />
 
       <div className="charts-grid">
-        <div className="chart-card full-width">
-          <h3>Risk Prediction <a href="#risk-categories-table" style={{ color: '#e03944', fontWeight: 700, textDecoration: 'none' }}>*</a></h3>
-          <div className="chart-wrapper pie-wrapper">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={data.riskBins} cx="50%" cy="50%" outerRadius="80%" fill="#8884d8" dataKey="value" labelLine={false} label={CustomPieLabel}>
-                  {data.riskBins.map((entry, index) => {
-                    let cellColor = '#3498db';
-                    if (entry.name === 'High Risk') cellColor = '#fb7185';
-                    if (entry.name === 'Significant Risk') cellColor = '#fb923c';
-                    if (entry.name === 'Evident Risk') cellColor = '#fde047';
-                    if (entry.name === 'Baseline Risk') cellColor = '#6ee7b7';
-                    return <Cell key={`cell-${index}`} fill={cellColor} />;
-                  })}
-                </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36} content={<CustomLegend />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <CrDrModalitySection />
 
         <div className="chart-card full-width">
           <h3>Age Distribution</h3>
@@ -231,10 +192,13 @@ const Stats = () => {
           </div>
         </div>
       </div>
-      <div style={{ marginTop: '20px', width: '100%' }}><RiskTable /></div>
       <div style={{ marginTop: '20px', width: '100%' }}>
         <MammogramStats />
       </div>
+      <div className="charts-grid" style={{ marginTop: '20px', overflow: 'visible' }}>
+        <RiskPredictionSection />
+      </div>
+      <div style={{ marginTop: '20px', width: '100%' }}><RiskTable /></div>
     </div>
   );
 };

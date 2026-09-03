@@ -67,17 +67,27 @@ def get_total_subjects_count(db: Session, questionnaire_db: Session) -> int:
     return total_res[0] if total_res else 0
 
 
-def get_total_mammogram_stats(db: Session, questionnaire_db: Session) -> dict:
-    imaging_studies_count = get_total_subjects_count(db, questionnaire_db)
-
-    report_count = db.query(func.count(Attachment.id)).join(
-        DoctorAssessment, Attachment.assessment_id == DoctorAssessment.id
+def get_report_uploaded_count(db: Session) -> int:
+    """Subject-level count: an assessment counts once toward 'reports uploaded'
+    as soon as it has at least one report attachment (mammo_reading and/or
+    us_reading), regardless of how many report files it actually has.
+    DICOM/mammogram view uploads do NOT count toward this metric."""
+    return db.query(func.count(func.distinct(DoctorAssessment.id))).join(
+        Attachment, Attachment.assessment_id == DoctorAssessment.id
     ).join(
         Hospital, DoctorAssessment.hospital_id == Hospital.id
     ).filter(
         Attachment.file_type.in_(REPORT_FILE_TYPES),
         ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
     ).scalar() or 0
+
+
+def get_total_mammogram_stats(db: Session, questionnaire_db: Session, report_uploaded_count: int = None) -> dict:
+    imaging_studies_count = get_total_subjects_count(db, questionnaire_db)
+
+    # subject-level: use the precomputed value if the caller already has it,
+    # otherwise compute it here.
+    report_count = report_uploaded_count if report_uploaded_count is not None else get_report_uploaded_count(db)
 
     return {
         'imaging_studies': imaging_studies_count,
@@ -108,18 +118,6 @@ def get_partial_sets_count(db: Session) -> int:
     ).scalar() or 0
 
     return partial
-
-
-def get_report_uploaded_count(db: Session) -> int:
-
-    return db.query(func.count(func.distinct(DoctorAssessment.id))).join(
-        Attachment, Attachment.assessment_id == DoctorAssessment.id
-    ).join(
-        Hospital, DoctorAssessment.hospital_id == Hospital.id
-    ).filter(
-        Attachment.file_type.in_(REPORT_FILE_TYPES),
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
-    ).scalar() or 0
 
 
 def get_report_missing_count(db: Session) -> int:
@@ -181,18 +179,40 @@ def get_mammogram_by_hospital(db: Session, questionnaire_db: Session) -> list:
         DoctorAssessment.hospital_id == Hospital.id
     ).correlate(Hospital).scalar_subquery()
 
-    dicom_count_subq = db.query(func.count(Attachment.id)).join(
+    dicom_count_subq = db.query(func.count(func.distinct(Attachment.assessment_id))).join(
         DoctorAssessment, Attachment.assessment_id == DoctorAssessment.id
     ).filter(
         DoctorAssessment.hospital_id == Hospital.id,
         Attachment.file_type.in_(MAMMOGRAM_VIEW_TYPES)
     ).correlate(Hospital).scalar_subquery()
 
-    report_count_subq = db.query(func.count(Attachment.id)).join(
+    report_count_subq = db.query(func.count(func.distinct(Attachment.assessment_id))).join(
         DoctorAssessment, Attachment.assessment_id == DoctorAssessment.id
     ).filter(
         DoctorAssessment.hospital_id == Hospital.id,
         Attachment.file_type.in_(REPORT_FILE_TYPES)
+    ).correlate(Hospital).scalar_subquery()
+
+    mammo_report_count_subq = db.query(func.count(func.distinct(Attachment.assessment_id))).join(
+        DoctorAssessment, Attachment.assessment_id == DoctorAssessment.id
+    ).filter(
+        DoctorAssessment.hospital_id == Hospital.id,
+        Attachment.file_type == 'mammo_reading'
+    ).correlate(Hospital).scalar_subquery()
+    dicom_exists = db.query(Attachment.id).filter(
+        Attachment.assessment_id == DoctorAssessment.id,
+        Attachment.file_type.in_(MAMMOGRAM_VIEW_TYPES)
+    ).exists()
+
+    report_exists = db.query(Attachment.id).filter(
+        Attachment.assessment_id == DoctorAssessment.id,
+        Attachment.file_type.in_(REPORT_FILE_TYPES)
+    ).exists()
+
+    both_dicom_and_report_subq = db.query(func.count(DoctorAssessment.id)).filter(
+        DoctorAssessment.hospital_id == Hospital.id,
+        dicom_exists,
+        report_exists,
     ).correlate(Hospital).scalar_subquery()
 
     results = db.query(
@@ -208,6 +228,8 @@ def get_mammogram_by_hospital(db: Session, questionnaire_db: Session) -> list:
         assessment_count_subq.label('assessment_count'),
         dicom_count_subq.label('dicom_count'),
         report_count_subq.label('report_count'),
+        mammo_report_count_subq.label('mammo_report_count'),
+        both_dicom_and_report_subq.label('both_dicom_and_report_count'),
     ).filter(
         ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
     ).outerjoin(
@@ -233,6 +255,7 @@ def get_mammogram_by_hospital(db: Session, questionnaire_db: Session) -> list:
             'assessment_count': row.assessment_count or 0,
             'dicom_count': row.dicom_count or 0,
             'report_count': row.report_count or 0,
+            'both_dicom_and_report_count': row.both_dicom_and_report_count or 0,
         })
 
     return hospital_data
@@ -362,7 +385,7 @@ def get_portal_mammogram_dashboard(db: Session, questionnaire_db: Session) -> di
     report_uploaded = get_report_uploaded_count(db)
     report_missing = max(total_assessments - report_uploaded, 0)
     view_counts = get_view_type_counts(db)
-    totals = get_total_mammogram_stats(db, questionnaire_db)
+    totals = get_total_mammogram_stats(db, questionnaire_db, report_uploaded_count=report_uploaded)
     by_hospital = get_mammogram_by_hospital(db, questionnaire_db)
     hospital_type_breakdown = get_hospital_type_breakdown(db)
     reports_by_hospital = get_reports_by_hospital(db)
