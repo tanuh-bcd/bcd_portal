@@ -62,6 +62,7 @@ app.include_router(risk_categories.router, prefix="/api/v1/risk-categories", tag
 app.include_router(model_weights.router, prefix="/api/v1/model-weights", tags=["model-weights"])
 app.include_router(risk_thresholds.router, prefix="/api/v1/risk-thresholds", tags=["risk-thresholds"])
 
+
 @app.get("/api/health")
 def health_check():
     return {"success": True, "message": "Backend is healthy!"}

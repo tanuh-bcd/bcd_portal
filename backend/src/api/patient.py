@@ -561,9 +561,12 @@ async def create_doctor_assessment(
         ).first()
 
         if assessment:
-            is_admin = user_role.lower() == 'admin'
-            if assessment.doctor_id != doctor_id and not is_admin:
-                raise HTTPException(status_code=403, detail="Not authorized to edit this assessment")
+            is_admin = (user_role or '').lower() == 'admin'
+            if assessment.hospital_id != hospital_id and not is_admin:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Not authorized to edit another hospital's assessment",
+                )
 
             assessment.questionnaire_feedback = questionnaire_feedback
             assessment.is_questionnaire_correct = is_questionnaire_correct
