@@ -44,9 +44,6 @@ const Navbar = () => {
           <Link to="/login" className={`nav-link ${location.pathname === '/login' ? 'active' : ''}`}>
             Login
           </Link>
-          <Link to="/qc-bcd-login" className={`nav-link ${location.pathname === '/qc-login' ? 'active' : ''}`}>
-            QC
-          </Link>
         </div>
       </div>
     </nav>
