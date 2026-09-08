@@ -76,7 +76,7 @@ const Riskometer = ({ riskLevel }) => {
 //     return null;
 // };
 
-function ThankYou({ riskResult, formData, sessionId, formStructure, questionnaireData }) {
+function ThankYou({ riskResult, formData, sessionId, formStructure, questionnaireData, dataCollectionOnly = false }) {
 
     const { t: tThankYou } = useTranslation('thankyou');
     // const { t: tQuestions } = useTranslation('questionnaire');
@@ -407,11 +407,11 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
           )}
         </div>
 
-        {score !== null && !isMale && (
+        {!dataCollectionOnly && score !== null && !isMale && (
             <Riskometer riskLevel={userRiskLevelEn || userRiskLevel} />
         )}
 
-        {score !== null && !isMale && (() => {
+        {!dataCollectionOnly && score !== null && !isMale && (() => {
             const highlightedRow = riskInterpretationData.find(
                 (row) => row.level === userRiskLevel
             );
@@ -431,26 +431,30 @@ function ThankYou({ riskResult, formData, sessionId, formStructure, questionnair
             );
         })()}
 
-        {score !== null && !isMale && (
+        {!dataCollectionOnly && score !== null && !isMale && (
             <div style={{ width: '100%' }}>
               <RiskTable />
             </div>
         )}
 
-        <p className="disclaimer-text" style={{ textAlign: 'left', marginTop: '20px', marginBottom: '30px' }}>
-          <span className="disclaimer-asterisk">{tThankYou('disclaimer.asterisk')}</span>
-          <strong>{tThankYou('disclaimer.title')}</strong>:
-          {' '}{tThankYou('disclaimer.text')}
-        </p>
+        {!dataCollectionOnly && (
+          <p className="disclaimer-text" style={{ textAlign: 'left', marginTop: '20px', marginBottom: '30px' }}>
+            <span className="disclaimer-asterisk">{tThankYou('disclaimer.asterisk')}</span>
+            <strong>{tThankYou('disclaimer.title')}</strong>:
+            {' '}{tThankYou('disclaimer.text')}
+          </p>
+        )}
 
         <div className="action-buttons">
           <button className="ok-button" onClick={() => window.location.reload()}>
             {tThankYou('buttons.ok')}
           </button>
-          <button className="download-button" onClick={handleDownloadPdf}>
-            <Download size={18} style={{ marginRight: '8px' }} />
-            {tThankYou('buttons.download')}
-          </button>
+          {!dataCollectionOnly && (
+            <button className="download-button" onClick={handleDownloadPdf}>
+              <Download size={18} style={{ marginRight: '8px' }} />
+              {tThankYou('buttons.download')}
+            </button>
+          )}
         </div>
       </div>
     </div>

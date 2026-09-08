@@ -62,6 +62,7 @@ jobs:
           IMAGE_LATEST=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/frontend:latest
           docker build \
             --build-arg REACT_APP_API_URL="" \
+            --build-arg REACT_APP_QUESTIONNAIRE_VERSION="2" \
             --build-arg REACT_APP_WEBSITE_URL="${{ steps.secrets.outputs.REACT_APP_WEBSITE_URL }}" \
             --build-arg REACT_APP_LINKEDIN_URL="${{ steps.secrets.outputs.REACT_APP_LINKEDIN_URL }}" \
             --build-arg REACT_APP_TWITTER_URL="${{ steps.secrets.outputs.REACT_APP_TWITTER_URL }}" \
@@ -91,6 +92,7 @@ jobs:
               -f backend/Dockerfile .
             docker build --no-cache \
               --build-arg REACT_APP_API_URL="" \
+              --build-arg REACT_APP_QUESTIONNAIRE_VERSION="2" \
               --build-arg REACT_APP_WEBSITE_URL="${{ steps.secrets.outputs.REACT_APP_WEBSITE_URL }}" \
               --build-arg REACT_APP_LINKEDIN_URL="${{ steps.secrets.outputs.REACT_APP_LINKEDIN_URL }}" \
               --build-arg REACT_APP_TWITTER_URL="${{ steps.secrets.outputs.REACT_APP_TWITTER_URL }}" \

@@ -16,12 +16,17 @@ root.render(
   <App />
 );
 
-serviceWorkerRegistration.register({
-  onUpdate: (registration) => {
-    if (registration.waiting) {
-      registration.waiting.addEventListener('statechange', (e) => {
-        if (e.target.state === 'activated') window.location.reload();
-      });
-    }
-  },
-});
+if (process.env.NODE_ENV === 'production') {
+  serviceWorkerRegistration.register({
+    onUpdate: (registration) => {
+      if (registration.waiting) {
+        registration.waiting.addEventListener('statechange', (e) => {
+          if (e.target.state === 'activated') window.location.reload();
+        });
+      }
+    },
+  });
+} else {
+  // Prevent an older production bundle from controlling localhost during development.
+  serviceWorkerRegistration.unregister();
+}
