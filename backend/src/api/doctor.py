@@ -194,7 +194,7 @@ def get_patient_sessions(
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
                    pid.answer AS patient_id, s.risk_category,
-                   hosp.answer AS hospital_name
+                   hosp.answer AS hospital_name, s.consent_url
             FROM session_table s
             JOIN (
                 SELECT session_id, MIN(answer) AS answer
@@ -230,7 +230,7 @@ def get_patient_sessions(
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
                    pid.answer AS patient_id, s.risk_category,
-                   NULL AS hospital_name
+                   NULL AS hospital_name, s.consent_url
             FROM session_table s
             JOIN session_data_table sd ON s.session_id = sd.session_id
             LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
@@ -259,7 +259,7 @@ def get_patient_sessions(
             "id": session_id,
             "patient_id": row[3] or "",
             "hospital_name": row[5] or None,
-            "consent_scanned_url": None,
+            "consent_scanned_url": row[6],
             "consent_timestamp": row[1],
             "snehita_risk": row[2],
             "risk_category": row[4] or "",
@@ -294,7 +294,8 @@ def get_patient_session_detail(
         raise HTTPException(status_code=400, detail="User hospital ID not found")
 
     session_row = q_db.execute(text(
-        "SELECT session_id, session_start_time, snehita_lifetime_risk, risk_category FROM session_table WHERE session_id = :sid"
+        "SELECT session_id, session_start_time, snehita_lifetime_risk, risk_category, consent_url "
+        "FROM session_table WHERE session_id = :sid"
     ), {"sid": session_id}).fetchone()
 
     patient_id_row = q_db.execute(text(
@@ -332,7 +333,7 @@ def get_patient_session_detail(
     return {
         "id": session_id,
         "patient_id": (patient_id_row[0] if patient_id_row else "") or "",
-        "consent_scanned_url": None,
+        "consent_scanned_url": session_row[4],
         "consent_timestamp": session_row[1],
         "snehita_risk": session_row[2],
         "risk_category": session_row[3] or "",
