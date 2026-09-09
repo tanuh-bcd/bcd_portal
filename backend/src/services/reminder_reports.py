@@ -29,6 +29,8 @@ INSTITUTE_QUESTIONS = (
     "Institute Name",
     "Institute Name:",
     "Enter the Hospital ID(If any, else leave):",
+    "Enter the Institution Name (if any, else leave)",
+    "Enter the Institution Name (If any, else leave)",
     "Q45",
 )
 MAMMOGRAM_VIEWS = {

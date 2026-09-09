@@ -45,7 +45,14 @@ def _geocode_pincode(pincode, state=""):
         logger.warning("Geocode failed for pincode %s: %s", pincode, e)
     return None
 
-INSTITUTE_QUESTIONS = ('Institute Name', 'Institute Name:', 'Enter the Hospital ID(If any, else leave):', 'Q45')
+INSTITUTE_QUESTIONS = (
+    'Institute Name',
+    'Institute Name:',
+    'Enter the Hospital ID(If any, else leave):',
+    'Enter the Institution Name (if any, else leave)',
+    'Enter the Institution Name (If any, else leave)',
+    'Q45',
+)
 AGE_QUESTIONS = ('What is your current age? (Please enter a number - years)', 'Q1')
 
 

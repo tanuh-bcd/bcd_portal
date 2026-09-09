@@ -21,8 +21,20 @@ INSTITUTE_QUESTIONS = (
     "Institute Name",
     "Institute Name:",
     "Enter the Hospital ID(If any, else leave):",
+    "Enter the Institution Name (if any, else leave)",
+    "Enter the Institution Name (If any, else leave)",
     "Q45",
 )
+
+PATIENT_ID_QUESTIONS = (
+    "Enter your Patient ID(if any, else leave):",
+    "Enter your subject ID:",
+    "Enter Subject ID (if any, else leave)",
+    "Q44",
+)
+
+INSTITUTE_QUESTION_KEYS = ("V2_Q02",)
+PATIENT_ID_QUESTION_KEYS = ("V2_Q01",)
 
 
 def _get_hospital_name(app_db, hospital_id):
@@ -73,7 +85,11 @@ def get_hospital_summary(
         return []
 
     valid_names = [h.name for h in hospitals]
-    params = {"inst_questions": INSTITUTE_QUESTIONS, "valid_names": tuple(valid_names)}
+    params = {
+        "inst_questions": INSTITUTE_QUESTIONS,
+        "inst_question_keys": INSTITUTE_QUESTION_KEYS,
+        "valid_names": tuple(valid_names),
+    }
 
     session_hosp_rows = q_db.execute(text("""
         SELECT s.session_id, sd_inst.answer AS hospital_name
@@ -81,7 +97,7 @@ def get_hospital_summary(
         JOIN (
             SELECT session_id, MIN(answer) AS answer
             FROM session_data_table
-            WHERE question IN :inst_questions
+            WHERE (question_key IN :inst_question_keys OR question IN :inst_questions)
               AND answer IN :valid_names
             GROUP BY session_id
         ) sd_inst ON s.session_id = sd_inst.session_id
@@ -183,21 +199,25 @@ def get_patient_sessions(
             JOIN (
                 SELECT session_id, MIN(answer) AS answer
                 FROM session_data_table
-                WHERE question IN ('Institute Name', 'Institute Name:',
-                                   'Enter the Hospital ID(If any, else leave):', 'Q45')
+                WHERE (question_key IN :institute_question_keys OR question IN :institute_questions)
                   AND answer IN :valid_names
                 GROUP BY session_id
             ) hosp ON s.session_id = hosp.session_id
             LEFT JOIN (
                 SELECT session_id, MIN(answer) AS answer
                 FROM session_data_table
-                WHERE question IN ('Enter your Patient ID(if any, else leave):',
-                                   'Enter your subject ID:', 'Q44')
+                WHERE (question_key IN :patient_id_question_keys OR question IN :patient_id_questions)
                 GROUP BY session_id
             ) pid ON s.session_id = pid.session_id
             WHERE s.snehita_lifetime_risk IS NOT NULL
             ORDER BY {order_clause}
-        """), {"valid_names": tuple(valid_names)}).fetchall()
+        """), {
+            "valid_names": tuple(valid_names),
+            "institute_questions": INSTITUTE_QUESTIONS,
+            "institute_question_keys": INSTITUTE_QUESTION_KEYS,
+            "patient_id_questions": PATIENT_ID_QUESTIONS,
+            "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+        }).fetchall()
     else:
         hospital_id = current_user.get("hospital_id")
         if not hospital_id:
@@ -214,12 +234,18 @@ def get_patient_sessions(
             FROM session_table s
             JOIN session_data_table sd ON s.session_id = sd.session_id
             LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
-              AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
-            WHERE sd.question IN :q1
+              AND (pid.question_key IN :patient_id_question_keys OR pid.question IN :patient_id_questions)
+            WHERE (sd.question_key IN :institute_question_keys OR sd.question IN :q1)
               AND sd.answer = :hospital_name
               AND s.snehita_lifetime_risk IS NOT NULL
             ORDER BY {order_clause}
-        """), {"q1": INSTITUTE_QUESTIONS, "hospital_name": hospital_name}).fetchall()
+        """), {
+            "q1": INSTITUTE_QUESTIONS,
+            "institute_question_keys": INSTITUTE_QUESTION_KEYS,
+            "patient_id_questions": PATIENT_ID_QUESTIONS,
+            "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+            "hospital_name": hospital_name,
+        }).fetchall()
 
     result = []
     for row in rows:
@@ -272,8 +298,13 @@ def get_patient_session_detail(
     ), {"sid": session_id}).fetchone()
 
     patient_id_row = q_db.execute(text(
-        "SELECT answer FROM session_data_table WHERE session_id = :sid AND question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44') LIMIT 1"
-    ), {"sid": session_id}).fetchone()
+        "SELECT answer FROM session_data_table WHERE session_id = :sid "
+        "AND (question_key IN :patient_id_question_keys OR question IN :patient_id_questions) LIMIT 1"
+    ), {
+        "sid": session_id,
+        "patient_id_questions": PATIENT_ID_QUESTIONS,
+        "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+    }).fetchone()
 
     if not session_row:
         raise HTTPException(status_code=404, detail="Session not found")
