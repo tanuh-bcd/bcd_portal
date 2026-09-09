@@ -104,6 +104,8 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 function Consent({ onAccept }) {
   const [isChecked, setIsChecked] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [informationVoluntary, setInformationVoluntary] = useState(false);
   const [scannedFile, setScannedFile] = useState(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
@@ -218,8 +220,17 @@ function Consent({ onAccept }) {
   };
 
   const handleAccept = () => {
-    onAccept({ file: scannedFile || null });
+    onAccept({
+      file: scannedFile || null,
+      ageConfirmed,
+      informationVoluntary,
+    });
   };
+
+  const informedConsent = content.informedConsent;
+  const consentConfirmed = informedConsent
+    ? ageConfirmed && informationVoluntary
+    : isChecked;
 
   return (
     <div className="consent-container">
@@ -252,6 +263,54 @@ function Consent({ onAccept }) {
           ))}
         </div>
       ))}
+
+      {informedConsent && (
+        <section className="informed-consent">
+          <h2>{informedConsent.title}</h2>
+
+          <div className="consent-header">
+            {Object.values(informedConsent.projectDetails || {}).map((detail, idx) => (
+              <p key={idx}>
+                <strong>{detail.label} :</strong> {detail.value}
+              </p>
+            ))}
+          </div>
+
+          {(informedConsent.sections || []).map((section, idx) => (
+            <div key={idx} className="consent-section">
+              <h3>{section.heading}</h3>
+              {(section.paragraphs || []).map((paragraph, pIdx) => (
+                <p key={pIdx}>{paragraph.text}</p>
+              ))}
+            </div>
+          ))}
+
+          <div className="participant-consent-block">
+            <h3>{informedConsent.participantConsentHeading}</h3>
+            <p>{informedConsent.declaration}</p>
+
+            <div className="consent-checkbox consent-confirmation">
+              <input
+                type="checkbox"
+                id="age-confirmed"
+                checked={ageConfirmed}
+                onChange={event => setAgeConfirmed(event.target.checked)}
+              />
+              <label htmlFor="age-confirmed">{informedConsent.ageCheckboxLabel}</label>
+            </div>
+
+            <div className="consent-checkbox consent-confirmation">
+              <input
+                type="checkbox"
+                id="information-voluntary"
+                checked={informationVoluntary}
+                onChange={event => setInformationVoluntary(event.target.checked)}
+              />
+              <label htmlFor="information-voluntary">{informedConsent.voluntaryCheckboxLabel}</label>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="consent-upload">
         <strong className="consent-upload-title">Consent Upload</strong>
@@ -307,17 +366,19 @@ function Consent({ onAccept }) {
         )}
       </div>
 
-      <div className="consent-checkbox">
-        <input
-          type="checkbox"
-          id="consent-check"
-          checked={isChecked}
-          onChange={() => setIsChecked(!isChecked)}
-        />
-        <label htmlFor="consent-check">{content.checkboxLabel}</label>
-      </div>
+      {!informedConsent && (
+        <div className="consent-checkbox">
+          <input
+            type="checkbox"
+            id="consent-check"
+            checked={isChecked}
+            onChange={() => setIsChecked(!isChecked)}
+          />
+          <label htmlFor="consent-check">{content.checkboxLabel}</label>
+        </div>
+      )}
 
-      <button onClick={handleAccept} disabled={!isChecked}>
+      <button onClick={handleAccept} disabled={!consentConfirmed}>
         {content.buttonText}
       </button>
     </div>

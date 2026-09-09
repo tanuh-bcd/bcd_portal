@@ -85,6 +85,29 @@
   margin-top: clamp(16px, 2.5vw, 30px);
 }
 
+.informed-consent {
+  margin-top: clamp(28px, 4vw, 50px);
+  padding-top: clamp(18px, 2.5vw, 30px);
+  border-top: 2px solid #d9eef0;
+}
+
+.participant-consent-block {
+  margin-top: clamp(20px, 3vw, 36px);
+  padding: clamp(14px, 2vw, 24px);
+  background: #f8fbfc;
+  border: 1px solid #dcebed;
+  border-radius: clamp(8px, 1vw, 12px);
+}
+
+.participant-consent-block h3 {
+  margin-top: 0;
+}
+
+.consent-checkbox.consent-confirmation {
+  margin-top: 12px;
+  align-items: flex-start;
+}
+
 .sub-point strong {
   color: #495057;
 }
