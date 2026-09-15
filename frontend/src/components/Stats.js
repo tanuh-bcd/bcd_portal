@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, Hospital as HospitalIcon, MapPin as MapPinIcon } from 'lucide-react';
+import { Users as UsersIcon, ScanLine as ScanLineIcon, FolderCheck as FolderCheckIcon } from 'lucide-react';
 import {
   ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -120,12 +120,12 @@ const Stats = () => {
           <div className="big-number"><AnimatedCounter value={data.totalSubjects} /></div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><HospitalIcon className="summary-icon" size={24} /><h3>Institutions</h3></div>
-          <div className="big-number"><AnimatedCounter value={data.institutionsEmpanelled} /></div>
+          <div className="card-header-with-icon"><ScanLineIcon className="summary-icon" size={24} /><h3>Image Studies</h3></div>
+          <div className="big-number"><AnimatedCounter value={data.imageStudies || 0} /></div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><MapPinIcon className="summary-icon" size={24} /><h3>States</h3></div>
-          <div className="big-number"><AnimatedCounter value={data.statesCount || 0} /></div>
+          <div className="card-header-with-icon"><FolderCheckIcon className="summary-icon" size={24} /><h3>Image Records</h3></div>
+          <div className="big-number"><AnimatedCounter value={data.imageRecords || 0} /></div>
         </div>
       </div>
 

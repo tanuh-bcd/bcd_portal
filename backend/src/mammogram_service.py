@@ -391,6 +391,10 @@ def get_portal_mammogram_dashboard(db: Session, questionnaire_db: Session) -> di
     reports_by_hospital = get_reports_by_hospital(db)
     birads_stats = get_birads_by_institute_and_side(db)
 
+    assessed_hospitals = [h for h in by_hospital if h.get('assessment_count', 0) > 0]
+    assessment_institutes_count = len(assessed_hospitals)
+    assessment_states_count = len({h['state'] for h in assessed_hospitals if h.get('state')})
+
     return {
         "totalAssessments": total_assessments,
         "totals": totals,
@@ -412,4 +416,6 @@ def get_portal_mammogram_dashboard(db: Session, questionnaire_db: Session) -> di
         "reportsByHospital": reports_by_hospital,
         "biradsCategory": birads_stats["biradsCategory"],
         "biradsDensity": birads_stats["biradsDensity"],
+        "assessmentInstitutesCount": assessment_institutes_count,
+        "assessmentStatesCount": assessment_states_count,
     }

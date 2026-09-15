@@ -28,5 +28,7 @@ def get_mammogram_portal_stats(
             "hospitalTypeBreakdown": [],
             "reportsByHospital": [],
             "biradsByInstituteAndSide": [],
+            "assessmentInstitutesCount": 0,
+            "assessmentStatesCount": 0,
             "error": str(e),
         }

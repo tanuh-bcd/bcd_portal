@@ -30,6 +30,15 @@ def _get_hospital_name(app_db, hospital_id):
     return hospital.name if hospital else None
 
 
+TEST_HOSPITAL_VIEWERS = ('manisha.verma@tanuh.ai',)
+
+
+def _excluded_hospitals(current_user):
+    if current_user.get("email", "").lower() in TEST_HOSPITAL_VIEWERS:
+        return ('Tanuh Foundation',)
+    return ('Test', 'Tanuh Foundation')
+
+
 def _get_attachment_flags(assessment):
     att_types = set()
     if assessment:
@@ -67,7 +76,7 @@ def get_hospital_summary(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     hospitals = app_db.query(Hospital).filter(
-        ~Hospital.name.in_(('Test', 'Tanuh Foundation'))
+        ~Hospital.name.in_(_excluded_hospitals(current_user))
     ).order_by(Hospital.name).all()
     if not hospitals:
         return []
@@ -169,7 +178,7 @@ def get_patient_sessions(
             valid_names = [
                 h.name for h in
                 app_db.query(Hospital.name).filter(
-                    ~Hospital.name.in_(('Test', 'Tanuh Foundation'))
+                    ~Hospital.name.in_(_excluded_hospitals(current_user))
                 ).all()
             ]
         if not valid_names:
@@ -275,6 +284,10 @@ def get_patient_session_detail(
         "SELECT answer FROM session_data_table WHERE session_id = :sid AND question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44') LIMIT 1"
     ), {"sid": session_id}).fetchone()
 
+    hospital_name_row = q_db.execute(text(
+        "SELECT answer FROM session_data_table WHERE session_id = :sid AND question IN :inst_questions AND answer IS NOT NULL LIMIT 1"
+    ), {"sid": session_id, "inst_questions": INSTITUTE_QUESTIONS}).fetchone()
+
     if not session_row:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -301,6 +314,7 @@ def get_patient_session_detail(
     return {
         "id": session_id,
         "patient_id": (patient_id_row[0] if patient_id_row else "") or "",
+        "hospital_name": hospital_name_row[0] if hospital_name_row else None,
         "consent_scanned_url": None,
         "consent_timestamp": session_row[1],
         "snehita_risk": session_row[2],

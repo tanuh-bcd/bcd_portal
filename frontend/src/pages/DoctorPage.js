@@ -20,6 +20,8 @@ const DoctorPage = ({ isEmbedded = false }) => {
   const [hospitalSessionsLoading, setHospitalSessionsLoading] = useState({});
   const PAGE_SIZE = 20;
   const isSuperViewer = localStorage.getItem('isSuperViewer') === 'true';
+  const userEmail = (localStorage.getItem('userEmail') || '').toLowerCase();
+  const canEditTestHospital = userEmail === 'manisha.verma@tanuh.ai';
 
   const toggleInstitution = (name) => {
     setExpandedInstitutions(prev => {
@@ -335,7 +337,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                   onClick={() => fetchSessionDetail(session.id)}
                   style={linkButtonStyle}
                 >
-                  {!isSuperViewer && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
+                  {(!isSuperViewer || (canEditTestHospital && session.hospital_name === 'Test')) && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
                 </button>
               </td>
             </tr>
@@ -542,7 +544,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                 </tbody>
               </table>
               
-              {isSuperViewer ? (
+              {isSuperViewer && !(canEditTestHospital && selectedSession.hospital_name === 'Test') ? (
                 selectedSession.assessment ? (
                   <DoctorAssessmentForm
                     sessionId={selectedSession.id}

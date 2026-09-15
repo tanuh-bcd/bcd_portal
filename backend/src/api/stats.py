@@ -3,10 +3,10 @@ import urllib.request
 import json
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
 from ..db.session import get_questionnaire_db, get_db
-from ..models.models import Hospital
+from ..models.models import Hospital, DoctorAssessment
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -60,6 +60,13 @@ def _get_institute_filter(valid_names):
     ) sd_inst ON s.session_id = sd_inst.session_id
     """
 
+QUALIFYING_DICOM_TYPES = ('mammo_cc_left', 'mammo_cc_right', 'mammo_mlo_left', 'mammo_mlo_right')
+
+def _has_qualifying_images(assessment):
+    att_types = {att.file_type for att in assessment.attachments}
+    all_4_dicom = all(t in att_types for t in QUALIFYING_DICOM_TYPES)
+    return all_4_dicom or 'mammo_reading' in att_types or 'us_reading' in att_types
+
 RISK_CASE = """
     SUM(CASE WHEN s.snehita_lifetime_risk < 0.4004 THEN 1 ELSE 0 END) as no_risk,
     SUM(CASE WHEN s.snehita_lifetime_risk >= 0.4004 AND s.snehita_lifetime_risk < 0.574 THEN 1 ELSE 0 END) as low_risk,
@@ -71,13 +78,15 @@ RISK_CASE = """
 @router.get("/")
 def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Depends(get_db)):
     EXCLUDED_NAMES = ('Test', 'Tanuh Foundation')
-    hospital_rows = app_db.query(Hospital.name, Hospital.short_name).filter(
+    hospital_rows = app_db.query(Hospital.id, Hospital.name, Hospital.short_name).filter(
         ~Hospital.name.in_(EXCLUDED_NAMES)
     ).all()
     valid_hospitals = [h.name for h in hospital_rows]
+    valid_hospital_ids = [h.id for h in hospital_rows]
     hospital_short_names = {h.name: h.short_name or h.name for h in hospital_rows}
     if not valid_hospitals:
         return {"totalSubjects": 0, "institutionsEmpanelled": 0, "statesCount": 0,
+                "imageStudies": 0, "imageRecords": 0,
                 "riskBins": [], "hospitalBins": [], "ageBins": [], "monthBins": []}
 
     inst_filter = _get_institute_filter(valid_hospitals)
@@ -181,10 +190,19 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
     )).fetchone()
     states_count = states_res[0] if states_res else 0
 
+    assessments = app_db.query(DoctorAssessment).filter(
+        DoctorAssessment.hospital_id.in_(valid_hospital_ids)
+    ).options(joinedload(DoctorAssessment.attachments)).all()
+
+    image_studies = len({a.patient_session_id for a in assessments})
+    image_records = len({a.patient_session_id for a in assessments if _has_qualifying_images(a)})
+
     return {
         "totalSubjects": total_subjects,
         "institutionsEmpanelled": institutions_empanelled,
         "statesCount": states_count,
+        "imageStudies": image_studies,
+        "imageRecords": image_records,
         "riskBins": risk_bins,
         "hospitalBins": hospital_bins,
         "ageBins": age_bins,

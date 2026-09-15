@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList
 } from 'recharts';
-import { Image as ImageIcon, FileCheck2, Building2 } from 'lucide-react';
+import { FileCheck2, Building2, MapPin } from 'lucide-react';
 import './Stats.css';
 
 const COLORS = ['#6ee7b7', '#fde047', '#fb923c', '#fb7185', '#14868C'];
@@ -1007,7 +1007,6 @@ const MammogramStats = () => {
   if (!data) return null;
 
   const totals = data.totals || {};
-  const completionRate = data.completionRate || { viewsUploaded: 0, totalSubjects: 0, rate: 0 };
 
   const byHospital = mergeDuplicateInstitutes(filterExcludedEntities(data.byHospital));
   const byHospitalMax = byHospital.reduce(
@@ -1023,17 +1022,16 @@ const MammogramStats = () => {
 
       <div className="summary-section" style={{ marginBottom: '2rem' }}>
         <div className="summary-card">
-          <div className="card-header-with-icon"><ImageIcon className="summary-icon" size={24} /><h3>Imaging Studies</h3></div>
-          <div className="big-number">{totals.imaging_studies ?? 0}</div>
+          <div className="card-header-with-icon"><Building2 className="summary-icon" size={24} /><h3>Total Institutes</h3></div>
+          <div className="big-number">{data.assessmentInstitutesCount ?? 0}</div>
+        </div>
+        <div className="summary-card">
+          <div className="card-header-with-icon"><MapPin className="summary-icon" size={24} /><h3>Total States</h3></div>
+          <div className="big-number">{data.assessmentStatesCount ?? 0}</div>
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><FileCheck2 className="summary-icon" size={24} /><h3>Reports Uploaded</h3></div>
           <div className="big-number">{totals.reports ?? 0}</div>
-        </div>
-
-        <div className="summary-card">
-          <div className="card-header-with-icon"><Building2 className="summary-icon" size={24} /><h3>Completion Rate</h3></div>
-          <div className="big-number">{completionRate.rate}%</div>
         </div>
       </div>
 
