@@ -981,6 +981,7 @@ export const RiskPredictionSection = () => {
 
 const MammogramStats = () => {
   const [data, setData] = useState(null);
+  const [mapCounts, setMapCounts] = useState({ institutes: 0, states: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -989,10 +990,21 @@ const MammogramStats = () => {
   useEffect(() => {
     const fetchMammoStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        const [response, locationsResponse] = await Promise.all([
+          fetch(`${API_URL}/api/v1/mammogram/portal-stats`),
+          fetch(`${API_URL}/api/v1/stats/hospital-locations`),
+        ]);
         if (!response.ok) throw new Error('Failed to load mammogram stats');
         const json = await response.json();
         setData(json);
+
+        if (locationsResponse.ok) {
+          const locations = await locationsResponse.json();
+          setMapCounts({
+            institutes: locations.length,
+            states: new Set(locations.map((l) => l.state).filter(Boolean)).size,
+          });
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -1023,11 +1035,11 @@ const MammogramStats = () => {
       <div className="summary-section" style={{ marginBottom: '2rem' }}>
         <div className="summary-card">
           <div className="card-header-with-icon"><Building2 className="summary-icon" size={24} /><h3>Total Institutes</h3></div>
-          <div className="big-number">{data.assessmentInstitutesCount ?? 0}</div>
+          <div className="big-number">{mapCounts.institutes}</div>
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><MapPin className="summary-icon" size={24} /><h3>Total States</h3></div>
-          <div className="big-number">{data.assessmentStatesCount ?? 0}</div>
+          <div className="big-number">{mapCounts.states}</div>
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><FileCheck2 className="summary-icon" size={24} /><h3>Reports Uploaded</h3></div>
