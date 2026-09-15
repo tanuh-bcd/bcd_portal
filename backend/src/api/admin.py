@@ -3,7 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
-from .doctor import _get_attachment_flags, INSTITUTE_QUESTIONS
+from .doctor import (
+    _get_attachment_flags,
+    INSTITUTE_QUESTIONS,
+    INSTITUTE_QUESTION_KEYS,
+    PATIENT_ID_QUESTIONS,
+    PATIENT_ID_QUESTION_KEYS,
+)
 from ..db.session import get_db, get_questionnaire_db
 from ..models.models import MRMCStudy, MRMCStudyParticipant, PatientSession, User, Hospital, Role, Machine, DoctorAssessment
 from ..schemas.schemas import MRMCParticipantResponse, MRMCStudyCreate, MRMCStudyResponse, PatientResponse, UserCreate, HospitalCreate, User as UserSchema, HospitalResponse, MachineCreate, MachineResponse, ClinicianOption
@@ -331,9 +337,14 @@ def get_clinicians(
 def _get_subject_hospital(q_db: Session, app_db: Session, session_id: str):
     row = q_db.execute(text("""
         SELECT answer FROM session_data_table
-        WHERE session_id = :sid AND question IN :inst_questions
+        WHERE session_id = :sid
+          AND (question_key IN :inst_question_keys OR question IN :inst_questions)
         LIMIT 1
-    """), {"sid": session_id, "inst_questions": INSTITUTE_QUESTIONS}).fetchone()
+    """), {
+        "sid": session_id,
+        "inst_questions": INSTITUTE_QUESTIONS,
+        "inst_question_keys": INSTITUTE_QUESTION_KEYS,
+    }).fetchone()
     if not row:
         return None
     return app_db.query(Hospital).filter(Hospital.name == row[0]).first()
@@ -343,9 +354,13 @@ def _get_subject_patient_id(q_db: Session, session_id: str):
     row = q_db.execute(text("""
         SELECT answer FROM session_data_table
         WHERE session_id = :sid
-          AND question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
+          AND (question_key IN :patient_id_question_keys OR question IN :patient_id_questions)
         LIMIT 1
-    """), {"sid": session_id}).fetchone()
+    """), {
+        "sid": session_id,
+        "patient_id_questions": PATIENT_ID_QUESTIONS,
+        "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+    }).fetchone()
     return row[0] if row else None
 
 
@@ -423,18 +438,24 @@ def get_available_subjects(
         JOIN (
             SELECT session_id, MIN(answer) AS answer
             FROM session_data_table
-            WHERE question IN :inst_questions
+            WHERE (question_key IN :inst_question_keys OR question IN :inst_questions)
               AND answer IN :valid_names
             GROUP BY session_id
         ) hosp ON s.session_id = hosp.session_id
         LEFT JOIN (
             SELECT session_id, MIN(answer) AS answer
             FROM session_data_table
-            WHERE question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
+            WHERE (question_key IN :patient_id_question_keys OR question IN :patient_id_questions)
             GROUP BY session_id
         ) pid ON s.session_id = pid.session_id
         WHERE s.snehita_lifetime_risk IS NOT NULL
-    """), {"inst_questions": INSTITUTE_QUESTIONS, "valid_names": tuple(valid_names)}).fetchall()
+    """), {
+        "inst_questions": INSTITUTE_QUESTIONS,
+        "inst_question_keys": INSTITUTE_QUESTION_KEYS,
+        "patient_id_questions": PATIENT_ID_QUESTIONS,
+        "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+        "valid_names": tuple(valid_names),
+    }).fetchall()
 
     result = []
     for session_id, patient_id in rows:

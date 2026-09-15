@@ -132,18 +132,35 @@ class Language(Base):
     code = Column(String(5), primary_key=True)
     name = Column(String(50), nullable=False)
 
+class QuestionnaireVersion(Base):
+    __tablename__ = "questionnaire_versions"
+
+    version_number = Column(Integer, primary_key=True)
+    version_name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=False)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    activated_at = Column(TIMESTAMP, nullable=True)
+
 class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    section = Column(String(100))
+    question_key = Column(String(50), nullable=True)
+    version_number = Column(Integer, ForeignKey("questionnaire_versions.version_number"), nullable=False, default=1)
+    display_order = Column(Integer, nullable=False, default=0)
+    section = Column(String(255))
     response_type = Column(Enum("text_field", "option", "numbers_only"), nullable=False)
     input_type = Column(String(50))
     is_required = Column(Boolean, default=False)
-    min_value = Column(String(50), nullable=True)
-    max_value = Column(String(50), nullable=True)
+    min_value = Column(Integer, nullable=True)
+    max_value = Column(Integer, nullable=True)
+    step_value = Column(Integer, nullable=True)
     placeholder = Column(String(255), nullable=True)
-    question = Column(Text, nullable=True)
+    video_url = Column(String(255), nullable=True)
+    other_option_id = Column(String(50), nullable=True)
+    other_placeholder = Column(String(255), nullable=True)
+    question = Column(Text, nullable=False)
     parent_question_id = Column(Integer, ForeignKey("questions.id"), nullable=True)
     trigger_answer = Column(String(255), nullable=True)
 
@@ -165,7 +182,7 @@ class QuestionOption(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     question_id = Column(Integer, ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
-    option_value = Column(Text, nullable=False)
+    option_value = Column(String(500), nullable=False)
     sort_order = Column(Integer, default=0)
 
     question = relationship("Question", back_populates="options")
@@ -186,6 +203,7 @@ class PatientSession(Base):
 
     id = Column(String(20), primary_key=True, index=True)
     hospital_id = Column(String(20), ForeignKey("hospitals.id"))
+    questionnaire_version = Column(Integer, nullable=False, default=1)
     consent_scanned_url = Column(Text)
     consent_timestamp = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 

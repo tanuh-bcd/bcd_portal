@@ -19,7 +19,14 @@ REPORT_FILE_TYPES = [
 ]
 
 EXCLUDED_HOSPITAL_NAMES = ('Test', 'Tanuh Foundation')
-INSTITUTE_QUESTIONS = ('Institute Name', 'Institute Name:', 'Enter the Hospital ID(If any, else leave):', 'Q45')
+INSTITUTE_QUESTIONS = (
+    'Institute Name',
+    'Institute Name:',
+    'Enter the Hospital ID(If any, else leave):',
+    'Enter the Institution Name (if any, else leave)',
+    'Enter the Institution Name (If any, else leave)',
+    'Q45',
+)
 
 VALID_BIRADS = {'0', '1', '2', '3', '4', '5'}
 
