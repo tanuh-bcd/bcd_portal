@@ -576,10 +576,10 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_cc_left'))}>
-                    <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} />
+                    <ResumableUpload label="CC Left" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
                   </div>
                   <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_mlo_left'))}>
-                    <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} />
+                    <ResumableUpload label="MLO Left" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
                   </div>
                 </div>
               </div>
@@ -587,10 +587,10 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_cc_right'))}>
-                    <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} />
+                    <ResumableUpload label="CC Right" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
                   </div>
                   <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_mlo_right'))}>
-                    <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} />
+                    <ResumableUpload label="MLO Right" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
                   </div>
                 </div>
               </div>
