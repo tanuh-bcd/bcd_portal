@@ -31,6 +31,10 @@
     "defaults": {
       "q45": "Universal"
     },
+    "tooltips": {
+      "postHysterectomy": "Post-hysterectomy: Surgical removal of uterus",
+      "postOophorectomy": "Post-oophorectomy: Surgical removal of ovaries"
+    },
     "invalidInput": {
       "numberPrefix": "Please enter a valid number between ",
       "and": "and",
