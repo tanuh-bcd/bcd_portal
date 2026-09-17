@@ -1,5 +1,10 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 
+const OPTION_TOOLTIPS = {
+  'Post-hysterectomy': 'postHysterectomy',
+  'Post-oophorectomy': 'postOophorectomy',
+};
+
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
 // Memoization prevents re-rendering all questions when typing in a single field,
@@ -283,13 +288,20 @@ const QuestionBlock = ({
         return (
           <div className="radio-group vertical">
             {qData.answers.map((ans, i) => {
-              const isOtherOption = /^others?$/i.test(String(questionnaireDataEn[config.key]?.answers?.[i] || ans).trim());
+              const englishAnswer = questionnaireDataEn[config.key]?.answers?.[i] || ans;
+              const isOtherOption = /^others?$/i.test(String(englishAnswer).trim());
+              const tooltipKey = OPTION_TOOLTIPS[englishAnswer];
+              const tooltip = tooltipKey ? t(`ui.tooltips.${tooltipKey}`) : undefined;
               return (
                 <React.Fragment key={i}>
-                  <label>
+                  <label
+                    className={tooltip ? 'question-option-with-tooltip' : undefined}
+                    data-tooltip={tooltip}
+                  >
                     <input
                       type="radio" name={qName} value={ans} onChange={handleChange}
                       checked={formData[qName] === ans}
+                      aria-label={tooltip ? `${ans}. ${tooltip}` : undefined}
                     /> {ans}
                   </label>
                   {isOtherOption && otherIsSelected(qName) && renderOtherInput(config, qName)}
