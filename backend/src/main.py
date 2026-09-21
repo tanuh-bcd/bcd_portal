@@ -17,6 +17,7 @@ from .api import (
     risk_categories,
     model_weights,
     risk_thresholds,
+    retrospective,
 )
 
 # Setup logging
@@ -61,6 +62,7 @@ app.include_router(reminders.router, prefix="/api/v1/reminders", tags=["reminder
 app.include_router(risk_categories.router, prefix="/api/v1/risk-categories", tags=["risk-categories"])
 app.include_router(model_weights.router, prefix="/api/v1/model-weights", tags=["model-weights"])
 app.include_router(risk_thresholds.router, prefix="/api/v1/risk-thresholds", tags=["risk-thresholds"])
+app.include_router(retrospective.router, prefix="/api/v1/admin/retrospective", tags=["retrospective"])
 
 
 @app.get("/api/health")

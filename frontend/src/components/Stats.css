@@ -501,6 +501,8 @@
 /* Institute table hover tooltip (Machines by Institute) */
 .institute-table-wrapper {
   position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .institute-hover-tooltip {

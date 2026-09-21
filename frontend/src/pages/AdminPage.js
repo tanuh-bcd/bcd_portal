@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import PatientPage from './PatientPage';
 import DoctorPage from './DoctorPage';
 import MRMCStudyContent from './MRMCStudyContent';
+import RetrospectiveUploadContent from './RetrospectiveUploadContent';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('admin');
@@ -45,11 +46,23 @@ const AdminPage = () => {
     { id: 'patient', label: 'Subject View' },
     { id: 'doctor', label: 'Clinician View' },
     // { id: 'mrmc', label: 'MRMC Study' },
+    ...(hospitalName === 'Test' ? [{ id: 'retrospective', label: 'Retrospective Upload' }] : []),
     { id: 'admin', label: 'Admin' },
   ];
 
-  const renderContent = () => {
-    switch (activeTab) {
+  // Tabs are kept mounted (hidden via CSS) once visited instead of being
+  // unmounted on switch -- otherwise navigating away from Retrospective
+  // Upload mid-upload would tear down its component state and abort the
+  // in-flight uploads. A visited tab keeps running in the background.
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set(['admin']));
+
+  const selectTab = (tabId) => {
+    setActiveTab(tabId);
+    setVisitedTabs((prev) => (prev.has(tabId) ? prev : new Set(prev).add(tabId)));
+  };
+
+  const renderTabContent = (tabId) => {
+    switch (tabId) {
       case 'patient':
         return <PatientPageContent />;
       case 'doctor':
@@ -58,6 +71,8 @@ const AdminPage = () => {
         return <div style={contentStyle}><AdminContent hospitalName={hospitalName} /></div>;
       case 'mrmc':
         return <div style={contentStyle}><MRMCStudyContent /></div>;
+      case 'retrospective':
+        return hospitalName === 'Test' ? <RetrospectiveUploadContent /> : null;
       default:
         return null;
     }
@@ -73,7 +88,7 @@ const AdminPage = () => {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => selectTab(tab.id)}
             style={{
               ...tabButtonStyle,
               borderBottom: activeTab === tab.id ? '3px solid #14868C' : 'none',
@@ -87,7 +102,13 @@ const AdminPage = () => {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        {renderContent()}
+        {tabs
+          .filter((tab) => visitedTabs.has(tab.id))
+          .map((tab) => (
+            <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
+              {renderTabContent(tab.id)}
+            </div>
+          ))}
       </div>
     </Layout>
   );
@@ -105,15 +126,20 @@ const DoctorPageContent = () => {
 const tabContainerStyle = {
   display: 'flex',
   justifyContent: 'center',
+  flexWrap: 'nowrap',
   backgroundColor: 'white',
   borderBottom: '1px solid #ddd',
-  padding: '0 20px',
-  borderRadius: '8px 8px 0 0'
+  padding: '0 4px',
+  borderRadius: '8px 8px 0 0',
+  overflowX: 'auto',
+  WebkitOverflowScrolling: 'touch',
 };
 
 const tabButtonStyle = {
-  padding: '15px 30px',
-  fontSize: '16px',
+  padding: 'clamp(8px, 2.5vw, 15px) clamp(8px, 3vw, 30px)',
+  fontSize: 'clamp(11px, 2.6vw, 16px)',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
   background: 'none',
   border: 'none',
   cursor: 'pointer',

@@ -377,7 +377,7 @@ def get_birads_by_institute_and_side(db: Session) -> dict:
     }
 
 
-def get_portal_mammogram_dashboard(db: Session, questionnaire_db: Session) -> dict:
+def get_portal_mammogram_dashboard(db: Session, questionnaire_db: Session, retrospective_case_count: int = 0) -> dict:
     total_assessments = get_total_assessments_count(db)
     complete_sets = get_complete_sets_count(db)
     partial_sets = get_partial_sets_count(db)
@@ -418,4 +418,5 @@ def get_portal_mammogram_dashboard(db: Session, questionnaire_db: Session) -> di
         "biradsDensity": birads_stats["biradsDensity"],
         "assessmentInstitutesCount": assessment_institutes_count,
         "assessmentStatesCount": assessment_states_count,
+        "retrospectiveCaseCount": retrospective_case_count,
     }
