@@ -241,12 +241,20 @@ def get_patient_sessions(
                    pid.answer AS patient_id, s.risk_category,
                    NULL AS hospital_name, s.consent_url
             FROM session_table s
-            JOIN session_data_table sd ON s.session_id = sd.session_id
-            LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
-              AND (pid.question_key IN :patient_id_question_keys OR pid.question IN :patient_id_questions)
-            WHERE (sd.question_key IN :institute_question_keys OR sd.question IN :q1)
-              AND sd.answer = :hospital_name
-              AND s.snehita_lifetime_risk IS NOT NULL
+            JOIN (
+                SELECT session_id
+                FROM session_data_table
+                WHERE (question_key IN :institute_question_keys OR question IN :q1)
+                  AND answer = :hospital_name
+                GROUP BY session_id
+            ) hosp ON s.session_id = hosp.session_id
+            LEFT JOIN (
+                SELECT session_id, MIN(answer) AS answer
+                FROM session_data_table
+                WHERE (question_key IN :patient_id_question_keys OR question IN :patient_id_questions)
+                GROUP BY session_id
+            ) pid ON s.session_id = pid.session_id
+            WHERE s.snehita_lifetime_risk IS NOT NULL
             ORDER BY {order_clause}
         """), {
             "q1": INSTITUTE_QUESTIONS,
