@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList
 } from 'recharts';
-import { FileCheck2, Building2, MapPin } from 'lucide-react';
+import { Archive, Building2, MapPin } from 'lucide-react';
 import './Stats.css';
 
 const COLORS = ['#6ee7b7', '#fde047', '#fb923c', '#fb7185', '#14868C'];
@@ -1018,8 +1018,6 @@ const MammogramStats = () => {
   if (error) return <div className="stats-error">Error: {error}</div>;
   if (!data) return null;
 
-  const totals = data.totals || {};
-
   const byHospital = mergeDuplicateInstitutes(filterExcludedEntities(data.byHospital));
   const byHospitalMax = byHospital.reduce(
     (max, h) => Math.max(max, h.subject_count || 0, h.report_count || 0),
@@ -1042,8 +1040,8 @@ const MammogramStats = () => {
           <div className="big-number">{mapCounts.states}</div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><FileCheck2 className="summary-icon" size={24} /><h3>Reports Uploaded</h3></div>
-          <div className="big-number">{totals.reports ?? 0}</div>
+          <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Retrospective Cases</h3></div>
+          <div className="big-number">{data.retrospectiveCaseCount ?? 0}</div>
         </div>
       </div>
 

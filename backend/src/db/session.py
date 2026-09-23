@@ -97,6 +97,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Questionnaire DB (bcd_questionnaire)
 questionnaire_engine = _build_engine(settings.MYSQL_DB_QUESTIONNAIRE)
 QuestionnaireSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=questionnaire_engine)
+retrospective_engine = _build_engine(settings.MYSQL_DB_RETROSPECTIVE)
+RetrospectiveSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=retrospective_engine)
+RetrospectiveBase = declarative_base()
 
 
 def get_db():
@@ -109,6 +112,13 @@ def get_db():
 
 def get_questionnaire_db():
     db = QuestionnaireSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_retrospective_db():
+    db = RetrospectiveSessionLocal()
     try:
         yield db
     finally:
