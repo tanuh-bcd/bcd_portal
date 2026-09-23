@@ -8,6 +8,7 @@ load_dotenv()
 
 def _cfg(name: str, default: str = "") -> str:
     return os.getenv(name) or get_secret(name, default)
+    # return os.getenv(name, default)
 
 
 class Settings:
@@ -106,6 +107,11 @@ class Settings:
     MYSQL_DB_QUESTIONNAIRE: str = _cfg("MYSQL_DB_QUESTIONNAIRE", "bcd_questionnaire")
     MYSQL_DB_QC: str = _cfg("MYSQL_DB_QC", "qc_bcd_portal")
     QC_DATABASE_URL_OVERRIDE: str = _cfg("QC_DATABASE_URL", "")
+
+    # Retrospective Data Upload: fully separate database/schema, isolated from
+    # bcd_application2 and bcd_questionnaire. See database/migrations for DDL.
+    MYSQL_DB_RETROSPECTIVE: str = _cfg("MYSQL_DB_RETROSPECTIVE", "Retrospective")
+    RETROSPECTIVE_GCS_PREFIX: str = _cfg("RETROSPECTIVE_GCS_PREFIX", "retrospective")
 
     @property
     def QC_DATABASE_URL(self) -> str:
