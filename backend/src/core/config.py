@@ -110,7 +110,7 @@ class Settings:
 
     # Retrospective Data Upload: fully separate database/schema, isolated from
     # bcd_application2 and bcd_questionnaire. See database/migrations for DDL.
-    MYSQL_DB_RETROSPECTIVE: str = _cfg("MYSQL_DB_RETROSPECTIVE", "Retrospective")
+    MYSQL_DB_RETROSPECTIVE: str = _cfg("MYSQL_DB_RETROSPECTIVE", "retrospective")
     RETROSPECTIVE_GCS_PREFIX: str = _cfg("RETROSPECTIVE_GCS_PREFIX", "retrospective")
 
     @property
