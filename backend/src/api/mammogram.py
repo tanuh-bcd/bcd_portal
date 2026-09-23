@@ -11,12 +11,6 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 def _get_retrospective_case_count(retro_db: Session) -> int:
-    """
-    Matches the "Total Retrospective Case Count" shown in the Admin's Upload
-    History (sum of each batch's total_cases_identified): every identified
-    case counts regardless of case_status (PENDING/PROCESSING/FAILED/...),
-    only report-only cases are excluded -- same rule as recompute_batch_progress.
-    """
     try:
         return retro_db.query(RetrospectiveCase).filter(~REPORT_ONLY_CASE).count()
     except Exception as e:
