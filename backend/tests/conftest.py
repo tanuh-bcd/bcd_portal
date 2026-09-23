@@ -59,11 +59,18 @@ def setup_databases():
 
     from sqlalchemy import text
     conn = q_engine.connect()
-    conn.execute(text("CREATE TABLE IF NOT EXISTS session_table (session_id TEXT PRIMARY KEY, ip_address TEXT, session_start_time TEXT, session_end_time TEXT, snehita_lifetime_risk TEXT, risk_category TEXT, consent_url TEXT)"))
+    conn.execute(text("CREATE TABLE IF NOT EXISTS session_table (session_id TEXT PRIMARY KEY, ip_address TEXT, session_start_time TEXT, session_end_time TEXT, snehita_lifetime_risk TEXT, risk_category TEXT, consent_url TEXT, questionnaire_version INTEGER NOT NULL DEFAULT 1)"))
     columns = {row[1] for row in conn.execute(text("PRAGMA table_info(session_table)")).fetchall()}
     if "consent_url" not in columns:
         conn.execute(text("ALTER TABLE session_table ADD COLUMN consent_url TEXT"))
-    conn.execute(text("CREATE TABLE IF NOT EXISTS session_data_table (session_data_id TEXT PRIMARY KEY, session_id TEXT, question TEXT, answer TEXT, created_by TEXT, created_at TEXT)"))
+    if "questionnaire_version" not in columns:
+        conn.execute(text("ALTER TABLE session_table ADD COLUMN questionnaire_version INTEGER NOT NULL DEFAULT 1"))
+    conn.execute(text("CREATE TABLE IF NOT EXISTS session_data_table (session_data_id TEXT PRIMARY KEY, session_id TEXT, question TEXT, answer TEXT, created_by TEXT, created_at TEXT, question_key TEXT, questionnaire_version INTEGER NOT NULL DEFAULT 1)"))
+    data_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(session_data_table)")).fetchall()}
+    if "question_key" not in data_columns:
+        conn.execute(text("ALTER TABLE session_data_table ADD COLUMN question_key TEXT"))
+    if "questionnaire_version" not in data_columns:
+        conn.execute(text("ALTER TABLE session_data_table ADD COLUMN questionnaire_version INTEGER NOT NULL DEFAULT 1"))
     conn.commit()
     conn.close()
 

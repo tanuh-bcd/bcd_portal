@@ -80,19 +80,26 @@ class QuestionOptionResponse(BaseModel):
 
 class QuestionResponse(BaseModel):
     id: int
+    question_key: str
+    version_number: int
+    display_order: int
     section: str
     response_type: str
     input_type: Optional[str] = None
     is_required: bool = False
     min_value: Optional[str] = None
     max_value: Optional[str] = None
+    step_value: Optional[str] = None
     placeholder: Optional[str] = None
+    video_url: Optional[str] = None
+    other_option_id: Optional[str] = None
+    other_placeholder: Optional[str] = None
     question_text: str
     parent_question_id: Optional[int] = None
     trigger_answer: Optional[str] = None
     options: list[QuestionOptionResponse] = []
 
-    @field_validator('min_value', 'max_value', mode='before')
+    @field_validator('min_value', 'max_value', 'step_value', mode='before')
     @classmethod
     def convert_to_string(cls, v):
         if v is None:

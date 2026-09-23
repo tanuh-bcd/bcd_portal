@@ -29,13 +29,17 @@
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-top: 6px solid #14868C;
   animation: fadeIn 0.5s ease-out;
+  font-family: 'Poppins', 'Noto Sans Devanagari', 'Noto Sans Bengali',
+    'Noto Sans Gujarati', 'Noto Sans Gurmukhi', 'Noto Sans Kannada',
+    'Noto Sans Malayalam', 'Noto Sans Oriya', 'Noto Sans Tamil',
+    'Noto Sans Telugu', sans-serif;
 }
 
 .consent-container h2 {
   color: #14868C;
   font-size: clamp(1.3rem, 2.2vw, 2rem);
   font-weight: 700;
-  font-family: 'Poppins', sans-serif;
+  font-family: inherit;
   letter-spacing: -0.5px;
   margin-top: 0;
   margin-bottom: clamp(12px, 1.6vw, 20px);
@@ -79,6 +83,29 @@
 
 .consent-section {
   margin-top: clamp(16px, 2.5vw, 30px);
+}
+
+.informed-consent {
+  margin-top: clamp(28px, 4vw, 50px);
+  padding-top: clamp(18px, 2.5vw, 30px);
+  border-top: 2px solid #d9eef0;
+}
+
+.participant-consent-block {
+  margin-top: clamp(20px, 3vw, 36px);
+  padding: clamp(14px, 2vw, 24px);
+  background: #f8fbfc;
+  border: 1px solid #dcebed;
+  border-radius: clamp(8px, 1vw, 12px);
+}
+
+.participant-consent-block h3 {
+  margin-top: 0;
+}
+
+.consent-checkbox.consent-confirmation {
+  margin-top: 12px;
+  align-items: flex-start;
 }
 
 .sub-point strong {

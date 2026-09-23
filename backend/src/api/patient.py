@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, status, Form
 from sqlalchemy.orm import Session, joinedload
 from ..db.session import get_db, get_questionnaire_db
-from ..models.models import PatientSession, Question, QuestionTranslation, QuestionOption, QuestionOptionTranslation, PatientResponse, DoctorAssessment, Attachment
+from ..models.models import PatientSession, Question, QuestionTranslation, QuestionOption, QuestionOptionTranslation, QuestionnaireVersion, PatientResponse, DoctorAssessment, Attachment
 from ..schemas.schemas import QuestionResponse, QuestionOptionResponse, QuestionnaireSubmission, PatientSessionListItem, PatientSessionDetail, DoctorAssessmentCreate, DoctorAssessmentResponse
 from ..core.config import settings
 from .auth import get_current_user
@@ -358,12 +358,22 @@ def record_upload(
 
 
 @router.get("/questions", response_model=List[QuestionResponse])
-def get_questions(lang: str = "en", db: Session = Depends(get_db)):
+def get_questions(lang: str = "en", version: Optional[int] = None, db: Session = Depends(get_db)):
+    if version is None:
+        active_version = db.query(QuestionnaireVersion).filter(
+            QuestionnaireVersion.is_active == True
+        ).order_by(QuestionnaireVersion.version_number.desc()).first()
+        if not active_version:
+            raise HTTPException(status_code=500, detail="No active questionnaire version configured")
+        version = active_version.version_number
+
     # Optimized query with joinedload to fetch translations and options in fewer queries
     questions = db.query(Question).options(
         joinedload(Question.translations),
         joinedload(Question.options).joinedload(QuestionOption.translations)
-    ).order_by(Question.id).all()
+    ).filter(
+        Question.version_number == version
+    ).order_by(Question.display_order, Question.id).all()
     
     response = []
     for q in questions:
@@ -384,23 +394,29 @@ def get_questions(lang: str = "en", db: Session = Depends(get_db)):
             if not opt_trans and lang != "en":
                 opt_trans = next((t for t in opt.translations if t.language_code == "en"), None)
             
-            if opt_trans:
-                options.append(QuestionOptionResponse(
-                    id=opt.id,
-                    option_value=opt.option_value,
-                    option_label=opt_trans.option_label,
-                    sort_order=opt.sort_order
-                ))
+            options.append(QuestionOptionResponse(
+                id=opt.id,
+                option_value=opt.option_value,
+                option_label=opt_trans.option_label if opt_trans else opt.option_value,
+                sort_order=opt.sort_order
+            ))
         
         response.append(QuestionResponse(
             id=q.id,
+            question_key=q.question_key or f"V{q.version_number}_Q{q.id:03d}",
+            version_number=q.version_number,
+            display_order=q.display_order,
             section=q.section,
             response_type=q.response_type,
             input_type=q.input_type,
             is_required=q.is_required,
             min_value=q.min_value,
             max_value=q.max_value,
+            step_value=q.step_value,
             placeholder=q.placeholder,
+            video_url=q.video_url,
+            other_option_id=q.other_option_id,
+            other_placeholder=q.other_placeholder,
             question_text=question_text,
             parent_question_id=q.parent_question_id,
             trigger_answer=q.trigger_answer,
