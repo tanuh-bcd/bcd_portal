@@ -1,7 +1,7 @@
-CREATE DATABASE IF NOT EXISTS `Retrospective`
+CREATE DATABASE IF NOT EXISTS `retrospective`
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE `Retrospective`;
+USE `retrospective`;
 
 CREATE TABLE IF NOT EXISTS retrospective_upload_batches (
     id INT AUTO_INCREMENT PRIMARY KEY,
