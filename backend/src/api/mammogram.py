@@ -5,15 +5,14 @@ from sqlalchemy import text
 from ..db.session import get_db, get_questionnaire_db, get_retrospective_db
 from ..mammogram_service import get_portal_mammogram_dashboard
 from ..models.retrospective_models import RetrospectiveCase
+from ..services.retrospective_processing import REPORT_ONLY_CASE
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 def _get_retrospective_case_count(retro_db: Session) -> int:
     try:
-        return retro_db.query(RetrospectiveCase).filter(
-            RetrospectiveCase.dicom_available == True  # noqa: E712 -- report-only cases never count
-        ).count()
+        return retro_db.query(RetrospectiveCase).filter(~REPORT_ONLY_CASE).count()
     except Exception as e:
         logger.warning(f"Could not compute retrospective case count: {e}")
         return 0
