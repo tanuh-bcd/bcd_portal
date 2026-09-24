@@ -169,13 +169,24 @@ def test_build_report_requires_all_five_data_point_components():
             q_db, session_ids[2], hospital.name, datetime(2026, 6, 30),
             consent_url="gs://test/consent-old.pdf",
         )
-        add_assessment(db, doctor, hospital, session_ids[0], complete=True)
-        add_assessment(db, doctor, hospital, session_ids[1], complete=False)
-        add_assessment(db, doctor, hospital, session_ids[2], complete=True)
+        complete = add_assessment(db, doctor, hospital, session_ids[0], complete=True)
+        incomplete = add_assessment(db, doctor, hospital, session_ids[1], complete=False)
+        old = add_assessment(db, doctor, hospital, session_ids[2], complete=True)
+        complete.created_at = datetime(2026, 7, 3)
+        incomplete.created_at = datetime(2026, 8, 3)
+        old.created_at = datetime(2026, 7, 1)
+        db.flush()
+        for assessment in (complete, incomplete, old):
+            db.query(Attachment).filter(
+                Attachment.assessment_id == assessment.id
+            ).update({Attachment.created_at: assessment.created_at})
         db.commit()
 
         report = build_report(db, q_db, hospital, date(2026, 8, 10), target=200)
         assert report.lifetime_data_points == 3
+        assert report.reports_uploaded == 2
+        assert report.image_records == 11
+        assert report.image_studies == 3
         assert report.data_points == 1
         assert report.assessments_submitted == 2
         assert report.pending_submissions == 199
