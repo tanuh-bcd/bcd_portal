@@ -4,17 +4,24 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.src.main import app
-from backend.src.db.session import Base, get_db, get_questionnaire_db
+from backend.src.db.session import Base, RetrospectiveBase, get_db, get_questionnaire_db, get_retrospective_db
 from backend.src.core.security import get_password_hash, create_access_token
 
 SQLALCHEMY_TEST_URL = "sqlite:///./test_bcd.db"
 SQLALCHEMY_TEST_Q_URL = "sqlite:///./test_questionnaire.db"
+SQLALCHEMY_TEST_RETRO_URL = "sqlite:///./test_retrospective.db"
 
-engine = create_engine(SQLALCHEMY_TEST_URL, connect_args={"check_same_thread": False})
+engine = create_engine(
+    SQLALCHEMY_TEST_URL,
+    connect_args={"check_same_thread": False},
+    execution_options={"schema_translate_map": {"ai_features": None}},
+)
 q_engine = create_engine(SQLALCHEMY_TEST_Q_URL, connect_args={"check_same_thread": False})
+retro_engine = create_engine(SQLALCHEMY_TEST_RETRO_URL, connect_args={"check_same_thread": False})
 
 TestSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 TestQSession = sessionmaker(autocommit=False, autoflush=False, bind=q_engine)
+TestRetroSession = sessionmaker(autocommit=False, autoflush=False, bind=retro_engine)
 
 
 def override_get_db():
@@ -33,20 +40,41 @@ def override_get_questionnaire_db():
         db.close()
 
 
+def override_get_retrospective_db():
+    db = TestRetroSession()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_databases():
     from backend.src.models.models import PatientResponse, EmailTemplate
-    for model in [PatientResponse, EmailTemplate]:
+    from backend.src.models import retrospective_models
+    for model in [PatientResponse, EmailTemplate, retrospective_models.RetrospectiveUploadBatch,
+                  retrospective_models.RetrospectiveCase, retrospective_models.RetrospectiveFile]:
         for col in model.__table__.columns:
             if col.name == 'updated_at' and col.server_default is not None:
                 col.server_default = None
 
     Base.metadata.create_all(bind=engine)
+    RetrospectiveBase.metadata.create_all(bind=retro_engine)
 
     from sqlalchemy import text
     conn = q_engine.connect()
-    conn.execute(text("CREATE TABLE IF NOT EXISTS session_table (session_id TEXT PRIMARY KEY, ip_address TEXT, session_start_time TEXT, session_end_time TEXT, snehita_lifetime_risk TEXT, risk_category TEXT)"))
-    conn.execute(text("CREATE TABLE IF NOT EXISTS session_data_table (session_data_id TEXT PRIMARY KEY, session_id TEXT, question TEXT, answer TEXT, created_by TEXT, created_at TEXT)"))
+    conn.execute(text("CREATE TABLE IF NOT EXISTS session_table (session_id TEXT PRIMARY KEY, ip_address TEXT, session_start_time TEXT, session_end_time TEXT, snehita_lifetime_risk TEXT, risk_category TEXT, consent_url TEXT, questionnaire_version INTEGER NOT NULL DEFAULT 1)"))
+    columns = {row[1] for row in conn.execute(text("PRAGMA table_info(session_table)")).fetchall()}
+    if "consent_url" not in columns:
+        conn.execute(text("ALTER TABLE session_table ADD COLUMN consent_url TEXT"))
+    if "questionnaire_version" not in columns:
+        conn.execute(text("ALTER TABLE session_table ADD COLUMN questionnaire_version INTEGER NOT NULL DEFAULT 1"))
+    conn.execute(text("CREATE TABLE IF NOT EXISTS session_data_table (session_data_id TEXT PRIMARY KEY, session_id TEXT, question TEXT, answer TEXT, created_by TEXT, created_at TEXT, question_key TEXT, questionnaire_version INTEGER NOT NULL DEFAULT 1)"))
+    data_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(session_data_table)")).fetchall()}
+    if "question_key" not in data_columns:
+        conn.execute(text("ALTER TABLE session_data_table ADD COLUMN question_key TEXT"))
+    if "questionnaire_version" not in data_columns:
+        conn.execute(text("ALTER TABLE session_data_table ADD COLUMN questionnaire_version INTEGER NOT NULL DEFAULT 1"))
     conn.commit()
     conn.close()
 
@@ -54,7 +82,7 @@ def setup_databases():
 
     yield
     import os
-    for f in ["test_bcd.db", "test_questionnaire.db"]:
+    for f in ["test_bcd.db", "test_questionnaire.db", "test_retrospective.db"]:
         if os.path.exists(f):
             os.unlink(f)
 
@@ -89,6 +117,7 @@ def _seed_test_data():
 def client():
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_questionnaire_db] = override_get_questionnaire_db
+    app.dependency_overrides[get_retrospective_db] = override_get_retrospective_db
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

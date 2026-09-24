@@ -49,9 +49,12 @@ class HospitalBase(BaseModel):
     address: Optional[str] = None
     pincode: Optional[str] = None
     state: Optional[str] = None
+    type: Optional[str] = None
 
 class HospitalCreate(HospitalBase):
     state: str
+    type: str
+    short_name: str
 
 class HospitalResponse(HospitalBase):
     id: str
@@ -77,19 +80,26 @@ class QuestionOptionResponse(BaseModel):
 
 class QuestionResponse(BaseModel):
     id: int
+    question_key: str
+    version_number: int
+    display_order: int
     section: str
     response_type: str
     input_type: Optional[str] = None
     is_required: bool = False
     min_value: Optional[str] = None
     max_value: Optional[str] = None
+    step_value: Optional[str] = None
     placeholder: Optional[str] = None
+    video_url: Optional[str] = None
+    other_option_id: Optional[str] = None
+    other_placeholder: Optional[str] = None
     question_text: str
     parent_question_id: Optional[int] = None
     trigger_answer: Optional[str] = None
     options: list[QuestionOptionResponse] = []
 
-    @field_validator('min_value', 'max_value', mode='before')
+    @field_validator('min_value', 'max_value', 'step_value', mode='before')
     @classmethod
     def convert_to_string(cls, v):
         if v is None:
@@ -186,3 +196,185 @@ class DoctorAssessmentCreate(BaseModel):
     us_biopsy_density: Optional[str] = None
     precision_diagnosis: Optional[str] = None
     datapoint_feedback: Optional[str] = None
+
+class MachineBase(BaseModel):
+    machine: str
+    make: Optional[str] = None
+    technology: Optional[str] = None
+    no_of_machines: int = 1
+
+    @field_validator('no_of_machines')
+    @classmethod
+    def validate_no_of_machines(cls, v):
+        if v <= 0:
+            raise ValueError('no_of_machines must be a positive number')
+        return v
+
+class MachineCreate(MachineBase):
+    hospital_id: str
+    hospital_short_name: Optional[str] = None
+
+class MachineResponse(MachineBase):
+    id: int
+    hospital_id: str
+    hospital_short_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class UserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+class MRMCStudyCreate(BaseModel):
+    name: str
+    institution_ids: List[str]
+    subject_ids: List[str]
+    reader_user_ids: List[int]
+    arbiter_user_id: int
+class MRMCParticipantResponse(BaseModel):
+    user_id: int
+    full_name: str
+    is_reader: bool
+    is_arbiter: bool
+    assigned_count: int
+    submitted_count: int
+    kappa_score: Optional[float]
+
+    class Config:
+        from_attributes = True
+
+class MRMCStudyResponse(BaseModel):
+    id: int
+    name: str
+    created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+
+class ClinicianOption(BaseModel):
+    id: int
+    full_name: str
+
+    class Config:
+        from_attributes = True
+
+class SubjectOption(BaseModel):
+    id: str  # patient_session_id
+    class Config:
+        from_attributes = True
+
+class SubjectAssignment(BaseModel):
+    patient_session_id: str
+    is_included: bool = True
+    reader_user_id: Optional[int] = None
+    arbiter_user_id: Optional[int] = None
+
+    @field_validator("arbiter_user_id")
+    @classmethod
+    def reader_ne_arbiter(cls, v, info):
+        if v is not None and v == info.data.get("reader_user_id"):
+            raise ValueError("Reader and arbiter cannot be the same clinician")
+        return v
+    
+class RiskCategoryResponse(BaseModel):
+    id: int
+    risk_category: str
+    lifetime_risk_percentage: str
+    description: Optional[str] = None
+    recommendation: Optional[str] = None
+    version_number: int
+    display_order: int
+
+    class Config:
+        from_attributes = True
+
+
+class RiskCategoryVersionResponse(BaseModel):
+    version_number: int
+    is_active: bool
+    started_at: Optional[datetime.datetime] = None
+    ended_at: Optional[datetime.datetime] = None
+    created_at: datetime.datetime
+    categories: List[RiskCategoryResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class RiskCategoryItemCreate(BaseModel):
+    risk_category: str
+    lifetime_risk_percentage: str
+    description: Optional[str] = None
+    recommendation: Optional[str] = None
+    display_order: int = 0
+
+
+class RiskCategoryVersionCreate(BaseModel):
+    categories: List[RiskCategoryItemCreate]
+
+class ModelWeightResponse(BaseModel):
+    id: int
+    feature_name: str
+    weight_value: float
+    version_number: int
+
+    class Config:
+        from_attributes = True
+
+
+class ModelWeightItemCreate(BaseModel):
+    feature_name: str
+    weight_value: float
+
+
+class ModelWeightsVersionCreate(BaseModel):
+    weights: List[ModelWeightItemCreate]
+
+
+class ModelWeightsVersionResponse(BaseModel):
+    version_number: int
+    is_active: bool
+    started_at: Optional[datetime.datetime] = None
+    ended_at: Optional[datetime.datetime] = None
+    created_at: datetime.datetime
+    weights: List[ModelWeightResponse] = []
+
+    class Config:
+        from_attributes = True
+
+class RiskThresholdResponse(BaseModel):
+    id: int
+    risk_category: str
+    min_percentage: Optional[float] = None 
+    max_percentage: Optional[float] = None
+    version_number: int
+
+    class Config:
+        from_attributes = True
+
+
+class RiskThresholdItemCreate(BaseModel):
+    risk_category: str
+    min_percentage: Optional[float] = None
+    max_percentage: Optional[float] = None
+
+
+class RiskThresholdsVersionCreate(BaseModel):
+    thresholds: List[RiskThresholdItemCreate]
+
+
+class RiskThresholdsVersionResponse(BaseModel):
+    version_number: int
+    is_active: bool
+    started_at: Optional[datetime.datetime] = None
+    ended_at: Optional[datetime.datetime] = None
+    created_at: datetime.datetime
+    thresholds: List[RiskThresholdResponse] = []
+
+    class Config:
+        from_attributes = True

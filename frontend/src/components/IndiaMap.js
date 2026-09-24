@@ -63,6 +63,7 @@ const IndiaMap = () => {
   const [error, setError] = useState(null);
   const [tooltip, setTooltip] = useState(null);
   const [activeMarker, setActiveMarker] = useState(null);
+  const [selectedState, setSelectedState] = useState(null);
   const wrapRef = useRef(null);
   const API_URL = process.env.REACT_APP_API_URL || '';
 
@@ -80,6 +81,13 @@ const IndiaMap = () => {
       .then(([map, locs]) => {
         setMapData(map);
         setHospitals(locs);
+
+        const defaultIdx = (map.states || []).findIndex(
+          (s) => (s.name || '').trim().toLowerCase() === 'karnataka'
+        );
+        if (defaultIdx !== -1) {
+          setSelectedState({ index: defaultIdx, name: map.states[defaultIdx].name });
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -119,16 +127,37 @@ const IndiaMap = () => {
     }
   }, [activeMarker, handleMarkerEnter]);
 
+  const handleStateClick = useCallback((s, idx, e) => {
+    e.stopPropagation();
+    setSelectedState((prev) =>
+      prev && prev.index === idx
+        ? null
+        : { index: idx, name: s.name || 'Unknown region' }
+    );
+    setTooltip(null);
+    setActiveMarker(null);
+  }, []);
+
   const handleWrapClick = useCallback((e) => {
-    if (!e.target.classList.contains('marker-dot')) {
+    if (
+      !e.target.classList.contains('marker-dot') &&
+      !e.target.classList.contains('india-state')
+    ) {
       setTooltip(null);
       setActiveMarker(null);
     }
   }, []);
-
+  
   if (loading) return <div className="india-map-loading">Loading map...</div>;
   if (error) return <div className="india-map-error">{error}</div>;
   if (!mapData) return null;
+
+  const viewBoxStr = mapData.viewBox || '0 0 640 720';
+  const vbParts = viewBoxStr.split(/\s+/).map(Number);
+  const mapAspect =
+    vbParts.length === 4 && vbParts[2] && vbParts[3]
+      ? `${vbParts[2]} / ${vbParts[3]}`
+      : '640 / 720';
 
   const grouped = new Map();
   for (const h of hospitals) {
@@ -145,20 +174,23 @@ const IndiaMap = () => {
   const groups = Array.from(grouped.values());
   const markers = clusterMarkers(groups, mapData.projection);
 
+  const selectedStateHospitals = selectedState
+    ? hospitals.filter((h) => h.state === selectedState.name)
+    : [];
+
   return (
     <div className="india-map-section">
       <div className="india-map-header">
-        {/* <span className="india-map-label">INDIA FOOTPRINT</span> */}
         <h3>Medical Partner Locations</h3>
-        {/* <p className="india-map-hint">Hover, tap, or focus a point to view the collaboration site and current submission count.</p> */}
       </div>
       <div className="public-map-wrap" ref={wrapRef} onClick={handleWrapClick}>
         <svg
           className="india-map"
-          viewBox={mapData.viewBox || '0 0 640 720'}
+          viewBox={viewBoxStr}
           preserveAspectRatio="xMidYMid meet"
           role="img"
           aria-label="India map showing partner hospital locations"
+          style={{ '--map-aspect': mapAspect }}
         >
           <g className="india-map-states">
             {(mapData.states || []).map((s, i) =>
@@ -166,8 +198,12 @@ const IndiaMap = () => {
                 <path
                   key={i}
                   d={s.path}
-                  className="india-state"
+                  className={`india-state${selectedState && selectedState.index === i ? ' selected' : ''
+                    }`}
                   aria-label={s.name || 'Indian state'}
+                  tabIndex={0}
+                  role="button"
+                  onClick={(e) => handleStateClick(s, i, e)}
                 />
               ) : null
             )}
@@ -224,6 +260,49 @@ const IndiaMap = () => {
               ))}
             </ul>
             <div className="map-tip-location">{tooltip.location}</div>
+          </div>
+        )}
+
+        {selectedState && (
+          <div className="india-info-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="info-panel-header">
+              <span className="info-panel-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <div>
+                <span className="info-panel-label">Selected Location</span>
+                <h4>{selectedState.name}</h4>
+              </div>
+            </div>
+
+            <div className="info-panel-count">
+              <span className="count-number">{selectedStateHospitals.length}</span>
+              <span className="count-label">Medical partners</span>
+            </div>
+
+            <p className="info-panel-message">
+              {selectedStateHospitals.length > 0
+                ? `${selectedStateHospitals.length} clinical partner${selectedStateHospitals.length > 1 ? 's' : ''
+                } in ${selectedState.name}.`
+                : 'No clinical partners as of now.'}
+            </p>
+
+            {selectedStateHospitals.length > 0 && (
+              <ul className="info-panel-hospital-list">
+                {selectedStateHospitals.map((h, i) => (
+                  <li key={h.id ?? i} className="info-panel-hospital-item">
+                    <span className="hospital-item-name">
+                      {[h.name, h.city].filter(Boolean).join(', ')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>

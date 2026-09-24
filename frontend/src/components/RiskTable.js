@@ -1,51 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './RiskTable.css';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const RiskTable = () => {
-    const tableData = [
-        {
-            category: 'Baseline',
-            percentage: '≤ 14%',
-            description: (
-                <span><strong>The "Baseline" Category:</strong> Most women fall in this group, with no major known risk indicators.</span>
-            ),
-            nextSteps: ['Routine screening']
-        },
-        {
-            category: 'Evident',
-            percentage: '15% - 19%',
-            description: (
-                <span><strong>The "Watchful" Category:</strong> You have a few mild risk indicators that may be worth monitoring over time.</span>
-            ),
-            nextSteps: [
-                'Continue routine screening.',
-                'Yearly mammography based screening is mandatory.'
-            ]
-        },
-        {
-            category: 'Significant',
-            percentage: '20% - 24%',
-            description: (
-                <span><strong>The "Increased" Category:</strong> You have at least one strong risk indicator that places you at a moderately elevated risk.</span>
-            ),
-            nextSteps: [
-                'Routine screening with yearly mammography being mandatory.',
-                'Supplemental screening is needed as well.'
-            ]
-        },
-        {
-            category: 'High',
-            percentage: '≥ 25%',
-            description: (
-                <span><strong>The "Intensive" Category:</strong> You are at the highest risk and need closer clinical attention.</span>
-            ),
-            nextSteps: [
-                'Routine screening with yearly mammography being mandatory.',
-                'Additional annual screening including breast MRI is desirable.',
-                'Genetic counseling and relatives screening might be necessary.'
-            ]
-        }
-    ];
+    const [tableData, setTableData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchRiskCategories = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/v1/risk-categories/`);
+                if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+                const data = await res.json();
+                const mapped = data.map((row) => {
+                    const match = row.description.match(/^(.*?Category:)\s*(.*)$/s);
+
+                    const descriptionNode = match
+                        ? <span><strong>{match[1]}</strong> {match[2]}</span>
+                        : <span>{row.description}</span>;
+
+                    return {
+                        category: row.riskCategory,
+                        percentage: row.lifetimeRiskPercentage,
+                        description: descriptionNode,
+                        nextSteps: row.recommendation
+                            .split('. ')
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                            .map((s) => (s.endsWith('.') ? s : `${s}.`))
+                    };
+                });
+                setTableData(mapped);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRiskCategories();
+    }, []);
+
+    if (loading) return <div className="risk-table-container fade-in">Loading risk categories…</div>;
+    if (error) return <div className="risk-table-container fade-in">Failed to load risk categories.</div>;
 
     return (
         <div id="risk-categories-table" className="risk-table-container fade-in">

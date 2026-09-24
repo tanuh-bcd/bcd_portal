@@ -8,6 +8,7 @@ load_dotenv()
 
 def _cfg(name: str, default: str = "") -> str:
     return os.getenv(name) or get_secret(name, default)
+    # return os.getenv(name, default)
 
 
 class Settings:
@@ -47,27 +48,79 @@ class Settings:
     SMTP_PASSWORD: str = _cfg("SMTP_PASSWORD")
     SMTP_FROM: str = _cfg("SMTP_FROM")
 
+    REMINDER_EMAIL_ENABLED: bool = _cfg("REMINDER_EMAIL_ENABLED", "false").lower() == "true"
+    REMINDER_RECIPIENT_EMAIL: str = _cfg("REMINDER_RECIPIENT_EMAIL", "")
     REMINDER_FROM_EMAIL: str = _cfg(
         "REMINDER_FROM_EMAIL",
         "PinkShieldAI <breastcancerscreening@tanuh.ai>",
     )
-    REMINDER_EMAIL_ENABLED: bool = _cfg("REMINDER_EMAIL_ENABLED", "false").lower() == "true"
-    REMINDER_RECIPIENT_EMAIL: str = _cfg("REMINDER_RECIPIENT_EMAIL", "")
     REMINDER_QUARTERLY_TARGET: int = int(_cfg("REMINDER_QUARTERLY_TARGET", "200"))
     REMINDER_INTERVAL_DAYS: int = int(_cfg("REMINDER_INTERVAL_DAYS", "14"))
+    REMINDER_INTERVAL_MINUTES: int = int(_cfg("REMINDER_INTERVAL_MINUTES", "0"))
     REMINDER_PORTAL_URL: str = _cfg("REMINDER_PORTAL_URL", "https://bc-portal-dev.tanuh.ai/login")
-    REMINDER_SUPPORT_EMAIL: str = _cfg(
-        "REMINDER_SUPPORT_EMAIL",
-        "breastcancerscreening@tanuh.ai",
-    )
+    REMINDER_SUPPORT_EMAIL: str = _cfg("REMINDER_SUPPORT_EMAIL", "breastcancerscreening@tanuh.ai")
     REMINDER_REPLY_TO: str = _cfg("REMINDER_REPLY_TO", REMINDER_SUPPORT_EMAIL)
     REMINDER_TIMEZONE: str = _cfg("REMINDER_TIMEZONE", "Asia/Kolkata")
-    CRON_SERVICE_ACCOUNT_EMAIL: str = _cfg("CRON_SERVICE_ACCOUNT_EMAIL")
-    CRON_OIDC_AUDIENCE: str = _cfg("CRON_OIDC_AUDIENCE")
+    REMINDER_EXCLUDED_HOSPITALS: str = _cfg(
+        "REMINDER_EXCLUDED_HOSPITALS",
+        "Test,Tanuh Foundation",
+    )
+    REMINDER_EXCLUDED_RECIPIENT_DOMAINS: str = _cfg(
+        "REMINDER_EXCLUDED_RECIPIENT_DOMAINS",
+        "tanuh.ai",
+    )
+    REMINDER_EXCLUDED_RECIPIENT_EMAILS: str = _cfg(
+        "REMINDER_EXCLUDED_RECIPIENT_EMAILS",
+        "psanjana2711@gmail.com,vermamanisha6200@gmail.com,minminiselvam95@gmail.com",
+    )
+    REMINDER_CC_EMAILS: str = _cfg(
+        "REMINDER_CC_EMAILS",
+        "bcs@tanuh.ai",
+    )
+    REMINDER_AGGREGATE_RECIPIENTS: str = _cfg(
+        "REMINDER_AGGREGATE_RECIPIENTS",
+        "bcs@tanuh.ai",
+    )
+    REMINDER_OPERATOR_EMAILS: str = _cfg(
+        "REMINDER_OPERATOR_EMAILS",
+        (
+            "bharath.tangella@tanuh.ai,ashwin.rajkumar@tanuh.ai,"
+            "vaishnavi.joshi@tanuh.ai,palivela.sanjana@tanuh.ai"
+        ),
+    )
+    REMINDER_LOG_RETENTION_DAYS: int = int(_cfg("REMINDER_LOG_RETENTION_DAYS", "365"))
+    REMINDER_MAX_DELIVERY_ATTEMPTS: int = int(
+        _cfg("REMINDER_MAX_DELIVERY_ATTEMPTS", "3")
+    )
+    REMINDER_FAILURE_RECIPIENT_EMAIL: str = _cfg(
+        "REMINDER_FAILURE_RECIPIENT_EMAIL",
+        "vaishnavi.joshi@tanuh.ai",
+    )
     REMINDER_TEMPLATE_TEST_ENABLED: bool = (
         _cfg("REMINDER_TEMPLATE_TEST_ENABLED", "false").lower() == "true"
     )
 
+    CRON_OIDC_AUDIENCE: str = _cfg("CRON_OIDC_AUDIENCE")
+    CRON_SERVICE_ACCOUNT_EMAIL: str = _cfg("CRON_SERVICE_ACCOUNT_EMAIL")
+    CRON_SHARED_SECRET: str = _cfg("CRON_SHARED_SECRET")
     MYSQL_DB_QUESTIONNAIRE: str = _cfg("MYSQL_DB_QUESTIONNAIRE", "bcd_questionnaire")
+    MYSQL_DB_QC: str = _cfg("MYSQL_DB_QC", "qc_bcd_portal")
+    QC_DATABASE_URL_OVERRIDE: str = _cfg("QC_DATABASE_URL", "")
+
+    # Retrospective Data Upload: fully separate database/schema, isolated from
+    # bcd_application2 and bcd_questionnaire. See database/migrations for DDL.
+    MYSQL_DB_RETROSPECTIVE: str = _cfg("MYSQL_DB_RETROSPECTIVE", "retrospective")
+    RETROSPECTIVE_GCS_PREFIX: str = _cfg("RETROSPECTIVE_GCS_PREFIX", "retrospective")
+
+    @property
+    def QC_DATABASE_URL(self) -> str:
+        if self.QC_DATABASE_URL_OVERRIDE:
+            return self.QC_DATABASE_URL_OVERRIDE
+        password = urllib.parse.quote_plus(self.MYSQL_PASSWORD) if self.MYSQL_PASSWORD else ""
+        url = f"mysql+pymysql://{self.MYSQL_USER}:{password}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB_QC}"
+        if self.MYSQL_QUERY:
+            url += f"?{self.MYSQL_QUERY}"
+        return url
+
 
 settings = Settings()

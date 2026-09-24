@@ -96,7 +96,7 @@
 // export default Consent;
 
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './Consent.css';
 import { useTranslation } from 'react-i18next';
 import { Camera, Upload, X, RefreshCw } from 'lucide-react';
@@ -104,11 +104,47 @@ import LanguageSwitcher from './LanguageSwitcher';
 
 function Consent({ onAccept }) {
   const [isChecked, setIsChecked] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [informationVoluntary, setInformationVoluntary] = useState(false);
   const [scannedFile, setScannedFile] = useState(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [facingMode, setFacingMode] = useState('environment');
-  const { t } = useTranslation('consent');
+  const { t, i18n } = useTranslation('consent');
+  const [databaseContent, setDatabaseContent] = useState(null);
+
+  useEffect(() => {
+    const languageCodes = {
+      english: 'en', hindi: 'hi', bengali: 'bn', gujarati: 'gu', kannada: 'kn',
+      malayalam: 'ml', marathi: 'mr', odia: 'or', punjabi: 'pa', tamil: 'ta', telugu: 'te',
+      en: 'en', hi: 'hi', bn: 'bn', gu: 'gu', kn: 'kn', ml: 'ml', mr: 'mr',
+      or: 'or', pa: 'pa', ta: 'ta', te: 'te',
+    };
+    const languageCode = languageCodes[i18n.resolvedLanguage || i18n.language] || 'en';
+    const apiUrl = process.env.REACT_APP_API_URL || '';
+    let cancelled = false;
+    const query = new URLSearchParams({ lang: languageCode });
+    const questionnaireVersion = process.env.REACT_APP_QUESTIONNAIRE_VERSION;
+    if (questionnaireVersion) query.set('version', questionnaireVersion);
+
+    fetch(`${apiUrl}/api/participant-information?${query.toString()}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Participant information unavailable');
+        return response.json();
+      })
+      .then(content => { if (!cancelled) setDatabaseContent(content); })
+      .catch(() => { if (!cancelled) setDatabaseContent(null); });
+    return () => { cancelled = true; };
+  }, [i18n.language, i18n.resolvedLanguage]);
+
+  const content = databaseContent || {
+    title: t('title'),
+    headernames: t('headernames', { returnObjects: true }),
+    header: t('header', { returnObjects: true }),
+    sections: t('sections', { returnObjects: true }),
+    checkboxLabel: t('checkboxLabel'),
+    buttonText: t('buttonText'),
+  };
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -184,8 +220,17 @@ function Consent({ onAccept }) {
   };
 
   const handleAccept = () => {
-    onAccept({ file: scannedFile || null });
+    onAccept({
+      file: scannedFile || null,
+      ageConfirmed,
+      informationVoluntary,
+    });
   };
+
+  const informedConsent = content.informedConsent;
+  const consentConfirmed = informedConsent
+    ? ageConfirmed && informationVoluntary
+    : isChecked;
 
   return (
     <div className="consent-container">
@@ -197,17 +242,17 @@ function Consent({ onAccept }) {
       <LanguageSwitcher />
 
       {/* Use the 't' function to get the text */}
-      <h2>{t('title')}</h2>
+      <h2>{content.title}</h2>
 
       <div className="consent-header">
-        <p><strong>{t('headernames.studyTitle')} :</strong> {t('header.studyTitle')}</p>
-        <p><strong>{t('headernames.sponsor')} :</strong> {t('header.sponsor')}</p>
-        <p><strong>{t('headernames.iecApproval')} :</strong> {t('header.iecApproval')}</p>
+        <p><strong>{content.headernames.studyTitle} :</strong> {content.header.studyTitle}</p>
+        <p><strong>{content.headernames.sponsor} :</strong> {content.header.sponsor}</p>
+        <p><strong>{content.headernames.iecApproval} :</strong> {content.header.iecApproval}</p>
       </div>
 
       {/* Loop through sections from the JSON file */}
       {/* {returnObjects: true} is important for looping */}
-      {t('sections', { returnObjects: true }).map((section, idx) => (
+      {(content.sections || []).map((section, idx) => (
         <div key={idx} className={section.className ? section.className : 'consent-section'}>
           <h3>{section.heading}</h3>
           {section.paragraphs.map((para, pIdx) => (
@@ -218,6 +263,54 @@ function Consent({ onAccept }) {
           ))}
         </div>
       ))}
+
+      {informedConsent && (
+        <section className="informed-consent">
+          <h2>{informedConsent.title}</h2>
+
+          <div className="consent-header">
+            {Object.values(informedConsent.projectDetails || {}).map((detail, idx) => (
+              <p key={idx}>
+                <strong>{detail.label} :</strong> {detail.value}
+              </p>
+            ))}
+          </div>
+
+          {(informedConsent.sections || []).map((section, idx) => (
+            <div key={idx} className="consent-section">
+              <h3>{section.heading}</h3>
+              {(section.paragraphs || []).map((paragraph, pIdx) => (
+                <p key={pIdx}>{paragraph.text}</p>
+              ))}
+            </div>
+          ))}
+
+          <div className="participant-consent-block">
+            <h3>{informedConsent.participantConsentHeading}</h3>
+            <p>{informedConsent.declaration}</p>
+
+            <div className="consent-checkbox consent-confirmation">
+              <input
+                type="checkbox"
+                id="age-confirmed"
+                checked={ageConfirmed}
+                onChange={event => setAgeConfirmed(event.target.checked)}
+              />
+              <label htmlFor="age-confirmed">{informedConsent.ageCheckboxLabel}</label>
+            </div>
+
+            <div className="consent-checkbox consent-confirmation">
+              <input
+                type="checkbox"
+                id="information-voluntary"
+                checked={informationVoluntary}
+                onChange={event => setInformationVoluntary(event.target.checked)}
+              />
+              <label htmlFor="information-voluntary">{informedConsent.voluntaryCheckboxLabel}</label>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="consent-upload">
         <strong className="consent-upload-title">Consent Upload</strong>
@@ -273,22 +366,23 @@ function Consent({ onAccept }) {
         )}
       </div>
 
-      <div className="consent-checkbox">
-        <input
-          type="checkbox"
-          id="consent-check"
-          checked={isChecked}
-          onChange={() => setIsChecked(!isChecked)}
-        />
-        <label htmlFor="consent-check">{t('checkboxLabel')}</label>
-      </div>
+      {!informedConsent && (
+        <div className="consent-checkbox">
+          <input
+            type="checkbox"
+            id="consent-check"
+            checked={isChecked}
+            onChange={() => setIsChecked(!isChecked)}
+          />
+          <label htmlFor="consent-check">{content.checkboxLabel}</label>
+        </div>
+      )}
 
-      <button onClick={handleAccept} disabled={!isChecked}>
-        {t('buttonText')}
+      <button onClick={handleAccept} disabled={!consentConfirmed}>
+        {content.buttonText}
       </button>
     </div>
   );
 }
 
 export default Consent;
-

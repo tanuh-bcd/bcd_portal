@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP, text, Text, Enum, JSON, Index, Date, DateTime, UniqueConstraint
+from sqlalchemy import Column, Float, Integer, String, ForeignKey, Boolean, TIMESTAMP, UniqueConstraint, text, Text, Enum, JSON, Index, Date, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from ..db.session import Base
 import enum
 
@@ -20,10 +19,23 @@ class Hospital(Base):
     address = Column(Text)
     pincode = Column(String(10))
     state = Column(String(100))
+    type = Column(String(100), nullable=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     users = relationship("User", back_populates="hospital")
+    machines = relationship("Machine", back_populates="hospital", cascade="all, delete-orphan")  # renamed + uselist implicit True
 
+class Machine(Base):
+    __tablename__ = "machines"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hospital_id = Column(String(20), ForeignKey("hospitals.id", ondelete="CASCADE"), nullable=False, index=True)
+    hospital_short_name = Column(String(255), nullable=True)
+    machine = Column(String(255), nullable=False)
+    make = Column(String(255), nullable=True)
+    technology = Column(String(255), nullable=True)
+    no_of_machines = Column(Integer, default=1)
+    hospital = relationship("Hospital", back_populates="machines")
 class Role(Base):
     __tablename__ = "roles"
 
@@ -70,30 +82,72 @@ class EmailTemplateCc(Base):
 class ReminderEmailLog(Base):
     __tablename__ = "reminder_email_log"
     __table_args__ = (
-        UniqueConstraint("hospital_id", "report_date", name="uq_reminder_hospital_report_date"),
+        Index("uq_reminder_idempotency_key", "idempotency_key", unique=True),
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    hospital_id = Column(String(20), ForeignKey("hospitals.id"), nullable=False, index=True)
+    report_type = Column(String(20), nullable=False, default="hospital")
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"), nullable=True, index=True)
     recipient_email = Column(String(255), nullable=False)
+    idempotency_key = Column(String(500), nullable=False)
     report_date = Column(Date, nullable=False)
     quarter_start = Column(Date, nullable=False)
     quarter_end = Column(Date, nullable=False)
     data_points = Column(Integer, nullable=False)
+    lifetime_data_points = Column(Integer, nullable=False, default=0)
     assessments_submitted = Column(Integer, nullable=False)
     pending_submissions = Column(Integer, nullable=False)
     quarterly_target = Column(Integer, nullable=False, default=200)
     missing_questionnaire_sessions = Column(Integer, nullable=False, default=0)
+    missing_consent = Column(Integer, nullable=False, default=0)
+    missing_birads = Column(Integer, nullable=False, default=0)
+    missing_density = Column(Integer, nullable=False, default=0)
     incomplete_assessments = Column(Integer, nullable=False, default=0)
     missing_mammogram_views = Column(Integer, nullable=False, default=0)
     missing_mammogram_reports = Column(Integer, nullable=False, default=0)
     mammogram_quality_flags = Column(Integer, nullable=False, default=0)
     status = Column(String(20), nullable=False, default="pending")
+    attempt_count = Column(Integer, nullable=False, default=0)
     error_message = Column(Text)
+    failure_notified_at = Column(DateTime)
+    failure_notification_error = Column(Text)
     sent_at = Column(DateTime)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     hospital = relationship("Hospital")
+
+
+class ReminderConfiguration(Base):
+    __tablename__ = "reminder_configuration"
+
+    id = Column(Integer, primary_key=True)
+    is_paused = Column(Boolean, nullable=False, default=False)
+    is_disabled = Column(Boolean, nullable=False, default=False)
+    updated_by = Column(String(255))
+    updated_at = Column(DateTime)
+
+
+class ReminderDelivery(Base):
+    """Immutable rendered message retained for the dashboard-mail pilot workflow."""
+    __tablename__ = "reminder_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "scope", "recipient_email", "cycle_date", name="uq_reminder_delivery_cycle"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True)
+    scope = Column(String(80), nullable=False)
+    recipient_email = Column(String(255), nullable=False)
+    cycle_date = Column(Date, nullable=False)
+    subject = Column(String(255), nullable=False)
+    body_html = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+    attempts = Column(Integer, nullable=False, default=0)
+    last_attempt_date = Column(Date)
+    sent_at = Column(DateTime)
+    error_message = Column(Text)
+    alert_sent_at = Column(DateTime)
 
 class Language(Base):
     __tablename__ = "languages"
@@ -101,18 +155,35 @@ class Language(Base):
     code = Column(String(5), primary_key=True)
     name = Column(String(50), nullable=False)
 
+class QuestionnaireVersion(Base):
+    __tablename__ = "questionnaire_versions"
+
+    version_number = Column(Integer, primary_key=True)
+    version_name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=False)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    activated_at = Column(TIMESTAMP, nullable=True)
+
 class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    section = Column(String(100))
+    question_key = Column(String(50), nullable=True)
+    version_number = Column(Integer, ForeignKey("questionnaire_versions.version_number"), nullable=False, default=1)
+    display_order = Column(Integer, nullable=False, default=0)
+    section = Column(String(255))
     response_type = Column(Enum("text_field", "option", "numbers_only"), nullable=False)
     input_type = Column(String(50))
     is_required = Column(Boolean, default=False)
-    min_value = Column(String(50), nullable=True)
-    max_value = Column(String(50), nullable=True)
+    min_value = Column(Integer, nullable=True)
+    max_value = Column(Integer, nullable=True)
+    step_value = Column(Integer, nullable=True)
     placeholder = Column(String(255), nullable=True)
-    question = Column(Text, nullable=True)
+    video_url = Column(String(255), nullable=True)
+    other_option_id = Column(String(50), nullable=True)
+    other_placeholder = Column(String(255), nullable=True)
+    question = Column(Text, nullable=False)
     parent_question_id = Column(Integer, ForeignKey("questions.id"), nullable=True)
     trigger_answer = Column(String(255), nullable=True)
 
@@ -134,7 +205,7 @@ class QuestionOption(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     question_id = Column(Integer, ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
-    option_value = Column(Text, nullable=False)
+    option_value = Column(String(500), nullable=False)
     sort_order = Column(Integer, default=0)
 
     question = relationship("Question", back_populates="options")
@@ -155,6 +226,7 @@ class PatientSession(Base):
 
     id = Column(String(20), primary_key=True, index=True)
     hospital_id = Column(String(20), ForeignKey("hospitals.id"))
+    questionnaire_version = Column(Integer, nullable=False, default=1)
     consent_scanned_url = Column(Text)
     consent_timestamp = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
@@ -217,20 +289,186 @@ class Attachment(Base):
     assessment = relationship("DoctorAssessment", back_populates="attachments")
 
 
-class ReminderDelivery(Base):
-    """One recipient and immutable content snapshot per reminder cycle."""
-    __tablename__ = "reminder_deliveries"
-    __table_args__ = (UniqueConstraint("scope", "recipient_email", "cycle_date",
-                                      name="uq_reminder_delivery_cycle"),)
-    id = Column(Integer, primary_key=True)
-    scope = Column(String(80), nullable=False)
-    recipient_email = Column(String(255), nullable=False)
-    cycle_date = Column(Date, nullable=False)
-    subject = Column(String(255), nullable=False)
-    body_html = Column(Text().with_variant(MEDIUMTEXT(), "mysql"), nullable=False)
-    status = Column(String(20), nullable=False, default="pending")
-    attempts = Column(Integer, nullable=False, default=0)
-    last_attempt_date = Column(Date)
-    sent_at = Column(DateTime)
-    error_message = Column(Text)
-    alert_sent_at = Column(DateTime)
+class MRMCStudy(Base):
+    __tablename__ = "mrmc_studies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    hospital_id = Column(String(20), ForeignKey("hospitals.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    hospital = relationship("Hospital")
+    creator = relationship("User")
+    participants = relationship("MRMCStudyParticipant", back_populates="study", cascade="all, delete-orphan")
+
+
+class MRMCStudyParticipant(Base):
+    __tablename__ = "mrmc_study_participants"
+    __table_args__ = (
+        UniqueConstraint("study_id", "user_id", name="uq_study_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    study_id = Column(Integer, ForeignKey("mrmc_studies.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_reader = Column(Boolean, nullable=False, default=False)
+    is_arbiter = Column(Boolean, nullable=False, default=False)
+    assigned_count = Column(Integer, nullable=False, default=0)
+    submitted_count = Column(Integer, nullable=False, default=0)
+    kappa_score = Column(Float, nullable=True)
+
+    study = relationship("MRMCStudy", back_populates="participants")
+    user = relationship("User")
+
+class MRMCStudySubject(Base):
+    __tablename__ = "mrmc_study_subjects"
+    __table_args__ = (
+        UniqueConstraint("study_id", "patient_session_id", name="uq_study_subject"),
+    )
+    id = Column(Integer, primary_key=True, index=True)
+    study_id = Column(Integer, ForeignKey("mrmc_studies.id", ondelete="CASCADE"), nullable=False)
+    patient_session_id = Column(String(20), ForeignKey("patient_sessions.id"), nullable=False)
+    is_included = Column(Boolean, nullable=False, default=True)
+    reader_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    arbiter_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    study = relationship("MRMCStudy")
+    session = relationship("PatientSession")
+    reader = relationship("User", foreign_keys=[reader_user_id])
+    arbiter = relationship("User", foreign_keys=[arbiter_user_id])
+
+class RiskCategoryVersionControl(Base):
+    __tablename__ = "risk_categories_version_control"
+    __table_args__ = {"schema": "ai_features"}
+
+    id = Column(Integer, primary_key=True, index=True)
+    version_number = Column(Integer, nullable=False, unique=True)
+    is_active = Column(Boolean, nullable=False, default=False)
+    started_at = Column(DateTime, nullable=True)
+    ended_at = Column(DateTime, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    categories = relationship(
+        "RiskCategory",
+        back_populates="version",
+        order_by="RiskCategory.display_order",
+        primaryjoin="RiskCategoryVersionControl.version_number==RiskCategory.version_number",
+        foreign_keys="[RiskCategory.version_number]",
+    )
+
+class RiskCategory(Base):
+    __tablename__ = "risk_categories"
+    __table_args__ = (
+        UniqueConstraint("risk_category", "version_number", name="uq_risk_category_version"),
+        {"schema": "ai_features"},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    risk_category = Column(String(100), nullable=False)
+    lifetime_risk_percentage = Column(String(20), nullable=False)
+    description = Column(Text, nullable=True)
+    recommendation = Column(Text, nullable=True)
+    version_number = Column(
+        Integer,
+        ForeignKey("ai_features.risk_categories_version_control.version_number"),
+        nullable=False,
+    )
+    display_order = Column(Integer, nullable=False, default=0)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    version = relationship(
+        "RiskCategoryVersionControl",
+        back_populates="categories",
+        primaryjoin="RiskCategory.version_number==RiskCategoryVersionControl.version_number",
+        foreign_keys=[version_number],
+    )
+class ModelWeightsVersionControl(Base):
+    __tablename__ = "model_weights_version_control"
+    __table_args__ = {"schema": "ai_features"}
+
+    id = Column(Integer, primary_key=True, index=True)
+    version_number = Column(Integer, nullable=False, unique=True)
+    is_active = Column(Boolean, nullable=False, default=False)
+    started_at = Column(DateTime, nullable=True)
+    ended_at = Column(DateTime, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    weights = relationship(
+        "ModelWeights",
+        back_populates="version",
+        primaryjoin="ModelWeightsVersionControl.version_number==ModelWeights.version_number",
+        foreign_keys="[ModelWeights.version_number]",
+        order_by="ModelWeights.id",
+    )
+
+
+class ModelWeights(Base):
+    __tablename__ = "model_weights"
+    __table_args__ = (
+        UniqueConstraint("feature_name", "version_number", name="uq_feature_version"),
+        {"schema": "ai_features"},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    feature_name = Column(String(150), nullable=False)
+    weight_value = Column(Float, nullable=False)
+    version_number = Column(
+        Integer,
+        ForeignKey("ai_features.model_weights_version_control.version_number"),
+        nullable=False,
+    )
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    version = relationship(
+        "ModelWeightsVersionControl",
+        back_populates="weights",
+        primaryjoin="ModelWeights.version_number==ModelWeightsVersionControl.version_number",
+        foreign_keys=[version_number],
+    )
+
+class RiskThresholdsVersionControl(Base):
+    __tablename__ = "risk_thresholds_version_control"
+    __table_args__ = {"schema": "ai_features"}
+
+    id = Column(Integer, primary_key=True, index=True)
+    version_number = Column(Integer, nullable=False, unique=True)
+    is_active = Column(Boolean, nullable=False, default=False)
+    started_at = Column(DateTime, nullable=True)
+    ended_at = Column(DateTime, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    thresholds = relationship(
+        "RiskThresholds",
+        back_populates="version",
+        primaryjoin="RiskThresholdsVersionControl.version_number==RiskThresholds.version_number",
+        foreign_keys="[RiskThresholds.version_number]",
+        order_by="RiskThresholds.id",
+    )
+
+
+class RiskThresholds(Base):
+    __tablename__ = "risk_thresholds"
+    __table_args__ = (
+        UniqueConstraint("risk_category", "version_number", name="uq_threshold_category_version"),
+        {"schema": "ai_features"},
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    risk_category = Column(String(100), nullable=False)
+    min_percentage = Column(Float, nullable=True)
+    max_percentage = Column(Float, nullable=True)
+    version_number = Column(
+        Integer,
+        ForeignKey("ai_features.risk_thresholds_version_control.version_number"),
+        nullable=False,
+    )
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+
+    version = relationship(
+        "RiskThresholdsVersionControl",
+        back_populates="thresholds",
+        primaryjoin="RiskThresholds.version_number==RiskThresholdsVersionControl.version_number",
+        foreign_keys=[version_number],
+    )

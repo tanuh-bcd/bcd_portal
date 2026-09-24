@@ -20,6 +20,8 @@ const DoctorPage = ({ isEmbedded = false }) => {
   const [hospitalSessionsLoading, setHospitalSessionsLoading] = useState({});
   const PAGE_SIZE = 20;
   const isSuperViewer = localStorage.getItem('isSuperViewer') === 'true';
+  const userEmail = (localStorage.getItem('userEmail') || '').toLowerCase();
+  const canEditTestHospital = userEmail === 'manisha.verma@tanuh.ai';
 
   const toggleInstitution = (name) => {
     setExpandedInstitutions(prev => {
@@ -204,34 +206,51 @@ const DoctorPage = ({ isEmbedded = false }) => {
 
   const RISK_COLORS = { 'Baseline Risk': '#6ee7b7', 'Evident Risk': '#fde047', 'Significant Risk': '#fb923c', 'High Risk': '#fb7185' };
 
+  const getSessionTimestamp = (value) => {
+    if (!value) return 0;
+    const normalized = typeof value === 'string' ? value.replace(' ', 'T') : value;
+    const timestamp = new Date(normalized).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  };
+
+  const hasAssessment = (value) => value === true || value === 1 || value === 'Yes' || value === 'yes';
+
+  const sortSessions = (sessionList) => [...sessionList].sort((a, b) => {
+    for (const { key, dir } of sortStack) {
+      let comparison = 0;
+      if (key === 'date') {
+        comparison = getSessionTimestamp(a.consent_timestamp) - getSessionTimestamp(b.consent_timestamp);
+      } else if (key === 'assessment') {
+        comparison = Number(hasAssessment(a.has_assessment)) - Number(hasAssessment(b.has_assessment));
+      }
+
+      if (comparison !== 0) return dir === 'asc' ? comparison : -comparison;
+    }
+    return 0;
+  });
+
   const handleSort = (key) => {
     setSortStack(prev => {
-      const existing = prev.find(s => s.key === key);
-      let newStack;
-      if (existing) {
-        newStack = prev.map(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : s);
-      } else {
-        newStack = [...prev, { key, dir: 'asc' }];
-        if (newStack.length > 3) newStack = newStack.slice(-3);
-      }
-      const sortQuery = newStack.map(s => `${s.key}:${s.dir}`).join(',');
-      fetchSessions(sortQuery);
-      return newStack;
+      const activeSort = prev[0];
+      const dir = activeSort?.key === key && activeSort.dir === 'asc' ? 'desc' : 'asc';
+      return [{ key, dir }];
     });
+    setCurrentPage(1);
+    setInstitutionPages({});
   };
 
   const clearSort = () => {
     const defaultSort = [{ key: 'date', dir: 'desc' }];
     setSortStack(defaultSort);
-    fetchSessions('date:desc');
+    setCurrentPage(1);
+    setInstitutionPages({});
   };
 
   const sortArrow = (key) => {
     const entry = sortStack.find(s => s.key === key);
     if (!entry) return ' ⇅';
-    const pos = sortStack.indexOf(entry) + 1;
     const arrow = entry.dir === 'asc' ? '↑' : '↓';
-    return ` ${arrow}${sortStack.length > 1 ? pos : ''}`;
+    return ` ${arrow}`;
   };
 
   const renderSessionTable = (sessionList, showHospitalCol) => (
@@ -244,10 +263,12 @@ const DoctorPage = ({ isEmbedded = false }) => {
             <th style={sortableThStyle} onClick={() => handleSort('date')}>Date{sortArrow('date')}</th>
             <th style={thCenterStyle}>Risk</th>
             <th style={sortableThStyle} onClick={() => handleSort('assessment')}>Assessment{sortArrow('assessment')}</th>
-            <th style={thCenterStyle}>Mammography</th>
+            {/* <th style={thCenterStyle}>Mammography</th>
             <th style={thCenterStyle}>Mammography Report</th>
             <th style={thCenterStyle}>Breast Ultrasound (USG Breast)</th>
-            <th style={thCenterStyle}>Breast Ultrasound (USG Breast) Report</th>
+            <th style={thCenterStyle}>Breast Ultrasound (USG Breast) Report</th> */}
+             <th style={thCenterStyle}>Mammography + Report</th>
+            <th style={thCenterStyle}>Breast Ultrasound + Report</th>
             <th style={thCenterStyle}>Biopsy</th>
             <th style={thCenterStyle}>Annotations</th>
             <th style={thCenterStyle}>Additional Docs</th>
@@ -276,7 +297,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
               <td style={statusCellStyle(session.has_assessment)}>
                 {session.has_assessment ? 'Yes' : 'No'}
               </td>
-              <td style={statusCellStyle(session.has_mammo_dicom)}>
+              {/* <td style={statusCellStyle(session.has_mammo_dicom)}>
                 {session.has_mammo_dicom ? 'Yes' : 'No'}
               </td>
               <td style={smrCellStyle(session.has_mammo_reading)}>
@@ -287,6 +308,37 @@ const DoctorPage = ({ isEmbedded = false }) => {
               </td>
               <td style={smrCellStyle(session.has_us_reading)}>
                 {session.has_us_reading === 'SMR' ? 'Yes (SMR)' : session.has_us_reading === 'Yes' ? 'Yes' : 'No'}
+              </td> */}
+              <td style={{ ...tdStyle, textAlign: 'center' }}>
+                {(() => {
+                  const isSMR = session.has_mammo_reading === 'SMR';
+                  const isYes = session.has_mammo_dicom && (session.has_mammo_reading === 'Yes' || isSMR);
+                  return (
+                    <span style={{
+                      color: isSMR ? '#0d6efd' : isYes ? 'green' : 'red',
+                      fontWeight: 'bold',
+                      fontSize: isSMR ? 12 : 'inherit',
+                    }}>
+                      {isSMR ? 'Yes (SMR)' : isYes ? 'Yes' : 'No'}
+                    </span>
+                  );
+                })()}
+              </td>
+              <td style={{ ...tdStyle, textAlign: 'center' }}>
+                {(() => {
+                  const isSMR = session.has_us_reading === 'SMR';
+                  const isYes = (session.has_us_video === 'Yes' || session.has_us_video === 'SMR')
+                    && (session.has_us_reading === 'Yes' || isSMR);
+                  return (
+                    <span style={{
+                      color: isSMR ? '#0d6efd' : isYes ? 'green' : 'red',
+                      fontWeight: 'bold',
+                      fontSize: isSMR ? 12 : 'inherit',
+                    }}>
+                      {isSMR ? 'Yes (SMR)' : isYes ? 'Yes' : 'No'}
+                    </span>
+                  );
+                })()}
               </td>
               <td style={statusCellStyle(session.has_biopsy)}>
                 {session.has_biopsy ? 'Yes' : 'No'}
@@ -302,7 +354,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                   onClick={() => fetchSessionDetail(session.id)}
                   style={linkButtonStyle}
                 >
-                  {!isSuperViewer && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
+                  {(!isSuperViewer || (canEditTestHospital && session.hospital_name === 'Test')) && session.has_assessment ? 'Edit Assessment' : 'View Responses'}
                 </button>
               </td>
             </tr>
@@ -394,7 +446,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                   <p style={{ fontSize: 13, color: '#888' }}>No sessions found for this institution.</p>
                 )}
                 {hospitalSessions[h.hospital_name] && hospitalSessions[h.hospital_name].length > 0 && (() => {
-                  const instSessions = hospitalSessions[h.hospital_name];
+                  const instSessions = sortSessions(hospitalSessions[h.hospital_name]);
                   const instPage = institutionPages[h.hospital_name] || 1;
                   const totalPages = Math.ceil(instSessions.length / PAGE_SIZE);
                   const paginated = instSessions.slice((instPage - 1) * PAGE_SIZE, instPage * PAGE_SIZE);
@@ -463,8 +515,9 @@ const DoctorPage = ({ isEmbedded = false }) => {
         if (!loading && !error && filtered.length === 0) return <p>No subjects match "{searchTerm}".</p>;
 
         if (!loading && !error && filtered.length > 0) {
-          const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-          const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+          const sorted = sortSessions(filtered);
+          const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+          const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
           return (
             <>
@@ -509,7 +562,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                 </tbody>
               </table>
               
-              {isSuperViewer ? (
+              {isSuperViewer && !(canEditTestHospital && selectedSession.hospital_name === 'Test') ? (
                 selectedSession.assessment ? (
                   <DoctorAssessmentForm
                     sessionId={selectedSession.id}
@@ -529,7 +582,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                       const a25 = (r['Q16'] === '25 to 29') ? 1 : 0;
                       const a30 = (r['Q16'] === 'After 30') ? 1 : 0;
                       const ab = (nul || a25) ? 1 : 0;
-                      const lp = -0.940 + 0.027*age - 0.082*aam + 0.453*irr - 0.892*bf + 0.810*fh + 1.420*bx + 0.811*ab + 1.035*a30;
+                      const lp = -0.940 + 0.027 * age - 0.082 * aam + 0.453 * irr - 0.892 * bf + 0.810 * fh + 1.420 * bx + 0.811 * ab + 1.035 * a30;
                       return ((1 / (1 + Math.exp(-lp))) * 100).toFixed(2);
                     })()}
                   />
@@ -556,7 +609,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                     const a25 = (r['Q16'] === '25 to 29') ? 1 : 0;
                     const a30 = (r['Q16'] === 'After 30') ? 1 : 0;
                     const ab = (nul || a25) ? 1 : 0;
-                    const lp = -0.940 + 0.027*age - 0.082*aam + 0.453*irr - 0.892*bf + 0.810*fh + 1.420*bx + 0.811*ab + 1.035*a30;
+                    const lp = -0.940 + 0.027 * age - 0.082 * aam + 0.453 * irr - 0.892 * bf + 0.810 * fh + 1.420 * bx + 0.811 * ab + 1.035 * a30;
                     return ((1 / (1 + Math.exp(-lp))) * 100).toFixed(2);
                   })()}
                   onSaveSuccess={() => {
@@ -704,7 +757,7 @@ const modalOverlayStyle = {
 const modalContentStyle = {
   backgroundColor: '#fff',
   width: '80%',
-  maxWidth: '80vw',
+  maxWidth: '90vw',
   maxHeight: '80vh',
   borderRadius: '8px',
   display: 'flex',

@@ -12,15 +12,15 @@ const Layout = ({ children, userRole, handleLogout, maxWidth = '1200px', padding
     <div style={containerStyle}>
       <header style={headerStyle}>
         <div style={{ ...logoContainerStyle, maxWidth: effectiveMaxWidth }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <img src="/tanuh.png" alt="TANUH Logo" style={{ height: 50, objectFit: 'contain' }} />
-            <img src="/MoE_Logo.svg" alt="MoE Logo" style={{ height: 42, objectFit: 'contain' }} />
-            <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: 55, objectFit: 'contain' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 2vw, 24px)', flexWrap: 'nowrap', flexShrink: 0, minWidth: 0 }}>
+            <img src="/tanuh.png" alt="TANUH Logo" style={{ height: 'clamp(24px, 7vw, 50px)', width: 'auto', objectFit: 'contain' }} />
+            <img src="/MoE_Logo.svg" alt="MoE Logo" style={{ height: 'clamp(20px, 6vw, 42px)', width: 'auto', objectFit: 'contain' }} />
+            <img src="/IISc_logo.png" alt="IISc Logo" style={{ height: 'clamp(26px, 7.5vw, 55px)', width: 'auto', objectFit: 'contain' }} />
           </div>
-          <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ textAlign: 'center', flex: '1 1 auto', minWidth: 0 }}>
             <h1 style={titleStyle}>AI enabled Breast Cancer Risk Prediction Tool</h1>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 0, flexShrink: 0 }}>
             <button onClick={handleLogout} style={logoutButtonStyle}>
               <LogOut size={14} />
               Logout
@@ -43,6 +43,8 @@ const containerStyle = {
   display: 'flex',
   flexDirection: 'column',
   minHeight: '100vh',
+  maxWidth: '100vw',
+  overflowX: 'hidden', // belt-and-suspenders: the page itself never scrolls sideways
   backgroundColor: 'transparent',
   fontFamily: '"Inter", sans-serif'
 };
@@ -61,43 +63,57 @@ const logoContainerStyle = {
   maxWidth: '1200px',
   margin: '0 auto',
   width: '100%',
-  gap: '20px',
-  flexWrap: 'wrap',
+  gap: 'clamp(8px, 3vw, 20px)',
+  flexWrap: 'nowrap',
 };
 
 const titleStyle = {
-  fontSize: '18px',
+  fontSize: 'clamp(11px, 2.8vw, 18px)',
   fontWeight: '700',
   color: '#14868C',
   margin: 0,
   fontFamily: "'Poppins', sans-serif",
+  whiteSpace: 'normal', // full title always shows -- wraps onto its own lines rather than truncating
+  overflowWrap: 'break-word',
+  lineHeight: 1.25,
 };
 
 const hospitalBadgeStyle = {
-  fontSize: '12px',
+  display: 'inline-block',
+  fontSize: 'clamp(9px, 2vw, 12px)',
   color: '#555',
   fontWeight: '500',
+  whiteSpace: 'nowrap',
+  maxWidth: '38vw',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 };
 
 const logoutButtonStyle = {
   display: 'flex',
   alignItems: 'center',
   gap: '5px',
-  padding: '5px 12px',
+  padding: 'clamp(3px, 1vw, 5px) clamp(6px, 2vw, 12px)',
   backgroundColor: '#fff',
   color: '#dc3545',
   border: '1px solid #dc3545',
   borderRadius: '6px',
   cursor: 'pointer',
   fontWeight: '500',
-  fontSize: '12px',
+  fontSize: 'clamp(10px, 2vw, 12px)',
   fontFamily: 'inherit',
+  whiteSpace: 'nowrap',
 };
 
 const userEmailStyle = {
-  fontSize: '11px',
+  display: 'inline-block',
+  fontSize: 'clamp(8px, 1.8vw, 11px)',
   color: '#777',
   fontWeight: '400',
+  whiteSpace: 'nowrap',
+  maxWidth: '38vw',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 };
 
 const mainStyle = {

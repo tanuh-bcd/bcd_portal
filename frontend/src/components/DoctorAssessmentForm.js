@@ -68,13 +68,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
+    flexWrap: 'wrap',
   },
   cardHeaderIcon: {
     fontSize: 22,
     lineHeight: 1,
   },
   cardBody: {
-    padding: 24,
+    padding: 'clamp(12px, 4vw, 24px)',
   },
   sectionTitle: {
     fontSize: 15,
@@ -95,7 +96,7 @@ const styles = {
   },
   field: {
     flex: '1 1 0',
-    minWidth: 200,
+    minWidth: 'min(200px, 100%)',
   },
   label: {
     display: 'block',
@@ -205,6 +206,20 @@ const styles = {
   }),
 };
 
+// Highlights an upload slot with a red border when the file is mandatory and missing
+const uploadSlotStyle = (missing) => ({
+  borderRadius: 10,
+  border: missing ? '2px solid #dc3545' : '2px solid transparent',
+  padding: missing ? 6 : 0,
+  transition: 'border-color 0.2s',
+});
+
+const responsiveGrid = (minColWidth, gap = 16) => ({
+  display: 'grid',
+  gridTemplateColumns: `repeat(auto-fit, minmax(min(${minColWidth}px, 100%), 1fr))`,
+  gap,
+});
+
 const Toggle = ({ label, checked, onChange, disabled }) => (
   <div
     style={{ ...styles.toggle, ...(checked ? styles.toggleActive : {}), ...(disabled ? { cursor: 'default', opacity: 0.8 } : {}) }}
@@ -287,7 +302,7 @@ const BreastPanel = ({ side, data, onChange, readOnly }) => {
       <div style={{ ...styles.sectionTitle, fontSize: 13, color: '#555', borderBottom: 'none', marginBottom: 8 }}>
         Associated Features
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: 8, marginBottom: 16 }}>
         <Toggle label="Skin thickening" checked={data.skin_thickening} onChange={(v) => set('skin_thickening', v)} disabled={readOnly} />
         <Toggle label="Nipple retraction" checked={data.nipple_retraction} onChange={(v) => set('nipple_retraction', v)} disabled={readOnly} />
         <Toggle label="Architectural distortion" checked={data.architectural_distortion} onChange={(v) => set('architectural_distortion', v)} disabled={readOnly} />
@@ -330,10 +345,23 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
   const [questionnaireCorrect, setQuestionnaireCorrect] = useState(false);
   const [doctorRiskClass, setDoctorRiskClass] = useState('');
   const [doctorCaseNotes, setDoctorCaseNotes] = useState('');
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [viewingAttachment, setViewingAttachment] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [uploadedTypes, setUploadedTypes] = useState({});
+
+  const handleUploadComplete = (fileType, gcsUrl) => {
+    setUploadedTypes(prev => ({ ...prev, [fileType]: gcsUrl }));
+  };
+
+  const isUploaded = (type) => !!getAttachmentByType(type) || !!uploadedTypes[type];
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     if (initialData) {
@@ -373,7 +401,22 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
     if (!leftBreast.density) missing.push('Left Breast Density');
 
     if (missing.length > 0) {
-      setMessage({ type: 'error', text: `Please fill required fields: ${missing.join(', ')}` });
+      setToast({ text: `Please fill required fields: ${missing.join(', ')}` });
+      return;
+    }
+
+    const missingViews = [];
+    if (!isUploaded('mammo_cc_left')) missingViews.push('CC Left');
+    if (!isUploaded('mammo_cc_right')) missingViews.push('CC Right');
+    if (!isUploaded('mammo_mlo_left')) missingViews.push('MLO Left');
+    if (!isUploaded('mammo_mlo_right')) missingViews.push('MLO Right');
+    const missingReport = !isUploaded('mammo_reading');
+
+    if (missingViews.length > 0 || missingReport) {
+      const parts = [];
+      if (missingViews.length > 0) parts.push(`Mammography Views (${missingViews.join(', ')})`);
+      if (missingReport) parts.push('Mammography Report');
+      setToast({ text: `Alert: Please upload ${parts.join(' and ')}.` });
       return;
     }
 
@@ -427,6 +470,14 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
     }
   };
 
+  const liveMissingViews = [];
+  if (!isUploaded('mammo_cc_left')) liveMissingViews.push('CC Left');
+  if (!isUploaded('mammo_cc_right')) liveMissingViews.push('CC Right');
+  if (!isUploaded('mammo_mlo_left')) liveMissingViews.push('MLO Left');
+  if (!isUploaded('mammo_mlo_right')) liveMissingViews.push('MLO Right');
+  const liveMissingReport = !isUploaded('mammo_reading');
+  const showMammoAlert = !readOnly && (liveMissingViews.length > 0 || liveMissingReport);
+
   return (
     <div style={styles.form}>
       <form onSubmit={handleSubmit}>
@@ -452,7 +503,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
               <span style={styles.cardHeaderIcon}>&#9829;</span> PinkShieldAI Risk Stratification
             </div>
             <div style={{ ...styles.cardBody, textAlign: 'center' }}>
-              <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 8 }}>
+              <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {RISK_CLASSES.map(rc => {
                   const score = parseFloat(snehithaRisk) / 100;
                   const isActive = (rc.value === 'Baseline Risk' && score < 0.4004) ||
@@ -509,52 +560,86 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
         {/* Mammography Upload — Left on left, Right on right */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <span style={styles.cardHeaderIcon}>&#128248;</span> Mammography Views
-            {getAttachmentByType('mammo_cc_right') &&
-             getAttachmentByType('mammo_cc_left') &&
-             getAttachmentByType('mammo_mlo_right') &&
-             getAttachmentByType('mammo_mlo_left') && (
-              <span style={{ marginLeft: 'auto', background: '#d4edda', color: '#155724', padding: '4px 12px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
-                &#10003; All DICOMs uploaded
-              </span>
-            )}
+            <span style={styles.cardHeaderIcon}>&#128248;</span> Mammography Views {!readOnly && <span style={{ color: '#ffd6d6', fontSize: 14 }}>*</span>}
+            {isUploaded('mammo_cc_right') &&
+              isUploaded('mammo_cc_left') &&
+              isUploaded('mammo_mlo_right') &&
+              isUploaded('mammo_mlo_left') && (
+                <span style={{ marginLeft: 'auto', background: '#d4edda', color: '#155724', padding: '4px 12px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
+                  &#10003; All DICOMs uploaded
+                </span>
+              )}
           </div>
           <div style={styles.cardBody}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={responsiveGrid(240, 20)}>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} readOnly={readOnly} />
-                  <ResumableUpload label="MLO Left" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} readOnly={readOnly} />
+                  <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_cc_left'))}>
+                    <ResumableUpload label="CC Left" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_cc_left" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_left')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
+                  </div>
+                  <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_mlo_left'))}>
+                    <ResumableUpload label="MLO Left" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_mlo_left" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_left')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
+                  </div>
                 </div>
               </div>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#14868C', marginBottom: 10, fontSize: 14 }}>Right Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <ResumableUpload label="CC Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} readOnly={readOnly} />
-                  <ResumableUpload label="MLO Right" hint=".dcm (up to 100MB)" accept=".dcm,application/dicom,image/*" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} readOnly={readOnly} />
+                  <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_cc_right'))}>
+                    <ResumableUpload label="CC Right" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_cc_right" sessionId={sessionId} existing={getAttachmentByType('mammo_cc_right')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
+                  </div>
+                  <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_mlo_right'))}>
+                    <ResumableUpload label="MLO Right" hint=".dcm / .DCM (up to 100MB)" accept=".dcm,.DCM,application/dicom" fileType="mammo_mlo_right" sessionId={sessionId} existing={getAttachmentByType('mammo_mlo_right')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} requiredExtension=".dcm" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Mammography Alert — shown before Breast Composition if any view/report is missing */}
+        {showMammoAlert && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+            padding: '14px 18px',
+            marginBottom: 24,
+            borderRadius: 10,
+            background: '#fff5f5',
+            border: '1.5px solid #f5c2c7',
+          }}>
+            <span style={{ fontSize: 20, color: '#dc3545', flexShrink: 0 }}>&#9888;</span>
+            <div style={{ fontSize: 14, color: '#721c24', fontWeight: 500, lineHeight: 1.5 }}>
+              {liveMissingViews.length > 0 && (
+                <div>Mammography Views missing: {liveMissingViews.join(', ')}</div>
+              )}
+              {liveMissingReport && (
+                <div>Mammography Report not uploaded.</div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Breast Composition — Left on left, Right on right */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <span style={styles.cardHeaderIcon}>&#129657;</span> Breast Composition & Findings
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-            <div style={{ ...styles.cardBody, borderRight: '2px solid #e8f4f5' }}>
+          <div style={responsiveGrid(320, 0)}>
+            <div style={{ ...styles.cardBody, borderRight: '2px solid #e8f4f5', borderBottom: '2px solid #e8f4f5' }}>
               <BreastPanel side="left" data={leftBreast} onChange={setLeftBreast} readOnly={readOnly} />
             </div>
-            <div style={styles.cardBody}>
+            <div style={{ ...styles.cardBody, borderBottom: '2px solid #e8f4f5' }}>
               <BreastPanel side="right" data={rightBreast} onChange={setRightBreast} readOnly={readOnly} />
             </div>
           </div>
           <div style={{ ...styles.cardBody, borderTop: '2px solid #e8f4f5' }}>
-            <label style={styles.label}>Mammography Report</label>
-            <ResumableUpload label="Upload Mammography Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="mammo_reading" sessionId={sessionId} existing={getAttachmentByType('mammo_reading')} onView={setViewingAttachment} readOnly={readOnly} />
+            <label style={styles.label}>Mammography Report {!readOnly && <span style={{ color: '#dc3545' }}>*</span>}</label>
+            <div style={uploadSlotStyle(!readOnly && !isUploaded('mammo_reading'))}>
+              <ResumableUpload label="Upload Mammography Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="mammo_reading" sessionId={sessionId} existing={getAttachmentByType('mammo_reading')} onView={setViewingAttachment} onComplete={handleUploadComplete} readOnly={readOnly} />
+            </div>
           </div>
         </div>
 
@@ -564,7 +649,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
             <span style={styles.cardHeaderIcon}>&#128300;</span> Ultrasound & Biopsy
           </div>
           <div style={styles.cardBody}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+            <div style={responsiveGrid(220, 16)}>
               <ResumableUpload label="Breast Ultrasound (USG Breast)" hint=".dcm / .jpg (up to 100MB)" accept=".dcm,image/*,video/*" fileType="us_video" sessionId={sessionId} existing={getAttachmentByType('us_video')} onView={setViewingAttachment} readOnly={readOnly} />
               <ResumableUpload label="Breast Ultrasound (USG Breast) Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="us_reading" sessionId={sessionId} existing={getAttachmentByType('us_reading')} onView={setViewingAttachment} readOnly={readOnly} />
               <ResumableUpload label="Biopsy Report" hint=".pdf (up to 25MB)" accept=".pdf,image/*" fileType="biopsy_reading" sessionId={sessionId} existing={getAttachmentByType('biopsy_reading')} onView={setViewingAttachment} readOnly={readOnly} />
@@ -579,7 +664,7 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           </div>
           <div style={styles.cardBody}>
             <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>Upload annotated images for each mammography view</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={responsiveGrid(240, 20)}>
               <div>
                 <div style={{ textAlign: 'center', fontWeight: 600, color: '#7c3aed', marginBottom: 10, fontSize: 14 }}>Left Breast</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -668,6 +753,34 @@ const DoctorAssessmentForm = ({ sessionId, initialData, onSaveSuccess, snehithaR
           fileTypeKey={viewingAttachment.file_type}
           onClose={() => setViewingAttachment(null)}
         />
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          right: 24,
+          zIndex: 2000,
+          background: '#fff',
+          borderLeft: '5px solid #dc3545',
+          borderRadius: 10,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+          padding: '16px 20px',
+          minWidth: 280,
+          maxWidth: 420,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 12,
+        }}>
+          <span style={{ fontSize: 20, color: '#dc3545', flexShrink: 0 }}>&#9888;</span>
+          <div style={{ flex: 1, fontSize: 14, color: '#721c24', fontWeight: 500, lineHeight: 1.4 }}>
+            {toast.text}
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            style={{ background: 'none', border: 'none', fontSize: 18, color: '#999', cursor: 'pointer', lineHeight: 1, padding: 0 }}
+          >&times;</button>
+        </div>
       )}
     </div>
   );

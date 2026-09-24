@@ -1,8 +1,8 @@
 [Unit]
-Description=Check daily for due PinkShield AI reminder emails
+Description=Check each Monday for due PinkShield AI reminder emails
 
 [Timer]
-OnCalendar=*-*-* 09:00:00 Asia/Kolkata
+OnCalendar=Mon *-*-* 09:00:00 Asia/Kolkata
 Persistent=true
 RandomizedDelaySec=300
 Unit=pinkshield-reminders.service

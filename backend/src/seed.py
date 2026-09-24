@@ -36,10 +36,10 @@ def seed_data():
 
         # 3. Create a Test User
         doctor_role = db.query(models.Role).filter(models.Role.name == "Staff").first()
-        test_user = db.query(models.User).filter(models.User.email == "breastcancerdetection@tanuh.ai").first()
+        test_user = db.query(models.User).filter(models.User.email == "breastcancerscreening@tanuh.ai").first()
         if not test_user:
             test_user = models.User(
-                email="breastcancerdetection@tanuh.ai",
+                email="breastcancerscreening@tanuh.ai",
                 password_hash=get_password_hash("BestWishes26"),
                 full_name="Test person",
                 hospital_id=hospital.id,

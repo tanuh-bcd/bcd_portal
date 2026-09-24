@@ -21,13 +21,34 @@ INSTITUTE_QUESTIONS = (
     "Institute Name",
     "Institute Name:",
     "Enter the Hospital ID(If any, else leave):",
+    "Enter the Institution Name (if any, else leave)",
+    "Enter the Institution Name (If any, else leave)",
     "Q45",
 )
+
+PATIENT_ID_QUESTIONS = (
+    "Enter your Patient ID(if any, else leave):",
+    "Enter your subject ID:",
+    "Enter Subject ID (if any, else leave)",
+    "Q44",
+)
+
+INSTITUTE_QUESTION_KEYS = ("V2_Q02",)
+PATIENT_ID_QUESTION_KEYS = ("V2_Q01",)
 
 
 def _get_hospital_name(app_db, hospital_id):
     hospital = app_db.query(Hospital).filter(Hospital.id == hospital_id).first()
     return hospital.name if hospital else None
+
+
+TEST_HOSPITAL_VIEWERS = ('manisha.verma@tanuh.ai',)
+
+
+def _excluded_hospitals(current_user):
+    if current_user.get("email", "").lower() in TEST_HOSPITAL_VIEWERS:
+        return ('Tanuh Foundation',)
+    return ('Test', 'Tanuh Foundation')
 
 
 def _get_attachment_flags(assessment):
@@ -67,13 +88,17 @@ def get_hospital_summary(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     hospitals = app_db.query(Hospital).filter(
-        ~Hospital.name.in_(('Test', 'Tanuh Foundation'))
+        ~Hospital.name.in_(_excluded_hospitals(current_user))
     ).order_by(Hospital.name).all()
     if not hospitals:
         return []
 
     valid_names = [h.name for h in hospitals]
-    params = {"inst_questions": INSTITUTE_QUESTIONS, "valid_names": tuple(valid_names)}
+    params = {
+        "inst_questions": INSTITUTE_QUESTIONS,
+        "inst_question_keys": INSTITUTE_QUESTION_KEYS,
+        "valid_names": tuple(valid_names),
+    }
 
     session_hosp_rows = q_db.execute(text("""
         SELECT s.session_id, sd_inst.answer AS hospital_name
@@ -81,7 +106,7 @@ def get_hospital_summary(
         JOIN (
             SELECT session_id, MIN(answer) AS answer
             FROM session_data_table
-            WHERE question IN :inst_questions
+            WHERE (question_key IN :inst_question_keys OR question IN :inst_questions)
               AND answer IN :valid_names
             GROUP BY session_id
         ) sd_inst ON s.session_id = sd_inst.session_id
@@ -169,7 +194,7 @@ def get_patient_sessions(
             valid_names = [
                 h.name for h in
                 app_db.query(Hospital.name).filter(
-                    ~Hospital.name.in_(('Test', 'Tanuh Foundation'))
+                    ~Hospital.name.in_(_excluded_hospitals(current_user))
                 ).all()
             ]
         if not valid_names:
@@ -178,26 +203,30 @@ def get_patient_sessions(
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
                    pid.answer AS patient_id, s.risk_category,
-                   hosp.answer AS hospital_name
+                   hosp.answer AS hospital_name, s.consent_url
             FROM session_table s
             JOIN (
                 SELECT session_id, MIN(answer) AS answer
                 FROM session_data_table
-                WHERE question IN ('Institute Name', 'Institute Name:',
-                                   'Enter the Hospital ID(If any, else leave):', 'Q45')
+                WHERE (question_key IN :institute_question_keys OR question IN :institute_questions)
                   AND answer IN :valid_names
                 GROUP BY session_id
             ) hosp ON s.session_id = hosp.session_id
             LEFT JOIN (
                 SELECT session_id, MIN(answer) AS answer
                 FROM session_data_table
-                WHERE question IN ('Enter your Patient ID(if any, else leave):',
-                                   'Enter your subject ID:', 'Q44')
+                WHERE (question_key IN :patient_id_question_keys OR question IN :patient_id_questions)
                 GROUP BY session_id
             ) pid ON s.session_id = pid.session_id
             WHERE s.snehita_lifetime_risk IS NOT NULL
             ORDER BY {order_clause}
-        """), {"valid_names": tuple(valid_names)}).fetchall()
+        """), {
+            "valid_names": tuple(valid_names),
+            "institute_questions": INSTITUTE_QUESTIONS,
+            "institute_question_keys": INSTITUTE_QUESTION_KEYS,
+            "patient_id_questions": PATIENT_ID_QUESTIONS,
+            "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+        }).fetchall()
     else:
         hospital_id = current_user.get("hospital_id")
         if not hospital_id:
@@ -210,16 +239,30 @@ def get_patient_sessions(
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
                    pid.answer AS patient_id, s.risk_category,
-                   NULL AS hospital_name
+                   NULL AS hospital_name, s.consent_url
             FROM session_table s
-            JOIN session_data_table sd ON s.session_id = sd.session_id
-            LEFT JOIN session_data_table pid ON s.session_id = pid.session_id
-              AND pid.question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44')
-            WHERE sd.question IN :q1
-              AND sd.answer = :hospital_name
-              AND s.snehita_lifetime_risk IS NOT NULL
+            JOIN (
+                SELECT session_id
+                FROM session_data_table
+                WHERE (question_key IN :institute_question_keys OR question IN :q1)
+                  AND answer = :hospital_name
+                GROUP BY session_id
+            ) hosp ON s.session_id = hosp.session_id
+            LEFT JOIN (
+                SELECT session_id, MIN(answer) AS answer
+                FROM session_data_table
+                WHERE (question_key IN :patient_id_question_keys OR question IN :patient_id_questions)
+                GROUP BY session_id
+            ) pid ON s.session_id = pid.session_id
+            WHERE s.snehita_lifetime_risk IS NOT NULL
             ORDER BY {order_clause}
-        """), {"q1": INSTITUTE_QUESTIONS, "hospital_name": hospital_name}).fetchall()
+        """), {
+            "q1": INSTITUTE_QUESTIONS,
+            "institute_question_keys": INSTITUTE_QUESTION_KEYS,
+            "patient_id_questions": PATIENT_ID_QUESTIONS,
+            "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+            "hospital_name": hospital_name,
+        }).fetchall()
 
     result = []
     for row in rows:
@@ -233,7 +276,7 @@ def get_patient_sessions(
             "id": session_id,
             "patient_id": row[3] or "",
             "hospital_name": row[5] or None,
-            "consent_scanned_url": None,
+            "consent_scanned_url": row[6],
             "consent_timestamp": row[1],
             "snehita_risk": row[2],
             "risk_category": row[4] or "",
@@ -268,12 +311,22 @@ def get_patient_session_detail(
         raise HTTPException(status_code=400, detail="User hospital ID not found")
 
     session_row = q_db.execute(text(
-        "SELECT session_id, session_start_time, snehita_lifetime_risk, risk_category FROM session_table WHERE session_id = :sid"
+        "SELECT session_id, session_start_time, snehita_lifetime_risk, risk_category, consent_url "
+        "FROM session_table WHERE session_id = :sid"
     ), {"sid": session_id}).fetchone()
 
     patient_id_row = q_db.execute(text(
-        "SELECT answer FROM session_data_table WHERE session_id = :sid AND question IN ('Enter your Patient ID(if any, else leave):', 'Enter your subject ID:', 'Q44') LIMIT 1"
-    ), {"sid": session_id}).fetchone()
+        "SELECT answer FROM session_data_table WHERE session_id = :sid "
+        "AND (question_key IN :patient_id_question_keys OR question IN :patient_id_questions) LIMIT 1"
+    ), {
+        "sid": session_id,
+        "patient_id_questions": PATIENT_ID_QUESTIONS,
+        "patient_id_question_keys": PATIENT_ID_QUESTION_KEYS,
+    }).fetchone()
+
+    hospital_name_row = q_db.execute(text(
+        "SELECT answer FROM session_data_table WHERE session_id = :sid AND question IN :inst_questions AND answer IS NOT NULL LIMIT 1"
+    ), {"sid": session_id, "inst_questions": INSTITUTE_QUESTIONS}).fetchone()
 
     if not session_row:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -301,7 +354,8 @@ def get_patient_session_detail(
     return {
         "id": session_id,
         "patient_id": (patient_id_row[0] if patient_id_row else "") or "",
-        "consent_scanned_url": None,
+        "hospital_name": hospital_name_row[0] if hospital_name_row else None,
+        "consent_scanned_url": session_row[4],
         "consent_timestamp": session_row[1],
         "snehita_risk": session_row[2],
         "risk_category": session_row[3] or "",

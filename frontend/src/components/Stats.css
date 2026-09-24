@@ -173,6 +173,22 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: clamp(1rem, 1.6vw, 2rem);
+  min-width: 0;
+}
+
+.stats-container {
+  max-width: 90%;
+  margin: clamp(0.5rem, 1.6vw, 2rem) auto;
+  padding: clamp(0.75rem, 1.6vw, 2rem);
+  background: #FDFCFC;
+  min-height: calc(100vh - 80px);
+  border-radius: clamp(8px, 1vw, 12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 6px solid #14868C;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  font-family: 'Poppins', sans-serif;
+  width: 100%;
+  overflow-x: hidden; /* belt-and-suspenders: page itself never scrolls sideways */
 }
 
 .chart-card {
@@ -187,6 +203,8 @@
 
 .chart-card.full-width {
   grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden; /* clip anything that still tries to escape */
 }
 
 .chart-card h3 {
@@ -342,4 +360,224 @@
 .recharts-tooltip-wrapper {
   opacity: 1 !important;
   z-index: 1000 !important;
+}
+
+.hospital-chart-scroll {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  box-sizing: border-box;
+}
+
+.hospital-chart-inner {
+  height: 100%;
+  min-width: 100%;
+  display: inline-block;
+  vertical-align: top;
+}
+
+@media (max-width: 900px) {
+  .hospital-chart-inner {
+    min-width: max(100%, calc(var(--hospital-count, 0) * 70px));
+  }
+}
+
+@media (max-width: 480px) {
+  .hospital-chart-inner {
+    min-width: max(100%, calc(var(--hospital-count, 0) * 85px));
+  }
+}
+
+.hospital-chart-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.hospital-chart-scroll::-webkit-scrollbar-thumb {
+  background: #14868c;
+  border-radius: 8px;
+}
+
+.hospital-chart-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .hospital-chart-scroll {
+    border-radius: 10px;
+    box-shadow: inset -12px 0 10px -12px rgba(0, 0, 0, 0.08);
+  }
+
+  .hospital-chart-scroll::-webkit-scrollbar {
+    height: 10px;
+  }
+}
+/* Institute Orbit Cloud - radial "Machines by Institute" visualization */
+.orbit-cloud {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.8rem, 1.2vw, 1.2rem);
+}
+
+.orbit-cloud-svg-wrap {
+  width: 100%;
+  max-width: 580px;
+}
+
+.orbit-info-panel {
+  width: 100%;
+  max-width: 440px;
+  min-height: 90px;
+  background: #FDFCFC;
+  border: 1px solid #eee;
+  border-top: 4px solid #14868C;
+  border-radius: clamp(8px, 1vw, 12px);
+  padding: clamp(0.7rem, 1vw, 1.1rem) clamp(0.9rem, 1.2vw, 1.3rem);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  font-family: 'Poppins', sans-serif;
+}
+
+.orbit-info-title {
+  font-weight: 700;
+  font-size: clamp(0.85rem, 1vw, 1rem);
+  color: #34495e;
+}
+
+.orbit-info-total {
+  font-size: clamp(0.72rem, 0.85vw, 0.85rem);
+  color: #14868C;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.orbit-info-list {
+  list-style: none;
+  padding: 0;
+  margin: clamp(0.5rem, 0.8vw, 0.7rem) 0 0;
+}
+
+.orbit-info-item {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(4px, 0.5vw, 6px) 0;
+  border-bottom: 1px solid rgba(20, 134, 140, 0.1);
+  font-size: clamp(0.72rem, 0.85vw, 0.85rem);
+}
+
+.orbit-info-item:last-child {
+  border-bottom: none;
+}
+
+.orbit-info-machine {
+  font-weight: 600;
+  color: #14868C;
+}
+
+.orbit-info-meta {
+  color: #7f8c8d;
+  font-size: clamp(0.68rem, 0.8vw, 0.78rem);
+}
+
+.orbit-info-placeholder {
+  color: #7f8c8d;
+  font-size: clamp(0.75rem, 0.9vw, 0.9rem);
+  text-align: center;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+@media (max-width: 768px) {
+  .orbit-info-panel {
+    max-width: 100%;
+  }
+}
+
+/* Institute table hover tooltip (Machines by Institute) */
+.institute-table-wrapper {
+  position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.institute-hover-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: #FDFCFC;
+  border: 1px solid #eee;
+  border-top: 3px solid #14868C;
+  border-radius: clamp(6px, 0.6vw, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: clamp(0.6rem, 0.8vw, 0.9rem) clamp(0.7rem, 1vw, 1rem);
+  min-width: clamp(160px, 18vw, 220px);
+  max-width: 280px;
+  z-index: 20;
+  pointer-events: none;
+  font-family: 'Poppins', sans-serif;
+}
+
+.institute-hover-title {
+  font-weight: 700;
+  font-size: clamp(0.78rem, 0.9vw, 0.9rem);
+  color: #14868C;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(20, 134, 140, 0.15);
+  padding-bottom: 4px;
+}
+
+.institute-hover-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.institute-hover-item {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 0;
+}
+
+.institute-hover-machine {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: clamp(0.7rem, 0.82vw, 0.8rem);
+}
+
+.institute-hover-meta {
+  color: #7f8c8d;
+  font-size: clamp(0.65rem, 0.76vw, 0.75rem);
+}
+
+.category-chart-inner {
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  .category-chart-inner {
+    min-width: 520px;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-chart-inner {
+    min-width: 650px;
+  }
+}
+
+.category-chart-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+
+@media (max-width: 768px) {
+  .birads-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

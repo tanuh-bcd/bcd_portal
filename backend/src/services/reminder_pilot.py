@@ -25,7 +25,7 @@ def prepare_pilot(db, questionnaire_db, report_date, include_failure=False):
     if hospital.name.strip().lower() in {'test', 'tanuh foundation'}:
         raise ValueError('Excluded hospitals cannot be used for this pilot')
     report = build_report(db, questionnaire_db, hospital, report_date)
-    if report.collection_start_date is None or report.data_points < 1:
+    if report.collection_start_date is None or report.lifetime_data_points < 1:
         raise ValueError('Pilot hospital has no completed submissions; no email will be sent')
     messages = [PilotEmail('hospital', f'[PILOT] PinkShieldAI | Thank you for your contribution - {hospital.name}',
                            hospital_document(report))]

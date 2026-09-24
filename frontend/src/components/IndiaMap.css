@@ -87,11 +87,24 @@
   stroke-linejoin: round;
   stroke-width: 0.85;
   vector-effect: non-scaling-stroke;
-  transition: fill 0.2s ease;
+  transition: fill 0.25s ease, stroke 0.25s ease;
+  cursor: pointer;
+  outline: none; 
+}
+
+.india-state:focus,
+.india-state:focus-visible {
+  outline: none;
 }
 
 .india-state:hover {
   fill: rgba(252, 231, 243, 0.96);
+}
+
+.india-state.selected {
+  fill: #be185d;
+  stroke: #831843;
+  stroke-width: 0.85;
 }
 
 .india-hospital-marker {
@@ -208,14 +221,287 @@
   padding-top: 0.45rem;
 }
 
+.india-info-panel {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 6;
+  min-width: 220px;
+  max-width: min(270px, calc(100% - 2rem));
+  background: #ffffff;
+  border: 1px solid rgba(219, 39, 119, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 16px 32px rgba(190, 24, 93, 0.12);
+  padding: 1.1rem 1.15rem;
+  font-family: 'Poppins', sans-serif;
+  animation: panel-fade-in 0.2s ease;
+}
+
+@keyframes panel-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.info-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.info-panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(219, 39, 119, 0.1);
+  color: #be185d;
+  flex-shrink: 0;
+}
+
+.info-panel-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #be185d;
+}
+
+.info-panel-header h4 {
+  margin: 0.15rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #831843;
+}
+
+.info-panel-count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: rgba(219, 39, 119, 0.07);
+  border-radius: 12px;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.count-number {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #be185d;
+}
+
+.count-label {
+  font-size: 0.76rem;
+  color: #526376;
+}
+
+.info-panel-message {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #526376;
+  line-height: 1.4;
+}
+
+.hospital-item-name {
+  font-size: 12px;
+  color: #444;
+}
+
 @media (max-width: 768px) {
   .public-map-wrap {
-    min-height: clamp(300px, 70vw, 500px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .public-map-wrap::before {
+    inset: 0.5rem;
+    bottom: auto;
+    height: calc(100% - 1rem);
+  }
+
+  .india-map {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--map-aspect, 640 / 720);
+    margin: 0.5rem 0 0;
+  }
+
+.india-info-panel {
+  position: absolute;
+  top: clamp(0.75rem, 2vw, 1.25rem);
+  right: clamp(0.75rem, 2vw, 1.25rem);
+  z-index: 6;
+  min-width: min(220px, 100%);
+  max-width: min(280px, calc(100% - 1.5rem));
+  width: clamp(200px, 26vw, 270px);
+  background: #ffffff;
+  border: 1px solid rgba(219, 39, 119, 0.14);
+  border-radius: clamp(12px, 1.6vw, 16px);
+  box-shadow: 0 16px 32px rgba(190, 24, 93, 0.12);
+  padding: clamp(0.85rem, 1.6vw, 1.1rem) clamp(0.9rem, 1.6vw, 1.15rem);
+  font-family: 'Poppins', sans-serif;
+  animation: panel-fade-in 0.2s ease;
+  box-sizing: border-box;
+}
+
+.info-panel-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.7rem);
+  margin-bottom: clamp(0.6rem, 1.2vw, 0.9rem);
+}
+
+.info-panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(32px, 4vw, 38px);
+  height: clamp(32px, 4vw, 38px);
+  border-radius: clamp(8px, 1vw, 10px);
+  background: rgba(219, 39, 119, 0.1);
+  color: #be185d;
+  flex-shrink: 0;
+}
+
+.info-panel-icon svg {
+  width: clamp(15px, 2vw, 18px);
+  height: clamp(15px, 2vw, 18px);
+}
+
+.info-panel-label {
+  display: block;
+  font-size: clamp(0.58rem, 0.8vw, 0.62rem);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #be185d;
+}
+
+.info-panel-header h4 {
+  margin: 0.15rem 0 0;
+  font-size: clamp(0.88rem, 1.3vw, 1rem);
+  font-weight: 700;
+  color: #831843;
+}
+
+.info-panel-count {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.4rem, 0.8vw, 0.5rem);
+  background: rgba(219, 39, 119, 0.07);
+  border-radius: clamp(10px, 1.4vw, 12px);
+  padding: clamp(0.55rem, 1vw, 0.65rem) clamp(0.75rem, 1.4vw, 0.9rem);
+  margin-bottom: clamp(0.6rem, 1vw, 0.75rem);
+}
+
+.count-number {
+  font-size: clamp(1.2rem, 2vw, 1.4rem);
+  font-weight: 800;
+  color: #be185d;
+}
+
+.count-label {
+  font-size: clamp(0.7rem, 1vw, 0.76rem);
+  color: #526376;
+}
+
+.info-panel-message {
+  margin: 0;
+  font-size: clamp(0.75rem, 1.1vw, 0.8rem);
+  color: #526376;
+  line-height: 1.4;
+}
+
+.info-panel-hospital-list {
+  list-style: none;
+  margin: clamp(0.5rem, 1vw, 0.7rem) 0 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(0.3rem, 0.6vw, 0.4rem);
+  max-height: clamp(140px, 22vw, 200px);
+  overflow-y: auto;
+}
+
+.info-panel-hospital-item {
+  padding: clamp(0.35rem, 0.6vw, 0.45rem) clamp(0.5rem, 0.8vw, 0.6rem);
+  background: rgba(219, 39, 119, 0.05);
+  border-radius: clamp(6px, 1vw, 8px);
+}
+
+.hospital-item-name {
+  font-size: clamp(0.7rem, 1vw, 0.75rem);
+  color: #444;
+}
+}
+
+@media (max-width: 768px) {
+  .public-map-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .public-map-wrap::before {
+    inset: 0.5rem;
+    bottom: auto;
+    height: calc(100% - 1rem);
+  }
+
+  .india-map {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--map-aspect, 640 / 720);
+    margin: 0.5rem 0 0;
+  }
+
+  .india-info-panel {
+    position: static;
+    width: 100%;
+    max-width: none;
+    margin: 0;
   }
 }
 
 @media (max-width: 480px) {
   .public-map-wrap {
-    min-height: 280px;
+    border-radius: 16px;
+  }
+
+  .india-map {
+    margin-top: 0.75rem;
+  }
+
+  .india-info-panel {
+    width: 100%;
+  }
+
+  .public-map-tooltip {
+    max-width: calc(100% - 2rem);
+  }
+
+  .india-hospital-marker .marker-dot {
+    r: 8;
   }
 }

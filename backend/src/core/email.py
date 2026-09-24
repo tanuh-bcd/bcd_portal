@@ -1,7 +1,8 @@
-import re
 import base64
+import re
 import smtplib
 import logging
+from email.utils import parseaddr
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -15,15 +16,16 @@ LOGIN_URL = "https://bc-portal-dev.tanuh.ai/login"
 
 
 class SMTPConfigurationError(RuntimeError):
-    """Missing configuration; message lists setting names, never credentials."""
+    """Raised when required SMTP setting names are missing."""
 
 
 def validate_smtp_config():
-    missing = [name for name in ('SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD')
-               if not getattr(settings, name)]
+    missing = [
+        name for name in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD")
+        if not getattr(settings, name)
+    ]
     if missing:
-        raise SMTPConfigurationError('Missing SMTP settings: ' + ', '.join(missing) +
-                                     '. Supply them in the environment, .env, or accessible Secret Manager entries.')
+        raise SMTPConfigurationError("Missing SMTP settings: " + ", ".join(missing))
 
 
 def send_email(
@@ -32,8 +34,8 @@ def send_email(
     html: str,
     cc: List[str] = None,
     reply_to: str = None,
-    raise_on_error: bool = False,
     from_email: str = None,
+    raise_on_error: bool = False,
 ) -> bool:
     try:
         validate_smtp_config()
@@ -43,16 +45,20 @@ def send_email(
             raise
         return False
 
-    # Bundle generated dashboard charts/logos in the message itself. External
-    # image loading and unsupported data: image URLs are unnecessary for readers.
     inline_images = []
+
     def embed_png(match):
         content_id = f"dashboard-{len(inline_images)}@pinkshield"
         part = MIMEImage(base64.b64decode(match.group(1), validate=True), _subtype="png")
         part.add_header("Content-ID", f"<{content_id}>")
-        part.add_header("Content-Disposition", "inline", filename=f"dashboard-{len(inline_images)}.png")
+        part.add_header(
+            "Content-Disposition",
+            "inline",
+            filename=f"dashboard-{len(inline_images)}.png",
+        )
         inline_images.append(part)
         return f'src="cid:{content_id}"'
+
     html = re.sub(r'src="data:image/png;base64,([A-Za-z0-9+/=]+)"', embed_png, html)
     msg = MIMEMultipart("related" if inline_images else "alternative")
     msg["Subject"] = subject
@@ -62,14 +68,9 @@ def send_email(
         msg["Reply-To"] = reply_to
     if cc:
         msg["Cc"] = ", ".join(cc)
-    if inline_images:
-        alternative = MIMEMultipart("alternative")
-        alternative.attach(MIMEText(html, "html", "utf-8"))
-        msg.attach(alternative)
-        for part in inline_images:
-            msg.attach(part)
-    else:
-        msg.attach(MIMEText(html, "html", "utf-8"))
+    msg.attach(MIMEText(html, "html"))
+    for image in inline_images:
+        msg.attach(image)
 
     recipients = [to_email] + (cc or [])
 
@@ -77,9 +78,8 @@ def send_email(
         with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
             server.starttls()
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            refused = server.sendmail(msg["From"], recipients, msg.as_string())
-            if to_email in refused:
-                raise smtplib.SMTPRecipientsRefused(refused)
+            envelope_sender = parseaddr(msg["From"])[1] or settings.SMTP_USER
+            server.sendmail(envelope_sender, recipients, msg.as_string())
         logger.info("Email sent to %s (cc: %s, subject: %s)", to_email, cc or "none", subject)
         return True
     except Exception as e:
@@ -102,6 +102,9 @@ def send_template_email(
     to_email: str,
     variables: dict,
     reply_to: str = None,
+    from_email: str = None,
+    cc: List[str] = None,
+    include_configured_cc: bool = True,
     raise_on_error: bool = False,
 ) -> bool:
     from ..models.models import EmailTemplate, EmailTemplateCc
@@ -113,8 +116,21 @@ def send_template_email(
             raise RuntimeError(f"Email template '{template_key}' was not found")
         return False
 
-    cc_rows = db.query(EmailTemplateCc).filter(EmailTemplateCc.template_key == template_key).all()
-    cc_list = [row.cc_email for row in cc_rows if row.cc_email != to_email]
+    cc_list = []
+    seen_cc = set()
+    to_email_normalized = to_email.strip().lower()
+    for address in cc or []:
+        normalized = address.strip().lower()
+        if normalized and normalized != to_email_normalized and normalized not in seen_cc:
+            seen_cc.add(normalized)
+            cc_list.append(normalized)
+    if include_configured_cc:
+        cc_rows = db.query(EmailTemplateCc).filter(EmailTemplateCc.template_key == template_key).all()
+        for row in cc_rows:
+            normalized = row.cc_email.strip().lower()
+            if normalized and normalized != to_email_normalized and normalized not in seen_cc:
+                seen_cc.add(normalized)
+                cc_list.append(normalized)
 
     variables.setdefault("login_url", LOGIN_URL)
 
@@ -126,5 +142,6 @@ def send_template_email(
         html,
         cc=cc_list if cc_list else None,
         reply_to=reply_to,
+        from_email=from_email,
         raise_on_error=raise_on_error,
     )

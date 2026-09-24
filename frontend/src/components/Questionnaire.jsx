@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './Questionnaire.css';
 // NEW: Import the translation hook
 import { useTranslation } from 'react-i18next';
-import QuestionBlock from './QuestionBlock';
+import QuestionBlock from './QuestionBlock.jsx';
 
 // Helper function to generate random string (Unchanged)
 const generateRandomId = (length = 8) => {
@@ -14,9 +14,26 @@ const generateRandomId = (length = 8) => {
   return result;
 };
 
+// Database trigger_answer may contain one value or multiple values separated by |.
+const conditionMatches = (condition, currentValue) => {
+  if (!condition?.value) return true;
+  const allowedValues = String(condition.value)
+    .split('|')
+    .map(value => value.trim())
+    .filter(Boolean);
+  return allowedValues.includes(currentValue);
+};
+
 
 // NEW: Accept formStructure and questionnaireData as props
-function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireData, questionnaireDataEn }) {
+function Questionnaire({
+  onSubmit,
+  isSubmitting,
+  formStructure,
+  questionnaireData,
+  questionnaireDataEn,
+  lockedHospitalName = '',
+}) {
   
   // NEW: Initialize i18next hook *only* for UI text
 
@@ -61,6 +78,28 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     setRandomPatientId(newId);
   }, []);
 
+  useEffect(() => {
+    if (!lockedHospitalName || !Array.isArray(formStructure)) return;
+
+    const hospitalKeys = [];
+    const collectHospitalKeys = (questions) => {
+      (questions || []).forEach(question => {
+        if (question.type === 'hospital-select') {
+          hospitalKeys.push(question.name || question.key);
+        }
+        collectHospitalKeys(question.subQuestions);
+      });
+    };
+    formStructure.forEach(section => collectHospitalKeys(section.questions));
+    if (!hospitalKeys.length) return;
+
+    const lockedValues = Object.fromEntries(
+      hospitalKeys.map(key => [key, lockedHospitalName])
+    );
+    setFormData(previous => ({ ...previous, ...lockedValues }));
+    setFormDataEn(previous => ({ ...previous, ...lockedValues }));
+  }, [formStructure, lockedHospitalName]);
+
   // Fetch hospitals for Q45 dropdown
   useEffect(() => {
     const apiUrl = process.env.REACT_APP_API_URL || '';
@@ -82,14 +121,19 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
           questions.forEach(q => {
               const qKey = q.name || q.key;
 
+              if (q.type === 'repeat_select') {
+                const repeatCount = Number.parseInt(currentFormDataEn[q.repeatCountKey], 10) || 0;
+                if (repeatCount <= 0) return;
+              }
+
               // NEW: Check if this question (the parent) should be visible
               if (q.condition && q.condition.key !== qKey) {
-                if (currentFormDataEn[q.condition.key] !== q.condition.value) {
+                if (!conditionMatches(q.condition, currentFormDataEn[q.condition.key])) {
                   return;
                 }
               }
 
-              visibleKeys.add(qKey); 
+              if (q.type !== 'group') visibleKeys.add(qKey);
               if (q.otherOptionId) {
                 const valEn = currentFormDataEn[qKey];
                 const isOtherSelected = Array.isArray(valEn) 
@@ -103,7 +147,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
               if (q.subQuestions && q.condition) {
                   // If it's a fork (condition is on another question)
                   if (q.condition.key !== qKey) {
-                    if (currentFormDataEn[q.condition.key] === q.condition.value) {
+                    if (conditionMatches(q.condition, currentFormDataEn[q.condition.key])) {
                       traverse(q.subQuestions);
                     }
                   } else {
@@ -113,6 +157,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                         traverse(q.subQuestions);
                     }
                   }
+              } else if (q.subQuestions) {
+                  traverse(q.subQuestions);
               }
           });
       };
@@ -186,6 +232,24 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     }
   };
 
+  const handleRepeatChange = (name, index, value) => {
+    const localAnswers = questionnaireData[name]?.answers || [];
+    const englishAnswers = questionnaireDataEn[name]?.answers || [];
+    const answerIndex = localAnswers.indexOf(value);
+    const englishValue = answerIndex >= 0 ? englishAnswers[answerIndex] : value;
+
+    setFormData(previous => {
+      const values = Array.isArray(previous[name]) ? [...previous[name]] : [];
+      values[index] = value;
+      return { ...previous, [name]: values };
+    });
+    setFormDataEn(previous => {
+      const values = Array.isArray(previous[name]) ? [...previous[name]] : [];
+      values[index] = englishValue;
+      return { ...previous, [name]: values };
+    });
+  };
+
 
   // getVisibleRequiredQuestions - Modified to use translated "Yes"
   const getVisibleRequiredQuestions = () => {
@@ -195,9 +259,14 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
         for (const q of questions) {
             const qKey = q.name || q.key;
 
+            if (q.type === 'repeat_select') {
+                const repeatCount = Number.parseInt(formDataEn[q.repeatCountKey], 10) || 0;
+                if (repeatCount <= 0) continue;
+            }
+
             // NEW: Check if this question (the parent) should be visible
             if (q.condition && q.condition.key !== qKey) {
-              if (formDataEn[q.condition.key] !== q.condition.value) {
+              if (!conditionMatches(q.condition, formDataEn[q.condition.key])) {
                 continue;
               }
             }
@@ -218,7 +287,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
             if (q.subQuestions && q.condition) {
                 // If it's a fork (condition is on another question)
                 if (q.condition.key !== qKey) {
-                  if (formDataEn[q.condition.key] === q.condition.value) {
+                  if (conditionMatches(q.condition, formDataEn[q.condition.key])) {
                     traverseQuestions(q.subQuestions);
                   }
                 } else {
@@ -228,6 +297,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                       traverseQuestions(q.subQuestions);
                   }
                 }
+            } else if (q.subQuestions) {
+                traverseQuestions(q.subQuestions);
             }
         }
     };
@@ -250,15 +321,16 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
         // NEW: Check if this question (the parent) should be visible
         if (q.condition && q.condition.key !== key) {
-          if (formDataEn[q.condition.key] !== q.condition.value) {
+          if (!conditionMatches(q.condition, formDataEn[q.condition.key])) {
             continue;
           }
         }
 
         // Only validate numeric fields that have value
-        if (q.type === 'number') {
+        if (q.type === 'number' || q.type === 'number_or_unknown') {
           const raw = data[key];
           if (raw !== undefined && raw !== null && raw !== '') {
+            if (q.type === 'number_or_unknown' && raw === "I don't know") continue;
             // coerce to number safely
             const num = Number(raw);
             if (Number.isNaN(num)) {
@@ -282,7 +354,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
         // Recurse into subQuestions
         if (q.subQuestions && q.condition) {
            if (q.condition.key !== key) {
-             if (formDataEn[q.condition.key] === q.condition.value) {
+             if (conditionMatches(q.condition, formDataEn[q.condition.key])) {
                traverse(q.subQuestions);
              }
            } else {
@@ -291,6 +363,8 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                traverse(q.subQuestions);
              }
            }
+        } else if (q.subQuestions) {
+             traverse(q.subQuestions);
         }
       }
     };
@@ -310,9 +384,40 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
 
     const visibleRequiredKeys = getVisibleRequiredQuestions();
+    const findQuestionConfig = (key) => {
+      let found;
+      const search = (questions) => {
+        for (const question of questions || []) {
+          if ((question.name || question.key) === key) {
+            found = question;
+            return;
+          }
+          search(question.subQuestions);
+          if (found) return;
+        }
+      };
+      (formStructure || []).forEach(section => search(section.questions));
+      return found;
+    };
+
+    visibleRequiredKeys.forEach(key => {
+      const config = findQuestionConfig(key);
+      if (config?.type !== 'repeat_select') return;
+      const count = Math.max(0, Number.parseInt(dataToSubmitEn[config.repeatCountKey], 10) || 0);
+      dataToSubmit[key] = (Array.isArray(dataToSubmit[key]) ? dataToSubmit[key] : []).slice(0, count);
+      dataToSubmitEn[key] = (Array.isArray(dataToSubmitEn[key]) ? dataToSubmitEn[key] : []).slice(0, count);
+    });
+
     const missingFields = visibleRequiredKeys.filter(key => {
-        const value = dataToSubmit[key];
-        return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+      const value = dataToSubmit[key];
+      const config = findQuestionConfig(key);
+      if (config?.type === 'repeat_select') {
+        const count = Math.max(0, Number.parseInt(dataToSubmit[config.repeatCountKey], 10) || 0);
+        return count > 0 && (!Array.isArray(value)
+          || value.slice(0, count).length < count
+          || value.slice(0, count).some(item => !item));
+      }
+      return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
     });
     // console.log('Submitting:', { dataToSubmit, dataToSubmitEn, missingFields });
 
@@ -332,6 +437,28 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
       return;
     }
 
+    // Generic "Other" inputs use a temporary frontend-only key. Keep the
+    // submitted value attached to the original question instead of creating
+    // a separate questionnaire/database question.
+    Object.keys(dataToSubmitEn)
+      .filter(key => key.endsWith('__other'))
+      .forEach(otherKey => {
+        const questionKey = otherKey.slice(0, -'__other'.length);
+        const detail = String(dataToSubmitEn[otherKey] || dataToSubmit[otherKey] || '').trim();
+        if (detail) {
+          const appendDetail = value => {
+            if (Array.isArray(value)) {
+              return value.map(item => /^others?$/i.test(String(item).trim()) ? `Other: ${detail}` : item);
+            }
+            return /^others?$/i.test(String(value || '').trim()) ? `Other: ${detail}` : value;
+          };
+          dataToSubmit[questionKey] = appendDetail(dataToSubmit[questionKey]);
+          dataToSubmitEn[questionKey] = appendDetail(dataToSubmitEn[questionKey]);
+        }
+        delete dataToSubmit[otherKey];
+        delete dataToSubmitEn[otherKey];
+      });
+
   
     onSubmit(dataToSubmit, dataToSubmitEn);
   };
@@ -344,12 +471,17 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
       const subQData = currentQuestionnaireData[subQConfig.key];
       if (!subQData) return null;
 
+      if (subQConfig.type === 'repeat_select') {
+        const repeatCount = Number.parseInt(currentFormDataEn[subQConfig.repeatCountKey], 10) || 0;
+        if (repeatCount <= 0) return null;
+      }
+
       const subQKey = subQConfig.name || subQConfig.key;
       const conditionKey = subQConfig.condition ? subQConfig.condition.key : null;
 
       // --- LOGIC 1: SHOULD THIS QUESTION (THE PARENT) RENDER? ---
       if (subQConfig.condition && conditionKey !== subQKey) {
-         if (currentFormDataEn[conditionKey] !== subQConfig.condition.value) {
+         if (!conditionMatches(subQConfig.condition, currentFormDataEn[conditionKey])) {
              return null; 
          }
       }
@@ -360,7 +492,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
       let renderedChildren = null;
       let allowChildren = true;
       if (subQConfig.condition && conditionKey === subQKey) {
-          if (currentFormDataEn[subQKey] !== subQConfig.condition.value) {
+          if (!conditionMatches(subQConfig.condition, currentFormDataEn[subQKey])) {
               allowChildren = false;
           }
       }
@@ -381,10 +513,12 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
             formDataEn={currentFormDataEn}
             validationErrors={currentValidationErrors}
             handleChange={handleChange}
+            handleRepeatChange={handleRepeatChange}
             t={t}
             displayNumber={displayNumber}
             randomPatientId={randomPatientId}
             hospitals={hospitals}
+            lockedHospitalName={lockedHospitalName}
           />
           {hasValidChildren && (
             <div className="sub-question-container visible">
@@ -398,9 +532,13 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
 
   let questionCounter = 0;
 
-  // Loading check (important!)
-  // If the data hasn't been loaded by i18next yet, show a loading message
-  if (!Array.isArray(formStructure) || !ui.header || !questionnaireData.Q1) {
+  // Questionnaire keys are versioned (for example V2_Q01), so loading must not
+  // depend on the legacy Q1 key.
+  const hasQuestionnaireContent = questionnaireData
+    && typeof questionnaireData === 'object'
+    && Object.keys(questionnaireData).length > 0;
+
+  if (!Array.isArray(formStructure) || !ui.header || !hasQuestionnaireContent) {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'Arial, sans-serif' }}>
             Loading questionnaire content...
@@ -449,7 +587,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
               // FIX: Only hide if the condition is based on ANOTHER question.
               // If condition.key === qConfig.key, it's a self-referencing condition used for subquestions.
               if (qConfig.condition && qConfig.condition.key !== qConfig.key) {
-                if (formDataEn[qConfig.condition.key] !== qConfig.condition.value) {
+                if (!conditionMatches(qConfig.condition, formDataEn[qConfig.condition.key])) {
                   return null;
                 }
               }
@@ -474,6 +612,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                     formDataEn={formDataEn}
                     validationErrors={validationErrors}
                     handleChange={handleChange}
+                    handleRepeatChange={handleRepeatChange}
                     t={t}
                     displayNumber={displayNumber}
                     isQ27No={isQ27No}
@@ -482,6 +621,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                     setQ27VideoConfirmed={setQ27VideoConfirmed}
                     randomPatientId={randomPatientId}
                     hospitals={hospitals}
+                    lockedHospitalName={lockedHospitalName}
                   />
                   {hasValidChildren && (
                     <div className="sub-question-container visible">

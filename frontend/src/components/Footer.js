@@ -44,7 +44,7 @@ const Footer = () => {
           <div style={{ textAlign: 'right' }}>
             <strong style={{ display: 'block', marginBottom: '10px', fontSize: '15px', color: '#14868C' }}>Contact Information</strong>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
-              <div>Study: <a href="mailto:breastcancerdetection@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>breastcancerdetection@tanuh.ai</a></div>
+              <div>Study: <a href="mailto:breastcancerscreening@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>breastcancerscreening@tanuh.ai</a></div>
               <div>General: <a href="mailto:info@tanuh.ai" style={{ color: '#14868C', textDecoration: 'none' }}>info@tanuh.ai</a></div>
               <div style={{ marginTop: '6px' }}>
                 Tel: (080) 2293 4106 &nbsp;|&nbsp; (080) 2293 4107

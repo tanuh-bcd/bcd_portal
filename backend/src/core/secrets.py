@@ -19,6 +19,8 @@ def _get_client():
 
 
 def get_secret(name: str, default: str = "") -> str:
+    if os.getenv("DISABLE_SECRET_MANAGER", "").lower() == "true":
+        return default
     if name in _cache:
         return _cache[name]
     try:

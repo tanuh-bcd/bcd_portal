@@ -108,7 +108,7 @@ def monthly_chart(report):
 
 
 def dashboard_fragment(report):
-    cards = (('Total subjects', report.data_points), ('Reports uploaded', report.reports_uploaded),
+    cards = (('Total subjects', report.lifetime_data_points), ('Reports uploaded', report.reports_uploaded),
              ('Image records', report.image_records), ('Image studies', report.image_studies))
     cells = []
     for title, count in cards:
