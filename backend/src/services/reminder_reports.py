@@ -187,6 +187,28 @@ def _latest_assessments(
     return assessments
 
 
+def _cumulative_assessments(
+    db: Session,
+    session_ids: list[str],
+    hospital_id: str,
+    report_date: date,
+) -> list[DoctorAssessment]:
+    """Return every assessment contributing attachments to the dashboard totals."""
+    assessments: list[DoctorAssessment] = []
+    report_end = datetime.combine(report_date + timedelta(days=1), time.min)
+    for session_chunk in _chunks(session_ids):
+        assessments.extend(
+            db.query(DoctorAssessment).options(
+                joinedload(DoctorAssessment.attachments)
+            ).filter(
+                DoctorAssessment.patient_session_id.in_(session_chunk),
+                DoctorAssessment.hospital_id == hospital_id,
+                DoctorAssessment.created_at < report_end,
+            ).all()
+        )
+    return assessments
+
+
 def _bilateral_value(assessment: Optional[DoctorAssessment], field: str) -> bool:
     if not assessment:
         return False
@@ -309,6 +331,9 @@ def build_report(
     session_ids = [row.session_id for row in questionnaire_rows]
     patient_sessions = _patient_sessions(db, session_ids)
     latest_assessments = _latest_assessments(db, session_ids)
+    cumulative_assessments = _cumulative_assessments(
+        db, session_ids, hospital.id, report_date
+    )
 
     current_rows = []
     # Hospital appreciation emails show cumulative subjects collected since
@@ -354,8 +379,12 @@ def build_report(
     reports_uploaded = 0
     image_records = 0
     image_studies: set[str] = set()
-    for session_id, assessment in latest_assessments.items():
+    for assessment in cumulative_assessments:
+        session_id = assessment.patient_session_id
         for attachment in assessment.attachments:
+            attachment_date = _as_date(attachment.created_at)
+            if attachment_date and attachment_date > report_date:
+                continue
             if attachment.file_type == "mammo_reading":
                 reports_uploaded += 1
             elif attachment.file_type in MAMMOGRAM_VIEWS or attachment.file_type == "mammo_dicom":
