@@ -311,6 +311,10 @@ def build_report(
     latest_assessments = _latest_assessments(db, session_ids)
 
     current_rows = []
+    # Hospital appreciation emails show cumulative subjects collected since
+    # onboarding. A subject counts once the questionnaire produced a risk
+    # result; the stricter five-component completeness rule remains limited to
+    # the quarterly data-quality metric below.
     lifetime_data_points = 0
     for row in questionnaire_rows:
         components = _components(
@@ -318,7 +322,7 @@ def build_report(
             patient_sessions.get(row.session_id),
             latest_assessments.get(row.session_id),
         )
-        if _is_complete_data_point(components):
+        if row.snehita_lifetime_risk is not None:
             lifetime_data_points += 1
         submitted_on = _as_date(row.session_end_time or row.session_start_time)
         if submitted_on and quarter_start <= submitted_on < quarter_end:
@@ -1015,7 +1019,8 @@ def run_reminders(
             else all_reports
         )
     delivery_reports = [
-        report for report in delivery_reports if report.collection_start_date is not None
+        report for report in delivery_reports
+        if report.collection_start_date is not None and report.lifetime_data_points > 0
     ]
 
     results: list[ReminderEmailLog] = []

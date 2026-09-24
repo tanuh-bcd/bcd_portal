@@ -175,7 +175,7 @@ def test_build_report_requires_all_five_data_point_components():
         db.commit()
 
         report = build_report(db, q_db, hospital, date(2026, 8, 10), target=200)
-        assert report.lifetime_data_points == 2
+        assert report.lifetime_data_points == 3
         assert report.data_points == 1
         assert report.assessments_submitted == 2
         assert report.pending_submissions == 199
@@ -314,6 +314,16 @@ def test_new_hospitals_are_automatically_included_in_reports():
         assert hospital_id in report_ids
         assert "clinic_00001" in report_ids
         assert "clinic_00002" not in report_ids
+
+        # Discovery still includes newly configured hospitals, while delivery
+        # skips them until at least one subject has a calculated risk result.
+        assert run_reminders(
+            db,
+            q_db,
+            report_date=date(2026, 8, 20),
+            hospital_id=hospital_id,
+            dry_run=True,
+        ) == []
     finally:
         db.query(Hospital).filter(Hospital.id == hospital_id).delete(
             synchronize_session=False
