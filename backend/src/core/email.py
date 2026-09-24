@@ -1,8 +1,10 @@
+import base64
 import re
 import smtplib
 import logging
 from email.utils import parseaddr
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from typing import List
 from sqlalchemy.orm import Session
@@ -11,6 +13,19 @@ from .config import settings
 logger = logging.getLogger(__name__)
 
 LOGIN_URL = "https://bc-portal-dev.tanuh.ai/login"
+
+
+class SMTPConfigurationError(RuntimeError):
+    """Raised when required SMTP setting names are missing."""
+
+
+def validate_smtp_config():
+    missing = [
+        name for name in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD")
+        if not getattr(settings, name)
+    ]
+    if missing:
+        raise SMTPConfigurationError("Missing SMTP settings: " + ", ".join(missing))
 
 
 def send_email(
@@ -22,13 +37,30 @@ def send_email(
     from_email: str = None,
     raise_on_error: bool = False,
 ) -> bool:
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+    try:
+        validate_smtp_config()
+    except SMTPConfigurationError:
         logger.warning("SMTP not configured — skipping email to %s", to_email)
         if raise_on_error:
-            raise RuntimeError("SMTP is not configured")
+            raise
         return False
 
-    msg = MIMEMultipart("alternative")
+    inline_images = []
+
+    def embed_png(match):
+        content_id = f"dashboard-{len(inline_images)}@pinkshield"
+        part = MIMEImage(base64.b64decode(match.group(1), validate=True), _subtype="png")
+        part.add_header("Content-ID", f"<{content_id}>")
+        part.add_header(
+            "Content-Disposition",
+            "inline",
+            filename=f"dashboard-{len(inline_images)}.png",
+        )
+        inline_images.append(part)
+        return f'src="cid:{content_id}"'
+
+    html = re.sub(r'src="data:image/png;base64,([A-Za-z0-9+/=]+)"', embed_png, html)
+    msg = MIMEMultipart("related" if inline_images else "alternative")
     msg["Subject"] = subject
     msg["From"] = from_email or settings.SMTP_FROM or settings.SMTP_USER
     msg["To"] = to_email
@@ -37,6 +69,8 @@ def send_email(
     if cc:
         msg["Cc"] = ", ".join(cc)
     msg.attach(MIMEText(html, "html"))
+    for image in inline_images:
+        msg.attach(image)
 
     recipients = [to_email] + (cc or [])
 

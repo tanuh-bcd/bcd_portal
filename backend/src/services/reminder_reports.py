@@ -1,7 +1,7 @@
 import html
 import logging
 import uuid
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from typing import Iterable, List, Optional
 from zoneinfo import ZoneInfo
@@ -10,7 +10,8 @@ from sqlalchemy import bindparam, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from ..core.config import settings
-from ..core.email import send_template_email
+from ..core.email import send_email, send_template_email
+from .reminder_dashboard import hospital_document
 from ..models.models import (
     DoctorAssessment,
     Hospital,
@@ -71,6 +72,12 @@ class ReminderReport:
     mammogram_quality_flags: int
     active_recipient_count: int
     active_recipient_emails: tuple[str, ...]
+    collection_start_date: Optional[date] = None
+    reports_uploaded: int = 0
+    image_records: int = 0
+    image_studies: int = 0
+    month_counts: dict = field(default_factory=dict)
+    month_risk_counts: dict = field(default_factory=dict)
 
 
 def _csv_values(value: str) -> list[str]:
@@ -238,11 +245,16 @@ def active_hospital_recipients(db: Session, hospital_id: str) -> list[ReminderRe
         value.lower().lstrip("@")
         for value in _csv_values(settings.REMINDER_EXCLUDED_RECIPIENT_DOMAINS)
     }
+    excluded_emails = {
+        value.lower() for value in _csv_values(settings.REMINDER_EXCLUDED_RECIPIENT_EMAILS)
+    }
     recipients: list[ReminderRecipient] = []
     seen: set[str] = set()
     for user in users:
         email = user.email.strip().lower()
         if any(email.endswith(f"@{domain}") for domain in excluded_domains):
+            continue
+        if email in excluded_emails:
             continue
         if email in seen:
             continue
@@ -317,6 +329,35 @@ def build_report(
     data_points = sum(_is_complete_data_point(components) for _, components in current_rows)
     assessments_submitted = sum(components["assessment"] for _, components in current_rows)
 
+    collection_dates = [
+        _as_date(row.session_end_time or row.session_start_time)
+        for row in questionnaire_rows
+    ]
+    collection_dates = [value for value in collection_dates if value]
+    month_counts: dict[str, int] = {}
+    month_risk_counts: dict[str, list[int]] = {}
+    for row in questionnaire_rows:
+        collected_on = _as_date(row.session_end_time or row.session_start_time)
+        if not collected_on or collected_on > report_date:
+            continue
+        month = collected_on.strftime("%Y-%m")
+        month_counts[month] = month_counts.get(month, 0) + 1
+        if row.snehita_lifetime_risk is not None:
+            risk = float(row.snehita_lifetime_risk)
+            bucket = 0 if risk < 0.4004 else 1 if risk < 0.574 else 2 if risk < 0.795 else 3
+            month_risk_counts.setdefault(month, [0, 0, 0, 0])[bucket] += 1
+
+    reports_uploaded = 0
+    image_records = 0
+    image_studies: set[str] = set()
+    for session_id, assessment in latest_assessments.items():
+        for attachment in assessment.attachments:
+            if attachment.file_type == "mammo_reading":
+                reports_uploaded += 1
+            elif attachment.file_type in MAMMOGRAM_VIEWS or attachment.file_type == "mammo_dicom":
+                image_records += 1
+                image_studies.add(session_id)
+
     recipients = active_hospital_recipients(db, hospital.id)
     return ReminderReport(
         hospital_id=hospital.id,
@@ -347,6 +388,12 @@ def build_report(
         ),
         active_recipient_count=len(recipients),
         active_recipient_emails=tuple(recipient.email for recipient in recipients),
+        collection_start_date=min(collection_dates) if collection_dates else None,
+        reports_uploaded=reports_uploaded,
+        image_records=image_records,
+        image_studies=len(image_studies),
+        month_counts=dict(sorted(month_counts.items())),
+        month_risk_counts=month_risk_counts,
     )
 
 
@@ -752,17 +799,28 @@ def _send_delivery(
         db.refresh(log)
         return log
     try:
-        send_template_email(
-            db,
-            template_key,
-            log.recipient_email,
-            variables,
-            reply_to=settings.REMINDER_REPLY_TO or None,
-            from_email=settings.REMINDER_FROM_EMAIL,
-            cc=reminder_cc_recipients(),
-            include_configured_cc=False,
-            raise_on_error=True,
-        )
+        if template_key == HOSPITAL_TEMPLATE_KEY and "_html_body" in variables:
+            send_email(
+                log.recipient_email,
+                variables["_subject"],
+                variables["_html_body"],
+                reply_to=settings.REMINDER_REPLY_TO or None,
+                from_email=settings.REMINDER_FROM_EMAIL,
+                cc=reminder_cc_recipients(),
+                raise_on_error=True,
+            )
+        else:
+            send_template_email(
+                db,
+                template_key,
+                log.recipient_email,
+                variables,
+                reply_to=settings.REMINDER_REPLY_TO or None,
+                from_email=settings.REMINDER_FROM_EMAIL,
+                cc=reminder_cc_recipients(),
+                include_configured_cc=False,
+                raise_on_error=True,
+            )
         log.status = "sent"
         log.sent_at = datetime.now(ZoneInfo(settings.REMINDER_TIMEZONE)).replace(tzinfo=None)
         log.error_message = None
@@ -803,12 +861,17 @@ def send_report(
         force,
         idempotency_period,
     )
+    variables = report_variables(report, recipient)
+    variables.update({
+        "_subject": f"PinkShieldAI | Thank you for your contribution - {report.hospital_name}",
+        "_html_body": hospital_document(report),
+    })
     return _send_delivery(
         db,
         log,
         should_send,
         HOSPITAL_TEMPLATE_KEY,
-        report_variables(report, recipient),
+        variables,
         dry_run,
     )
 
@@ -930,7 +993,7 @@ def run_reminders(
     if aggregate_only:
         include_aggregate = True
     elif include_aggregate is None:
-        include_aggregate = hospital_id is None
+        include_aggregate = False
 
     cleanup_delivery_logs(db, due_as_of)
     idempotency_period = _idempotency_period(
@@ -951,6 +1014,9 @@ def run_reminders(
             if hospital_id
             else all_reports
         )
+    delivery_reports = [
+        report for report in delivery_reports if report.collection_start_date is not None
+    ]
 
     results: list[ReminderEmailLog] = []
     for report in delivery_reports:
