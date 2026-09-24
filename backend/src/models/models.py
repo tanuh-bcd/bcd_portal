@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, TIMESTAMP, text, Text, Enum, JSON, Index, Date, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from ..db.session import Base
 import enum
 
@@ -214,3 +215,22 @@ class Attachment(Base):
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
 
     assessment = relationship("DoctorAssessment", back_populates="attachments")
+
+
+class ReminderDelivery(Base):
+    """One recipient and immutable content snapshot per reminder cycle."""
+    __tablename__ = "reminder_deliveries"
+    __table_args__ = (UniqueConstraint("scope", "recipient_email", "cycle_date",
+                                      name="uq_reminder_delivery_cycle"),)
+    id = Column(Integer, primary_key=True)
+    scope = Column(String(80), nullable=False)
+    recipient_email = Column(String(255), nullable=False)
+    cycle_date = Column(Date, nullable=False)
+    subject = Column(String(255), nullable=False)
+    body_html = Column(Text().with_variant(MEDIUMTEXT(), "mysql"), nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+    attempts = Column(Integer, nullable=False, default=0)
+    last_attempt_date = Column(Date)
+    sent_at = Column(DateTime)
+    error_message = Column(Text)
+    alert_sent_at = Column(DateTime)

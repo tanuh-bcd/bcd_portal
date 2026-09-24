@@ -47,14 +47,26 @@ class Settings:
     SMTP_PASSWORD: str = _cfg("SMTP_PASSWORD")
     SMTP_FROM: str = _cfg("SMTP_FROM")
 
+    REMINDER_FROM_EMAIL: str = _cfg(
+        "REMINDER_FROM_EMAIL",
+        "PinkShieldAI <breastcancerscreening@tanuh.ai>",
+    )
     REMINDER_EMAIL_ENABLED: bool = _cfg("REMINDER_EMAIL_ENABLED", "false").lower() == "true"
     REMINDER_RECIPIENT_EMAIL: str = _cfg("REMINDER_RECIPIENT_EMAIL", "")
     REMINDER_QUARTERLY_TARGET: int = int(_cfg("REMINDER_QUARTERLY_TARGET", "200"))
     REMINDER_INTERVAL_DAYS: int = int(_cfg("REMINDER_INTERVAL_DAYS", "14"))
     REMINDER_PORTAL_URL: str = _cfg("REMINDER_PORTAL_URL", "https://bc-portal-dev.tanuh.ai/login")
-    REMINDER_SUPPORT_EMAIL: str = _cfg("REMINDER_SUPPORT_EMAIL", SMTP_USER)
+    REMINDER_SUPPORT_EMAIL: str = _cfg(
+        "REMINDER_SUPPORT_EMAIL",
+        "breastcancerscreening@tanuh.ai",
+    )
     REMINDER_REPLY_TO: str = _cfg("REMINDER_REPLY_TO", REMINDER_SUPPORT_EMAIL)
     REMINDER_TIMEZONE: str = _cfg("REMINDER_TIMEZONE", "Asia/Kolkata")
+    CRON_SERVICE_ACCOUNT_EMAIL: str = _cfg("CRON_SERVICE_ACCOUNT_EMAIL")
+    CRON_OIDC_AUDIENCE: str = _cfg("CRON_OIDC_AUDIENCE")
+    REMINDER_TEMPLATE_TEST_ENABLED: bool = (
+        _cfg("REMINDER_TEMPLATE_TEST_ENABLED", "false").lower() == "true"
+    )
 
     MYSQL_DB_QUESTIONNAIRE: str = _cfg("MYSQL_DB_QUESTIONNAIRE", "bcd_questionnaire")
 

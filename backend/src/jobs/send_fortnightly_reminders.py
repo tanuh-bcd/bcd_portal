@@ -1,6 +1,9 @@
 import argparse
 import logging
+from pathlib import Path
 from datetime import date
+
+from sqlalchemy import text
 
 from ..core.config import settings
 from ..db.session import QuestionnaireSessionLocal, SessionLocal
@@ -9,11 +12,15 @@ from ..services.reminder_reports import run_reminders
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Send PinkShield AI fortnightly hospital updates")
-    parser.add_argument("--dry-run", action="store_true", help="Calculate and log reports without sending email")
+    parser.add_argument("--dry-run", action="store_true", help="Preview reports without sending email or changing delivery history")
     parser.add_argument("--force", action="store_true", help="Ignore the 14-day due check")
     parser.add_argument("--hospital-id", help="Restrict the run to one hospital")
     parser.add_argument("--report-date", type=date.fromisoformat, help="Override report date (YYYY-MM-DD)")
-    return parser.parse_args()
+    parser.add_argument("--preview-dir", help="Write HTML previews (requires --dry-run)")
+    args = parser.parse_args()
+    if args.preview_dir and not args.dry_run:
+        parser.error("--preview-dir requires --dry-run")
+    return args
 
 
 def main():
@@ -24,7 +31,12 @@ def main():
 
     db = SessionLocal()
     questionnaire_db = QuestionnaireSessionLocal()
+    lock_connection = None
     try:
+        if not args.dry_run and db.bind.dialect.name == "mysql":
+            lock_connection = db.bind.connect()
+            if lock_connection.execute(text("SELECT GET_LOCK('pinkshield_reminders', 0)")).scalar() != 1:
+                raise SystemExit("Another reminder job is running")
         results = run_reminders(
             db,
             questionnaire_db,
@@ -33,15 +45,21 @@ def main():
             dry_run=args.dry_run,
             force=args.force,
         )
-        for result in results:
-            print(
-                f"{result.hospital_id}: {result.status}; "
-                f"data_points={result.data_points}; "
-                f"assessments={result.assessments_submitted}; "
-                f"pending={result.pending_submissions}"
-            )
-        print(f"Processed {len(results)} hospital report(s).")
+        if args.preview_dir:
+            Path(args.preview_dir).mkdir(parents=True, exist_ok=True)
+        for index, result in enumerate(results):
+            print(f"{result.scope}: {result.status}; to={result.recipient_email}; "
+                  f"attempts={result.attempts}")
+            if args.preview_dir:
+                (Path(args.preview_dir) / f"reminder-{index + 1}.html").write_text(
+                    result.body_html, encoding="utf-8")
+        print(f"Processed {len(results)} recipient delivery record(s).")
     finally:
+        if lock_connection is not None:
+            try:
+                lock_connection.execute(text("SELECT RELEASE_LOCK('pinkshield_reminders')"))
+            finally:
+                lock_connection.close()
         questionnaire_db.close()
         db.close()
 
