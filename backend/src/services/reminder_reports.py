@@ -76,6 +76,7 @@ class ReminderReport:
     reports_uploaded: int = 0
     image_records: int = 0
     image_studies: int = 0
+    cumulative_assessments: int = 0
     month_counts: dict = field(default_factory=dict)
     month_risk_counts: dict = field(default_factory=dict)
 
@@ -425,6 +426,7 @@ def build_report(
         reports_uploaded=reports_uploaded,
         image_records=image_records,
         image_studies=len(image_studies),
+        cumulative_assessments=len(cumulative_assessments),
         month_counts=dict(sorted(month_counts.items())),
         month_risk_counts=month_risk_counts,
     )
@@ -1049,7 +1051,9 @@ def run_reminders(
         )
     delivery_reports = [
         report for report in delivery_reports
-        if report.collection_start_date is not None and report.lifetime_data_points > 0
+        if report.collection_start_date is not None
+        and report.lifetime_data_points > 0
+        and report.cumulative_assessments > 0
     ]
 
     results: list[ReminderEmailLog] = []

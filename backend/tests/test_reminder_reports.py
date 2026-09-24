@@ -187,6 +187,7 @@ def test_build_report_requires_all_five_data_point_components():
         assert report.reports_uploaded == 2
         assert report.image_records == 11
         assert report.image_studies == 3
+        assert report.cumulative_assessments == 3
         assert report.data_points == 1
         assert report.assessments_submitted == 2
         assert report.pending_submissions == 199
