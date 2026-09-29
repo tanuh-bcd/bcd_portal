@@ -20,6 +20,7 @@ from ..schemas.retrospective_schemas import (
     RetrospectiveRetryResponse,
     RetrospectiveRetryFileItem,
     RetrospectiveDashboardCount,
+    RetrospectiveBatchDeleteResponse,
 )
 from ..services.retrospective_ids import generate_batch_id, generate_case_ids
 from ..services.retrospective_processing import (
@@ -34,6 +35,7 @@ from ..services.retrospective_storage import (
 )
 from .admin import check_super_admin
 from google.cloud import storage
+from google.api_core.exceptions import NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +129,9 @@ def create_batch(
 
     case_ids = generate_case_ids(db, len(manifest.cases))
     case_results = []
+    all_cases = []
+    all_files = []
+    case_file_rows = []  # parallel to all_cases, for rollup + response building
 
     for case_item, retro_case_id in zip(manifest.cases, case_ids):
         case = RetrospectiveCase(
@@ -137,8 +142,7 @@ def create_batch(
             source_case_name=case_item.source_case_name,
             source_folder=case_item.source_folder,
         )
-        db.add(case)
-        db.flush()
+        all_cases.append(case)
 
         file_rows = []
         for file_item in case_item.files:
@@ -146,7 +150,7 @@ def create_batch(
                 safe_name = sanitize_file_name(file_item.file_name)
                 blob_path = build_retrospective_blob_path(retro_case_id, file_item.file_type, safe_name)
                 file_rows.append(RetrospectiveFile(
-                    retrospective_case_id=case.retrospective_case_id,
+                    retrospective_case_id=retro_case_id,
                     file_type=file_item.file_type,
                     file_name=safe_name,
                     gcp_path=blob_path,
@@ -154,7 +158,7 @@ def create_batch(
                 ))
             except RetrospectivePathError as e:
                 file_rows.append(RetrospectiveFile(
-                    retrospective_case_id=case.retrospective_case_id,
+                    retrospective_case_id=retro_case_id,
                     file_type=file_item.file_type,
                     file_name=file_item.file_name,
                     gcp_path=None,
@@ -162,9 +166,14 @@ def create_batch(
                     error_message=str(e),
                 ))
 
-        db.add_all(file_rows)
-        db.flush()
+        all_files.extend(file_rows)
+        case_file_rows.append(file_rows)
 
+    db.add_all(all_cases)
+    db.add_all(all_files)
+    db.flush()
+
+    for case, file_rows in zip(all_cases, case_file_rows):
         recompute_case_rollup(case, files=file_rows)
         case_results.append(_case_to_manifest_result(case, file_rows))
 
@@ -228,6 +237,61 @@ def get_batch(
     return batch
 
 
+@router.delete("/batches/{upload_batch_id}", response_model=RetrospectiveBatchDeleteResponse)
+def delete_batch(
+    upload_batch_id: str,
+    db: Session = Depends(get_retrospective_db),
+    current_user: dict = Depends(check_super_admin),
+):
+    institute_id = current_user["hospital_id"]
+    batch = _get_batch_or_404(db, institute_id, upload_batch_id)
+
+    cases = (
+        db.query(RetrospectiveCase)
+        .options(joinedload(RetrospectiveCase.files))
+        .filter(RetrospectiveCase.upload_batch_id == upload_batch_id)
+        .all()
+    )
+    files = [f for c in cases for f in c.files]
+    uploaded_paths = [f.gcp_path for f in files if f.gcp_path and f.upload_status == "UPLOADED"]
+    gcs_deleted = 0
+    if uploaded_paths and settings.GCP_STORAGE_BUCKET:
+        client = _get_storage_client()
+        bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+        failures = []
+        for path in uploaded_paths:
+            try:
+                bucket.blob(path).delete()
+                gcs_deleted += 1
+            except NotFound:
+                gcs_deleted += 1
+            except Exception as e:
+                logger.warning("Failed to delete retrospective GCS object %s: %s", path, e)
+                failures.append(path)
+        if failures:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Failed to delete {len(failures)} of {len(uploaded_paths)} stored file(s); "
+                    "the folder was NOT deleted so nothing is left inconsistent. Please retry."
+                ),
+            )
+
+    cases_deleted = len(cases)
+    files_deleted = len(files)
+
+    db.delete(batch)  # DB-level ON DELETE CASCADE removes its cases and files
+    db.commit()
+
+    return RetrospectiveBatchDeleteResponse(
+        upload_batch_id=upload_batch_id,
+        deleted=True,
+        cases_deleted=cases_deleted,
+        files_deleted=files_deleted,
+        gcs_objects_deleted=gcs_deleted,
+    )
+
+
 @router.get("/batches/{upload_batch_id}/cases", response_model=List[RetrospectiveCaseResponse])
 def list_batch_cases(
     upload_batch_id: str,
@@ -266,6 +330,61 @@ def get_case(
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
     return case
+
+
+@router.delete("/cases/{retrospective_case_id}", response_model=RetrospectiveUploadBatchResponse)
+def delete_case(
+    retrospective_case_id: str,
+    db: Session = Depends(get_retrospective_db),
+    current_user: dict = Depends(check_super_admin),
+):
+    institute_id = current_user["hospital_id"]
+    case = (
+        db.query(RetrospectiveCase)
+        .options(joinedload(RetrospectiveCase.files))
+        .filter(
+            RetrospectiveCase.retrospective_case_id == retrospective_case_id,
+            RetrospectiveCase.institute_id == institute_id,
+        )
+        .first()
+    )
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    uploaded_paths = [f.gcp_path for f in case.files if f.gcp_path and f.upload_status == "UPLOADED"]
+
+    if uploaded_paths and settings.GCP_STORAGE_BUCKET:
+        client = _get_storage_client()
+        bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
+        failures = []
+        for path in uploaded_paths:
+            try:
+                bucket.blob(path).delete()
+            except NotFound:
+                pass
+            except Exception as e:
+                logger.warning("Failed to delete retrospective GCS object %s: %s", path, e)
+                failures.append(path)
+        if failures:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Failed to delete {len(failures)} of {len(uploaded_paths)} stored file(s) for this case; "
+                    "it was NOT deleted so nothing is left inconsistent. Please retry."
+                ),
+            )
+
+    upload_batch_id = case.upload_batch_id
+    db.delete(case)  # DB-level ON DELETE CASCADE removes its DICOM/report file rows
+    db.flush()
+
+    batch = db.query(RetrospectiveUploadBatch).filter(
+        RetrospectiveUploadBatch.upload_batch_id == upload_batch_id
+    ).first()
+    recompute_batch_progress(db, batch)
+    db.commit()
+    db.refresh(batch)
+    return batch
 
 
 def _get_pending_file_or_404(db: Session, institute_id: str, file_id: int) -> RetrospectiveFile:

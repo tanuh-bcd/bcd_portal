@@ -172,3 +172,11 @@ class RetrospectiveDashboardCount(BaseModel):
     institute_id: str
     institute_name: str
     total_retrospective_cases: int
+
+
+class RetrospectiveBatchDeleteResponse(BaseModel):
+    upload_batch_id: str
+    deleted: bool
+    cases_deleted: int
+    files_deleted: int
+    gcs_objects_deleted: int

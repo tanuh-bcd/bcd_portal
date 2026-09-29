@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FolderUp, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
+import { FolderUp, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 
 const API_BASE = `${process.env.REACT_APP_API_URL || ''}/api/v1/admin/retrospective`;
 const DICOM_EXTENSIONS = new Set(['dcm', 'dicom']);
-const MAX_CONCURRENT_UPLOADS = 4;
+const MAX_CONCURRENT_UPLOADS = 12;
 
 const FILE_TYPE_FOLDER_NAMES = new Set([
   'dicom', 'dcm', 'dicoms', 'images', 'image', 'scan', 'scans',
@@ -118,11 +118,13 @@ const RetrospectiveUploadContent = () => {
   const [error, setError] = useState(null);
   const [skippedCount, setSkippedCount] = useState(0);
   const [cancelling, setCancelling] = useState(false);
-
   const [batches, setBatches] = useState([]);
   const [loadingBatches, setLoadingBatches] = useState(false);
   const [expandedBatchId, setExpandedBatchId] = useState(null);
   const [expandedCases, setExpandedCases] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null); // batch pending delete confirmation
+  const [deleting, setDeleting] = useState(false);
+  const [historyMessage, setHistoryMessage] = useState(null); // { type: 'success'|'error', text }
 
   const cancelRequestedRef = useRef(false);
   const activeXhrsRef = useRef(new Set());
@@ -314,6 +316,16 @@ const RetrospectiveUploadContent = () => {
     }
     await refreshBatch(batch.upload_batch_id);
   };
+  const refreshExpandedBatchCases = async () => {
+    if (!expandedBatchId) return;
+    try {
+      const res = await fetch(`${API_BASE}/batches/${expandedBatchId}/cases`, { headers: authHeaders() });
+      setExpandedCases(res.ok ? await res.json() : []);
+    } catch {
+      /* keep the stale list rather than clearing it on a transient error */
+    }
+    await refreshBatch(expandedBatchId);
+  };
 
   const startRetry = async (batch) => {
     try {
@@ -373,6 +385,44 @@ const RetrospectiveUploadContent = () => {
     await fetchBatches();
     retryContextRef.current = null;
     if (retryFileInputRef.current) retryFileInputRef.current.value = '';
+  };
+
+  const confirmDeleteBatch = (batch) => {
+    setHistoryMessage(null);
+    setDeleteTarget(batch);
+  };
+
+  const cancelDeleteBatch = () => {
+    if (deleting) return;
+    setDeleteTarget(null);
+  };
+
+  const performDeleteBatch = async () => {
+    if (!deleteTarget) return;
+    const batchId = deleteTarget.upload_batch_id;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${API_BASE}/batches/${batchId}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `Failed to delete folder (${res.status})`);
+      }
+      setBatches((prev) => prev.filter((b) => b.upload_batch_id !== batchId));
+      if (expandedBatchId === batchId) {
+        setExpandedBatchId(null);
+        setExpandedCases([]);
+      }
+      if (activeBatch?.batch?.upload_batch_id === batchId) setActiveBatch(null);
+      setHistoryMessage({ type: 'success', text: 'Retrospective folder deleted successfully.' });
+      setDeleteTarget(null);
+    } catch (err) {
+      setHistoryMessage({ type: 'error', text: err.message || 'Failed to delete folder. Please try again.' });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const caseCount = caseMap ? caseMap.size : 0;
@@ -489,6 +539,32 @@ const RetrospectiveUploadContent = () => {
           </button>
         </div>
 
+        {historyMessage && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: '8px 12px',
+              borderRadius: 4,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              color: historyMessage.type === 'success' ? '#2f9e44' : '#c0392b',
+              background: historyMessage.type === 'success' ? '#eafaf0' : '#fdecea',
+              border: `1px solid ${historyMessage.type === 'success' ? '#b7e4c7' : '#f5c6cb'}`,
+            }}
+          >
+            <span>{historyMessage.text}</span>
+            <button
+              style={{ ...iconButtonStyle, border: 'none', padding: '2px 6px' }}
+              onClick={() => setHistoryMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {loadingBatches ? (
           <p style={{ color: '#999' }}>Loading…</p>
         ) : batches.length === 0 ? (
@@ -529,11 +605,22 @@ const RetrospectiveUploadContent = () => {
                       {(() => {
                         const isActivelyUploadingHere = creating && activeBatch?.batch?.upload_batch_id === b.upload_batch_id;
                         const needsAction = b.failed_cases > 0 || b.batch_status === 'PENDING' || b.batch_status === 'PROCESSING';
-                        if (isActivelyUploadingHere || !needsAction) return null;
                         return (
-                          <button style={{ ...iconButtonStyle, color: '#c0392b' }} onClick={() => startRetry(b)}>
-                            {b.failed_cases > 0 ? 'Retry Failed' : 'Resume Upload'}
-                          </button>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {!isActivelyUploadingHere && needsAction && (
+                              <button style={{ ...iconButtonStyle, color: '#c0392b' }} onClick={() => startRetry(b)}>
+                                {b.failed_cases > 0 ? 'Retry Failed' : 'Resume Upload'}
+                              </button>
+                            )}
+                            <button
+                              style={{ ...iconButtonStyle, color: '#c0392b', opacity: isActivelyUploadingHere ? 0.5 : 1 }}
+                              disabled={isActivelyUploadingHere}
+                              title="Delete this folder and all its data"
+                              onClick={() => confirmDeleteBatch(b)}
+                            >
+                              <Trash2 size={15} /> 
+                            </button>
+                          </div>
                         );
                       })()}
                     </td>
@@ -541,7 +628,7 @@ const RetrospectiveUploadContent = () => {
                   {expandedBatchId === b.upload_batch_id && (
                     <tr>
                       <td colSpan={9} style={{ padding: 0, background: '#fafefe' }}>
-                        <CaseTable cases={expandedCases} />
+                        <CaseTable cases={expandedCases} onCaseChanged={refreshExpandedBatchCases} />
                       </td>
                     </tr>
                   )}
@@ -552,6 +639,35 @@ const RetrospectiveUploadContent = () => {
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <div style={modalOverlayStyle} onClick={cancelDeleteBatch}>
+          <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0, color: '#14868C' }}>Delete Retrospective Folder</h3>
+            <p style={{ color: '#444', fontSize: 14 }}>
+              Are you sure you want to delete <strong>"{deleteTarget.source_folder_name}"</strong> ({deleteTarget.upload_batch_id})
+              and all its associated data? This will permanently remove its cases, files, and stored DICOM/report
+              data. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button
+                style={{ ...buttonStyle, backgroundColor: '#fff', color: '#333', border: '1.5px solid #ccc' }}
+                disabled={deleting}
+                onClick={cancelDeleteBatch}
+              >
+                No, Cancel
+              </button>
+              <button
+                style={{ ...buttonStyle, backgroundColor: '#c0392b', opacity: deleting ? 0.7 : 1 }}
+                disabled={deleting}
+                onClick={performDeleteBatch}
+              >
+                {deleting ? 'Deleting…' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -600,12 +716,64 @@ const ProgressBar = ({ percent }) => (
   </div>
 );
 
-const CaseTable = ({ cases }) => {
+const CaseTable = ({ cases, onCaseChanged }) => {
+  const [caseDeleteTarget, setCaseDeleteTarget] = useState(null); // { retrospective_case_id, source_case_name }
+  const [deletingCase, setDeletingCase] = useState(false);
+  const [caseMessage, setCaseMessage] = useState(null);
+
   if (!cases || cases.length === 0) {
     return <div style={{ padding: 16, color: '#999', fontSize: 13 }}>No cases in this batch.</div>;
   }
+
+  const confirmDeleteCase = (c) => {
+    setCaseMessage(null);
+    setCaseDeleteTarget(c);
+  };
+
+  const cancelDeleteCase = () => {
+    if (deletingCase) return;
+    setCaseDeleteTarget(null);
+  };
+
+  const performDeleteCase = async () => {
+    if (!caseDeleteTarget) return;
+    setDeletingCase(true);
+    try {
+      const res = await fetch(`${API_BASE}/cases/${caseDeleteTarget.retrospective_case_id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `Failed to delete case (${res.status})`);
+      }
+      setCaseMessage({ type: 'success', text: `"${caseDeleteTarget.source_case_name}" deleted successfully.` });
+      setCaseDeleteTarget(null);
+      if (onCaseChanged) await onCaseChanged();
+    } catch (err) {
+      setCaseMessage({ type: 'error', text: err.message || 'Failed to delete case. Please try again.' });
+    } finally {
+      setDeletingCase(false);
+    }
+  };
+
   return (
     <div style={{ ...scrollWrapStyle, margin: '8px 16px', width: 'auto' }}>
+      {caseMessage && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: '6px 10px',
+            borderRadius: 4,
+            fontSize: 12,
+            color: caseMessage.type === 'success' ? '#2f9e44' : '#c0392b',
+            background: caseMessage.type === 'success' ? '#eafaf0' : '#fdecea',
+            border: `1px solid ${caseMessage.type === 'success' ? '#b7e4c7' : '#f5c6cb'}`,
+          }}
+        >
+          {caseMessage.text}
+        </div>
+      )}
       <table style={{ ...tableStyle, minWidth: 600 }}>
         <thead>
           <tr>
@@ -615,6 +783,7 @@ const CaseTable = ({ cases }) => {
             <th style={thStyle}>Report</th>
             <th style={thStyle}>Status</th>
             <th style={thStyle}>Error</th>
+            <th style={thStyle}></th>
           </tr>
         </thead>
         <tbody>
@@ -626,10 +795,48 @@ const CaseTable = ({ cases }) => {
               <td style={tdStyle}>{c.report_available ? 'Available' : '—'}</td>
               <td style={tdStyle}><StatusBadge status={c.case_status} /></td>
               <td style={{ ...tdStyle, color: '#c0392b', maxWidth: 260 }}>{c.error_message || ''}</td>
+              <td style={tdStyle}>
+                <button
+                  style={{ ...iconButtonStyle, color: '#c0392b' }}
+                  title="Delete this source file (DICOM + report go with it)"
+                  onClick={() => confirmDeleteCase(c)}
+                >
+                  <Trash2 size={12} /> 
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {caseDeleteTarget && (
+        <div style={modalOverlayStyle} onClick={cancelDeleteCase}>
+          <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0, color: '#14868C' }}>Delete Source File</h3>
+            <p style={{ color: '#444', fontSize: 14 }}>
+              Are you sure you want to delete <strong>"{caseDeleteTarget.source_case_name}"</strong>{' '}
+              ({caseDeleteTarget.retrospective_case_id})? Its DICOM images and report will be permanently removed
+              from storage and from the database along with it. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button
+                style={{ ...buttonStyle, backgroundColor: '#fff', color: '#333', border: '1.5px solid #ccc' }}
+                disabled={deletingCase}
+                onClick={cancelDeleteCase}
+              >
+                No, Cancel
+              </button>
+              <button
+                style={{ ...buttonStyle, backgroundColor: '#c0392b', opacity: deletingCase ? 0.7 : 1 }}
+                disabled={deletingCase}
+                onClick={performDeleteCase}
+              >
+                {deletingCase ? 'Deleting…' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -698,6 +905,27 @@ const tdStyle = {
   padding: '8px 10px',
   borderBottom: '1px solid #eee',
   color: '#444',
+};
+
+const modalOverlayStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: 'rgba(0, 0, 0, 0.45)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000,
+};
+
+const modalBoxStyle = {
+  background: 'white',
+  borderRadius: 8,
+  padding: 24,
+  width: 'min(420px, 90vw)',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
 };
 
 export default RetrospectiveUploadContent;
