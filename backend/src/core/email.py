@@ -7,10 +7,16 @@ from email.mime.multipart import MIMEMultipart
 from typing import List
 from sqlalchemy.orm import Session
 from .config import settings
+from .pilot_study import is_pilot_study_hospital
 
 logger = logging.getLogger(__name__)
 
 LOGIN_URL = "https://bc-portal-dev.tanuh.ai/login"
+PILOT_STUDY_LOGIN_URL = "https://pinkshield-pd.tanuh.ai/login"
+
+
+def resolve_portal_login_url(hospital_name: str) -> str:
+    return PILOT_STUDY_LOGIN_URL if is_pilot_study_hospital(hospital_name) else LOGIN_URL
 
 
 def send_email(
@@ -98,7 +104,8 @@ def send_template_email(
                 seen_cc.add(normalized)
                 cc_list.append(normalized)
 
-    variables.setdefault("login_url", LOGIN_URL)
+    if "login_url" not in variables:
+        variables["login_url"] = resolve_portal_login_url(variables.get("hospital_name"))
 
     subject = _render(template.subject, variables)
     html = _render(template.body_html, variables)
