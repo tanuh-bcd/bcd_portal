@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList
 } from 'recharts';
-import { FolderCheck as FolderCheckIcon, Building2, MapPin } from 'lucide-react';
+import { FolderCheck as FolderCheckIcon, Building2, MapPin, ScanLine as ScanLineIcon } from 'lucide-react';
 import './Stats.css';
 
 const COLORS = ['#6ee7b7', '#fde047', '#fb923c', '#fb7185', '#14868C'];
@@ -979,7 +979,7 @@ export const RiskPredictionSection = () => {
   );
 };
 
-const MammogramStats = ({ imageRecords }) => {
+const MammogramStats = ({ imageRecords, imageStudies }) => {
   const [data, setData] = useState(null);
   const [mapCounts, setMapCounts] = useState({ institutes: 0, states: 0 });
   const [loading, setLoading] = useState(true);
@@ -1032,7 +1032,7 @@ const MammogramStats = ({ imageRecords }) => {
 
       <div className="summary-section" style={{ marginBottom: '2rem' }}>
         <div className="summary-card">
-          <div className="card-header-with-icon"><Building2 className="summary-icon" size={24} /><h3>Total Institutes</h3></div>
+          <div className="card-header-with-icon"><Building2 className="summary-icon" size={24} /><h3>Total Institutions</h3></div>
           <div className="big-number">{mapCounts.institutes}</div>
         </div>
         <div className="summary-card">
@@ -1040,9 +1040,13 @@ const MammogramStats = ({ imageRecords }) => {
           <div className="big-number">{mapCounts.states}</div>
         </div>
         <div className="summary-card">
+          <div className="card-header-with-icon"><ScanLineIcon className="summary-icon" size={24} /><h3>Image Studies</h3></div>
+          <div className="big-number">{imageStudies ?? 0}</div>
+        </div>
+        {/* <div className="summary-card">
           <div className="card-header-with-icon"><FolderCheckIcon className="summary-icon" size={24} /><h3>Image Records</h3></div>
           <div className="big-number">{imageRecords ?? 0}</div>
-        </div>
+        </div> */}
       </div>
 
       <div className="charts-grid" style={{ overflow: 'visible' }}>
