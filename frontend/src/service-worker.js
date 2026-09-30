@@ -15,6 +15,7 @@ registerRoute(
   ({ request, url }) => {
     if (request.mode !== 'navigate') return false;
     if (url.pathname.startsWith('/_')) return false;
+    if (url.pathname.startsWith('/api/')) return false;
     if (url.pathname.match(fileExtensionRegexp)) return false;
     return true;
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, ScanLine as ScanLineIcon, FolderCheck as FolderCheckIcon } from 'lucide-react';
+import { Users as UsersIcon, ScanLine as ScanLineIcon, Archive } from 'lucide-react';
 import {
   ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -76,6 +76,7 @@ const Stats = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [retrospectiveCaseCount, setRetrospectiveCaseCount] = useState(0);
 
   const API_URL = process.env.REACT_APP_API_URL || '';
 
@@ -93,6 +94,23 @@ const Stats = () => {
       }
     };
     fetchStats();
+
+    // The Retrospective Cases card lives in this top row now (swapped with
+    // Image Records, which moved down into the mammogram section below), so
+    // it needs this count too. Best-effort: a failure here shouldn't block
+    // the rest of the dashboard, so it just stays at 0.
+    const fetchRetrospectiveCount = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        if (response.ok) {
+          const json = await response.json();
+          setRetrospectiveCaseCount(json.retrospectiveCaseCount ?? 0);
+        }
+      } catch {
+        /* best-effort */
+      }
+    };
+    fetchRetrospectiveCount();
   }, [API_URL]);
 
   if (loading) return <div className="stats-loader">Loading Dashboard...</div>;
@@ -124,8 +142,8 @@ const Stats = () => {
           <div className="big-number"><AnimatedCounter value={data.imageStudies || 0} /></div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><FolderCheckIcon className="summary-icon" size={24} /><h3>Image Records</h3></div>
-          <div className="big-number"><AnimatedCounter value={data.imageRecords || 0} /></div>
+          <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Retrospective Cases</h3></div>
+          <div className="big-number"><AnimatedCounter value={retrospectiveCaseCount} /></div>
         </div>
       </div>
 
@@ -193,7 +211,7 @@ const Stats = () => {
         </div>
       </div>
       <div style={{ marginTop: '20px', width: '100%' }}>
-        <MammogramStats />
+        <MammogramStats imageRecords={data.imageRecords} />
       </div>
       <div className="charts-grid" style={{ marginTop: '20px', overflow: 'visible' }}>
         <RiskPredictionSection />

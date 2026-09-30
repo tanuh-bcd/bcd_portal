@@ -578,11 +578,13 @@ const RetrospectiveUploadContent = () => {
                 <th style={thStyle}>Batch ID</th>
                 <th style={thStyle}>Folder</th>
                 <th style={thStyle}>Total</th>
+                {/* Hidden for now per requirement -- keep for future re-enable (uncomment to restore):
                 <th style={thStyle}>Successful</th>
                 <th style={thStyle}>Failed</th>
-                <th style={thStyle}>Uploaded At</th>
+                <th style={thStyle}>Updated At</th>
                 <th style={thStyle}>Status</th>
-                <th style={thStyle}></th>
+                */}
+                <th style={thStyle}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -597,21 +599,31 @@ const RetrospectiveUploadContent = () => {
                     <td style={tdStyle}>{b.upload_batch_id}</td>
                     <td style={tdStyle}>{b.source_folder_name}</td>
                     <td style={tdStyle}>{b.total_cases_identified}</td>
+                    {/* Hidden for now per requirement -- keep for future re-enable (uncomment to restore):
                     <td style={tdStyle}>{b.successful_cases}</td>
                     <td style={tdStyle}>{b.failed_cases}</td>
-                    <td style={tdStyle}>{formatUploadedAt(b.created_at)}</td>
+                    <td style={tdStyle}>
+                      {b.updated_at
+                        ? new Date(b.updated_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                        : '—'}
+                    </td>
                     <td style={tdStyle}><StatusBadge status={b.batch_status} /></td>
+                    */}
                     <td style={tdStyle}>
                       {(() => {
                         const isActivelyUploadingHere = creating && activeBatch?.batch?.upload_batch_id === b.upload_batch_id;
+                        /* Retry Failed / Resume Upload hidden for now per requirement -- keep for future re-enable:
                         const needsAction = b.failed_cases > 0 || b.batch_status === 'PENDING' || b.batch_status === 'PROCESSING';
+                        */
                         return (
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {/* Retry Failed / Resume Upload hidden for now per requirement -- keep for future re-enable:
                             {!isActivelyUploadingHere && needsAction && (
                               <button style={{ ...iconButtonStyle, color: '#c0392b' }} onClick={() => startRetry(b)}>
                                 {b.failed_cases > 0 ? 'Retry Failed' : 'Resume Upload'}
                               </button>
                             )}
+                            */}
                             <button
                               style={{ ...iconButtonStyle, color: '#c0392b', opacity: isActivelyUploadingHere ? 0.5 : 1 }}
                               disabled={isActivelyUploadingHere}
@@ -627,7 +639,7 @@ const RetrospectiveUploadContent = () => {
                   </tr>
                   {expandedBatchId === b.upload_batch_id && (
                     <tr>
-                      <td colSpan={9} style={{ padding: 0, background: '#fafefe' }}>
+                      <td colSpan={5} style={{ padding: 0, background: '#fafefe' }}>
                         <CaseTable cases={expandedCases} onCaseChanged={refreshExpandedBatchCases} />
                       </td>
                     </tr>
@@ -779,11 +791,13 @@ const CaseTable = ({ cases, onCaseChanged }) => {
           <tr>
             <th style={thStyle}>Case ID</th>
             <th style={thStyle}>Source Folder</th>
+            {/* Hidden for now per requirement -- keep for future re-enable (uncomment to restore):
             <th style={thStyle}>DICOM</th>
             <th style={thStyle}>Report</th>
             <th style={thStyle}>Status</th>
             <th style={thStyle}>Error</th>
-            <th style={thStyle}></th>
+            */}
+            <th style={thStyle}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -791,10 +805,12 @@ const CaseTable = ({ cases, onCaseChanged }) => {
             <tr key={c.retrospective_case_id}>
               <td style={tdStyle}>{c.retrospective_case_id}</td>
               <td style={tdStyle}>{c.source_case_name}</td>
+              {/* Hidden for now per requirement -- keep for future re-enable (uncomment to restore):
               <td style={tdStyle}>{c.dicom_available ? `${c.dicom_count} file(s)` : '—'}</td>
               <td style={tdStyle}>{c.report_available ? 'Available' : '—'}</td>
               <td style={tdStyle}><StatusBadge status={c.case_status} /></td>
               <td style={{ ...tdStyle, color: '#c0392b', maxWidth: 260 }}>{c.error_message || ''}</td>
+              */}
               <td style={tdStyle}>
                 <button
                   style={{ ...iconButtonStyle, color: '#c0392b' }}
