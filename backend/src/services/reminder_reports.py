@@ -10,7 +10,7 @@ from sqlalchemy import bindparam, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from ..core.config import settings
-from ..core.email import send_email, send_template_email
+from ..core.email import send_template_email, resolve_portal_login_url
 from .reminder_dashboard import hospital_document
 from ..models.models import (
     DoctorAssessment,
@@ -504,7 +504,7 @@ def report_variables(report: ReminderReport, recipient: ReminderRecipient) -> di
         "missing_density": report.missing_density,
         "missing_mammogram_reports": report.missing_mammogram_reports,
         "mammogram_quality_flags": report.mammogram_quality_flags,
-        "portal_url": settings.REMINDER_PORTAL_URL,
+        "portal_url": resolve_portal_login_url(report.hospital_name),
     }
 
 

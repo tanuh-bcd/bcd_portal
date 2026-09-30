@@ -103,7 +103,7 @@ function Questionnaire({
   // Fetch hospitals for Q45 dropdown
   useEffect(() => {
     const apiUrl = process.env.REACT_APP_API_URL || '';
-    fetch(`${apiUrl}/api/v1/auth/hospitals?questionnaire=true`)
+    fetch(`${apiUrl}/api/v1/auth/hospitals?questionnaire=true&exclude_pilot_study=true`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setHospitals(data); })
       .catch(() => {});

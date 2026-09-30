@@ -79,7 +79,7 @@ const ResetPasswordPage = () => {
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals`);
+        const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals?exclude_pilot_study=true`);
         if (!response.ok) throw new Error('Failed to fetch hospitals');
         const data = await response.json();
         setHospitals(data);

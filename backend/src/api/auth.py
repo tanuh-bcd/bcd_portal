@@ -8,6 +8,7 @@ from ..schemas.schemas import Token, LoginRequest, HospitalResponse, TokenData, 
 from ..core.security import verify_password, create_access_token, get_password_hash
 from ..core.email import send_template_email
 from ..core.config import settings
+from ..core.pilot_study import is_pilot_study_hospital
 from typing import List
 
 router = APIRouter()
@@ -48,11 +49,18 @@ EXCLUDED_INSTITUTIONS = ('Tanuh Foundation',)
 
 
 @router.get("/hospitals", response_model=List[HospitalResponse])
-def get_hospitals(questionnaire: bool = False, db: Session = Depends(get_db)):
+def get_hospitals(
+    questionnaire: bool = False,
+    exclude_pilot_study: bool = False,
+    db: Session = Depends(get_db),
+):
     query = db.query(Hospital)
     if questionnaire:
         query = query.filter(~Hospital.name.in_(EXCLUDED_INSTITUTIONS))
-    return query.all()
+    hospitals = query.all()
+    if exclude_pilot_study:
+        hospitals = [h for h in hospitals if not is_pilot_study_hospital(h.name)]
+    return hospitals
 
 @router.post("/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
