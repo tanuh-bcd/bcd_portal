@@ -180,7 +180,7 @@ const AdminContent = ({ hospitalName }) => {
 
   const fetchHospitals = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals?exclude_pilot_study=true`);
       const contentType = response.headers.get("content-type");
       if (response.ok && contentType && contentType.indexOf("application/json") !== -1) {
         const data = await response.json();

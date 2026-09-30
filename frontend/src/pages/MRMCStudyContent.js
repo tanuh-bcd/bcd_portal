@@ -508,7 +508,7 @@ const MRMCStudyContent = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals`,
+        `${process.env.REACT_APP_API_URL || ''}/api/v1/auth/hospitals?exclude_pilot_study=true`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const contentType = response.headers.get('content-type');
