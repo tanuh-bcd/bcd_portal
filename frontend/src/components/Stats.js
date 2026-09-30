@@ -134,15 +134,15 @@ const Stats = () => {
 
       <div className="summary-section">
         <div className="summary-card">
-          <div className="card-header-with-icon"><Layers className="summary-icon" size={24} /><h3>Total</h3></div>
+          <div className="card-header-with-icon"><Layers className="summary-icon" size={24} /><h3>Total Participants</h3></div>
           <div className="big-number"><AnimatedCounter value={(data.totalSubjects || 0) + retrospectiveCaseCount} /></div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><UsersIcon className="summary-icon" size={24} /><h3>Total Subjects</h3></div>
+          <div className="card-header-with-icon"><UsersIcon className="summary-icon" size={24} /><h3>Prospective</h3></div>
           <div className="big-number"><AnimatedCounter value={data.totalSubjects} /></div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Retrospective Case</h3></div>
+          <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Reterospective</h3></div>
           <div className="big-number"><AnimatedCounter value={retrospectiveCaseCount} /></div>
         </div>
       </div>
