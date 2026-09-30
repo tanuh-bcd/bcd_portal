@@ -11,7 +11,11 @@ SQLALCHEMY_TEST_URL = "sqlite:///./test_bcd.db"
 SQLALCHEMY_TEST_Q_URL = "sqlite:///./test_questionnaire.db"
 SQLALCHEMY_TEST_RETRO_URL = "sqlite:///./test_retrospective.db"
 
-engine = create_engine(SQLALCHEMY_TEST_URL, connect_args={"check_same_thread": False})
+engine = create_engine(
+    SQLALCHEMY_TEST_URL,
+    connect_args={"check_same_thread": False},
+    execution_options={"schema_translate_map": {"ai_features": None}},
+)
 q_engine = create_engine(SQLALCHEMY_TEST_Q_URL, connect_args={"check_same_thread": False})
 retro_engine = create_engine(SQLALCHEMY_TEST_RETRO_URL, connect_args={"check_same_thread": False})
 

@@ -206,34 +206,51 @@ const DoctorPage = ({ isEmbedded = false }) => {
 
   const RISK_COLORS = { 'Baseline Risk': '#6ee7b7', 'Evident Risk': '#fde047', 'Significant Risk': '#fb923c', 'High Risk': '#fb7185' };
 
+  const getSessionTimestamp = (value) => {
+    if (!value) return 0;
+    const normalized = typeof value === 'string' ? value.replace(' ', 'T') : value;
+    const timestamp = new Date(normalized).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  };
+
+  const hasAssessment = (value) => value === true || value === 1 || value === 'Yes' || value === 'yes';
+
+  const sortSessions = (sessionList) => [...sessionList].sort((a, b) => {
+    for (const { key, dir } of sortStack) {
+      let comparison = 0;
+      if (key === 'date') {
+        comparison = getSessionTimestamp(a.consent_timestamp) - getSessionTimestamp(b.consent_timestamp);
+      } else if (key === 'assessment') {
+        comparison = Number(hasAssessment(a.has_assessment)) - Number(hasAssessment(b.has_assessment));
+      }
+
+      if (comparison !== 0) return dir === 'asc' ? comparison : -comparison;
+    }
+    return 0;
+  });
+
   const handleSort = (key) => {
     setSortStack(prev => {
-      const existing = prev.find(s => s.key === key);
-      let newStack;
-      if (existing) {
-        newStack = prev.map(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : s);
-      } else {
-        newStack = [...prev, { key, dir: 'asc' }];
-        if (newStack.length > 3) newStack = newStack.slice(-3);
-      }
-      const sortQuery = newStack.map(s => `${s.key}:${s.dir}`).join(',');
-      fetchSessions(sortQuery);
-      return newStack;
+      const activeSort = prev[0];
+      const dir = activeSort?.key === key && activeSort.dir === 'asc' ? 'desc' : 'asc';
+      return [{ key, dir }];
     });
+    setCurrentPage(1);
+    setInstitutionPages({});
   };
 
   const clearSort = () => {
     const defaultSort = [{ key: 'date', dir: 'desc' }];
     setSortStack(defaultSort);
-    fetchSessions('date:desc');
+    setCurrentPage(1);
+    setInstitutionPages({});
   };
 
   const sortArrow = (key) => {
     const entry = sortStack.find(s => s.key === key);
     if (!entry) return ' ⇅';
-    const pos = sortStack.indexOf(entry) + 1;
     const arrow = entry.dir === 'asc' ? '↑' : '↓';
-    return ` ${arrow}${sortStack.length > 1 ? pos : ''}`;
+    return ` ${arrow}`;
   };
 
   const renderSessionTable = (sessionList, showHospitalCol) => (
@@ -429,7 +446,7 @@ const DoctorPage = ({ isEmbedded = false }) => {
                   <p style={{ fontSize: 13, color: '#888' }}>No sessions found for this institution.</p>
                 )}
                 {hospitalSessions[h.hospital_name] && hospitalSessions[h.hospital_name].length > 0 && (() => {
-                  const instSessions = hospitalSessions[h.hospital_name];
+                  const instSessions = sortSessions(hospitalSessions[h.hospital_name]);
                   const instPage = institutionPages[h.hospital_name] || 1;
                   const totalPages = Math.ceil(instSessions.length / PAGE_SIZE);
                   const paginated = instSessions.slice((instPage - 1) * PAGE_SIZE, instPage * PAGE_SIZE);
@@ -498,8 +515,9 @@ const DoctorPage = ({ isEmbedded = false }) => {
         if (!loading && !error && filtered.length === 0) return <p>No subjects match "{searchTerm}".</p>;
 
         if (!loading && !error && filtered.length > 0) {
-          const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-          const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+          const sorted = sortSessions(filtered);
+          const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+          const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
           return (
             <>

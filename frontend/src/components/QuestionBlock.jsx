@@ -1,5 +1,10 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 
+const OPTION_TOOLTIPS = {
+  'Post-hysterectomy': 'postHysterectomy',
+  'Post-oophorectomy': 'postOophorectomy',
+};
+
 // Optimization: Extracted this component to apply React.memo.
 // The Questionnaire component renders many of these blocks.
 // Memoization prevents re-rendering all questions when typing in a single field,
@@ -17,6 +22,7 @@ const QuestionBlock = ({
   displayNumber,
   randomPatientId, // NEW: Passed prop
   hospitals,
+  lockedHospitalName,
   // Q27 specific props
   isQ27No,
   showQ27VideoPrompt,
@@ -80,10 +86,19 @@ const QuestionBlock = ({
     }
 
     if (config.type === 'hospital-select') {
+      const hospitalOptions = lockedHospitalName
+        ? [{ id: 'locked-hospital', name: lockedHospitalName }]
+        : (hospitals || []);
       return (
-        <select name={qName} onChange={handleChange} value={formData[qName] || ""} className="select-input">
+        <select
+          name={qName}
+          onChange={handleChange}
+          value={formData[qName] || ""}
+          className="select-input"
+          disabled={Boolean(lockedHospitalName)}
+        >
           <option value="" disabled>{t('ui.inputs.selectDefault')}</option>
-          {(hospitals || []).map((h) => <option key={h.id} value={h.name}>{h.name}</option>)}
+          {hospitalOptions.map((h) => <option key={h.id} value={h.name}>{h.name}</option>)}
         </select>
       );
     }
@@ -283,13 +298,20 @@ const QuestionBlock = ({
         return (
           <div className="radio-group vertical">
             {qData.answers.map((ans, i) => {
-              const isOtherOption = /^others?$/i.test(String(questionnaireDataEn[config.key]?.answers?.[i] || ans).trim());
+              const englishAnswer = questionnaireDataEn[config.key]?.answers?.[i] || ans;
+              const isOtherOption = /^others?$/i.test(String(englishAnswer).trim());
+              const tooltipKey = OPTION_TOOLTIPS[englishAnswer];
+              const tooltip = tooltipKey ? t(`ui.tooltips.${tooltipKey}`) : undefined;
               return (
                 <React.Fragment key={i}>
-                  <label>
+                  <label
+                    className={tooltip ? 'question-option-with-tooltip' : undefined}
+                    data-tooltip={tooltip}
+                  >
                     <input
                       type="radio" name={qName} value={ans} onChange={handleChange}
                       checked={formData[qName] === ans}
+                      aria-label={tooltip ? `${ans}. ${tooltip}` : undefined}
                     /> {ans}
                   </label>
                   {isOtherOption && otherIsSelected(qName) && renderOtherInput(config, qName)}
@@ -376,6 +398,7 @@ const arePropsEqual = (prev, next) => {
 
   if (prev.randomPatientId !== next.randomPatientId) return false; // FIX: Q44 dependency
   if (prev.hospitals !== next.hospitals) return false;
+  if (prev.lockedHospitalName !== next.lockedHospitalName) return false;
 
   // 2. Check value change
   if (prev.formData[name] !== next.formData[name]) return false;

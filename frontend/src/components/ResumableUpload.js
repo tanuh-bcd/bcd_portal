@@ -1,7 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Eye } from 'lucide-react';
 
-const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, onComplete, onView, readOnly = false }) => {
+const ResumableUpload = ({
+  label,
+  hint,
+  accept,
+  fileType,
+  sessionId,
+  existing,
+  onComplete,
+  onView,
+  readOnly = false,
+  requiredExtension,
+}) => {
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -10,9 +21,28 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
   const [uploadedAttachment, setUploadedAttachment] = useState(null);
   const xhrRef = useRef(null);
 
+  const validateFile = (selected) => {
+    if (requiredExtension && !selected.name.toLowerCase().endsWith(requiredExtension.toLowerCase())) {
+      return `Invalid file format. Please upload a ${requiredExtension} DICOM file.`;
+    }
+
+    return null;
+  };
+
   const handleFileSelect = (e) => {
     const selected = e.target.files[0];
     if (!selected) return;
+
+    const validationError = validateFile(selected);
+    if (validationError) {
+      setFile(null);
+      setProgress(0);
+      setError(validationError);
+      setDone(false);
+      e.target.value = '';
+      return;
+    }
+
     setFile(selected);
     setProgress(0);
     setError(null);
@@ -21,6 +51,13 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
 
   const upload = async () => {
     if (!file || !sessionId) return;
+
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setUploading(true);
     setError(null);
 
@@ -214,7 +251,12 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 12px', background: '#f0fafb', borderRadius: 8, border: '1px solid #c8e0e2', minWidth: 0 }}>
           <span style={{ flex: 1, fontSize: 12, color: '#333', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{file.name}</span>
           <span style={{ fontSize: 11, color: '#888', flexShrink: 0 }}>{fileSizeLabel(file.size)}</span>
-          <button type="button" onClick={() => { setFile(null); setProgress(0); }} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }}>&times;</button>
+          <button type="button" onClick={() => {
+            setFile(null);
+            setProgress(0);
+            setError(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }}>&times;</button>
         </div>
       )}
 
@@ -278,10 +320,12 @@ const ResumableUpload = ({ label, hint, accept, fileType, sessionId, existing, o
       {error && (
         <div style={{ fontSize: 12, color: '#dc3545', marginTop: 4 }}>
           {error}
-          <button onClick={upload} style={{
-            background: 'none', border: 'none', color: '#14868C',
-            cursor: 'pointer', fontSize: 12, fontWeight: 600, marginLeft: 8,
-          }}>Retry</button>
+          {file && (
+            <button type="button" onClick={upload} style={{
+              background: 'none', border: 'none', color: '#14868C',
+              cursor: 'pointer', fontSize: 12, fontWeight: 600, marginLeft: 8,
+            }}>Retry</button>
+          )}
         </div>
       )}
     </div>

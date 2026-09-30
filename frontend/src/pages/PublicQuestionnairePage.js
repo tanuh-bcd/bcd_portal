@@ -6,7 +6,7 @@ import ThankYou from '../components/ThankYou.jsx';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
-const PublicQuestionnairePage = () => {
+const PublicQuestionnairePage = ({ lockedHospitalName = '' }) => {
   const [step, setStep] = useState('consent');
   const [sessionId, setSessionId] = useState(null);
   const [questionnaireVersion, setQuestionnaireVersion] = useState(null);
@@ -223,6 +223,7 @@ const PublicQuestionnairePage = () => {
           formStructure={formStructure}
           questionnaireData={questionnaireData}
           questionnaireDataEn={questionnaireDataEn}
+          lockedHospitalName={lockedHospitalName}
         />
       )}
       {questionLoadError && step === 'consent' && (

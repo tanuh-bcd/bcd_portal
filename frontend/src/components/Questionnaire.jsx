@@ -26,7 +26,14 @@ const conditionMatches = (condition, currentValue) => {
 
 
 // NEW: Accept formStructure and questionnaireData as props
-function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireData, questionnaireDataEn }) {
+function Questionnaire({
+  onSubmit,
+  isSubmitting,
+  formStructure,
+  questionnaireData,
+  questionnaireDataEn,
+  lockedHospitalName = '',
+}) {
   
   // NEW: Initialize i18next hook *only* for UI text
 
@@ -70,6 +77,28 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
     const newId = generateRandomId();
     setRandomPatientId(newId);
   }, []);
+
+  useEffect(() => {
+    if (!lockedHospitalName || !Array.isArray(formStructure)) return;
+
+    const hospitalKeys = [];
+    const collectHospitalKeys = (questions) => {
+      (questions || []).forEach(question => {
+        if (question.type === 'hospital-select') {
+          hospitalKeys.push(question.name || question.key);
+        }
+        collectHospitalKeys(question.subQuestions);
+      });
+    };
+    formStructure.forEach(section => collectHospitalKeys(section.questions));
+    if (!hospitalKeys.length) return;
+
+    const lockedValues = Object.fromEntries(
+      hospitalKeys.map(key => [key, lockedHospitalName])
+    );
+    setFormData(previous => ({ ...previous, ...lockedValues }));
+    setFormDataEn(previous => ({ ...previous, ...lockedValues }));
+  }, [formStructure, lockedHospitalName]);
 
   // Fetch hospitals for Q45 dropdown
   useEffect(() => {
@@ -489,6 +518,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
             displayNumber={displayNumber}
             randomPatientId={randomPatientId}
             hospitals={hospitals}
+            lockedHospitalName={lockedHospitalName}
           />
           {hasValidChildren && (
             <div className="sub-question-container visible">
@@ -591,6 +621,7 @@ function Questionnaire({ onSubmit, isSubmitting, formStructure, questionnaireDat
                     setQ27VideoConfirmed={setQ27VideoConfirmed}
                     randomPatientId={randomPatientId}
                     hospitals={hospitals}
+                    lockedHospitalName={lockedHospitalName}
                   />
                   {hasValidChildren && (
                     <div className="sub-question-container visible">

@@ -58,8 +58,8 @@ class Settings:
     REMINDER_INTERVAL_DAYS: int = int(_cfg("REMINDER_INTERVAL_DAYS", "14"))
     REMINDER_INTERVAL_MINUTES: int = int(_cfg("REMINDER_INTERVAL_MINUTES", "0"))
     REMINDER_PORTAL_URL: str = _cfg("REMINDER_PORTAL_URL", "https://bc-portal-dev.tanuh.ai/login")
-    REMINDER_SUPPORT_EMAIL: str = _cfg("REMINDER_SUPPORT_EMAIL", "")
-    REMINDER_REPLY_TO: str = _cfg("REMINDER_REPLY_TO", "")
+    REMINDER_SUPPORT_EMAIL: str = _cfg("REMINDER_SUPPORT_EMAIL", "breastcancerscreening@tanuh.ai")
+    REMINDER_REPLY_TO: str = _cfg("REMINDER_REPLY_TO", REMINDER_SUPPORT_EMAIL)
     REMINDER_TIMEZONE: str = _cfg("REMINDER_TIMEZONE", "Asia/Kolkata")
     REMINDER_EXCLUDED_HOSPITALS: str = _cfg(
         "REMINDER_EXCLUDED_HOSPITALS",
@@ -69,17 +69,17 @@ class Settings:
         "REMINDER_EXCLUDED_RECIPIENT_DOMAINS",
         "tanuh.ai",
     )
+    REMINDER_EXCLUDED_RECIPIENT_EMAILS: str = _cfg(
+        "REMINDER_EXCLUDED_RECIPIENT_EMAILS",
+        "psanjana2711@gmail.com,vermamanisha6200@gmail.com,minminiselvam95@gmail.com",
+    )
     REMINDER_CC_EMAILS: str = _cfg(
         "REMINDER_CC_EMAILS",
         "bcs@tanuh.ai",
     )
     REMINDER_AGGREGATE_RECIPIENTS: str = _cfg(
         "REMINDER_AGGREGATE_RECIPIENTS",
-        (
-            "ashwin.rajkumar@tanuh.ai,vaishnavi.joshi@tanuh.ai,"
-            "palivela.sanjana@tanuh.ai,manisha.verma@tanuh.ai,"
-            "bharath.tangella@tanuh.ai,phaneendra.yalavarthy@tanuh.ai"
-        ),
+        "bcs@tanuh.ai",
     )
     REMINDER_OPERATOR_EMAILS: str = _cfg(
         "REMINDER_OPERATOR_EMAILS",
@@ -103,7 +103,6 @@ class Settings:
     CRON_OIDC_AUDIENCE: str = _cfg("CRON_OIDC_AUDIENCE")
     CRON_SERVICE_ACCOUNT_EMAIL: str = _cfg("CRON_SERVICE_ACCOUNT_EMAIL")
     CRON_SHARED_SECRET: str = _cfg("CRON_SHARED_SECRET")
-
     MYSQL_DB_QUESTIONNAIRE: str = _cfg("MYSQL_DB_QUESTIONNAIRE", "bcd_questionnaire")
     MYSQL_DB_QC: str = _cfg("MYSQL_DB_QC", "qc_bcd_portal")
     QC_DATABASE_URL_OVERRIDE: str = _cfg("QC_DATABASE_URL", "")
