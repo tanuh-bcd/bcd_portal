@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, ScanLine as ScanLineIcon, Archive } from 'lucide-react';
+import { Users as UsersIcon, Archive, Layers } from 'lucide-react';
 import {
   ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -134,15 +134,15 @@ const Stats = () => {
 
       <div className="summary-section">
         <div className="summary-card">
-          <div className="card-header-with-icon"><UsersIcon className="summary-icon" size={24} /><h3>Subjects</h3></div>
+          <div className="card-header-with-icon"><Layers className="summary-icon" size={24} /><h3>Total</h3></div>
+          <div className="big-number"><AnimatedCounter value={(data.totalSubjects || 0) + retrospectiveCaseCount} /></div>
+        </div>
+        <div className="summary-card">
+          <div className="card-header-with-icon"><UsersIcon className="summary-icon" size={24} /><h3>Total Subjects</h3></div>
           <div className="big-number"><AnimatedCounter value={data.totalSubjects} /></div>
         </div>
         <div className="summary-card">
-          <div className="card-header-with-icon"><ScanLineIcon className="summary-icon" size={24} /><h3>Image Studies</h3></div>
-          <div className="big-number"><AnimatedCounter value={data.imageStudies || 0} /></div>
-        </div>
-        <div className="summary-card">
-          <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Retrospective Cases</h3></div>
+          <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Retrospective Case</h3></div>
           <div className="big-number"><AnimatedCounter value={retrospectiveCaseCount} /></div>
         </div>
       </div>
@@ -211,7 +211,7 @@ const Stats = () => {
         </div>
       </div>
       <div style={{ marginTop: '20px', width: '100%' }}>
-        <MammogramStats imageRecords={data.imageRecords} />
+        <MammogramStats imageRecords={data.imageRecords} imageStudies={data.imageStudies} />
       </div>
       <div className="charts-grid" style={{ marginTop: '20px', overflow: 'visible' }}>
         <RiskPredictionSection />
