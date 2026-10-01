@@ -63,7 +63,7 @@ class Settings:
     REMINDER_TIMEZONE: str = _cfg("REMINDER_TIMEZONE", "Asia/Kolkata")
     REMINDER_EXCLUDED_HOSPITALS: str = _cfg(
         "REMINDER_EXCLUDED_HOSPITALS",
-        "Test,Tanuh Foundation",
+        "Test,Tanuh Foundation,Pilot Study -Test",
     )
     REMINDER_EXCLUDED_RECIPIENT_DOMAINS: str = _cfg(
         "REMINDER_EXCLUDED_RECIPIENT_DOMAINS",
@@ -111,6 +111,10 @@ class Settings:
     # bcd_application2 and bcd_questionnaire. See database/migrations for DDL.
     MYSQL_DB_RETROSPECTIVE: str = _cfg("MYSQL_DB_RETROSPECTIVE", "retrospective")
     RETROSPECTIVE_GCS_PREFIX: str = _cfg("RETROSPECTIVE_GCS_PREFIX", "retrospective")
+
+    # Pilot Deployment app: another fully separate database/schema (subjects,
+    # patient_details, pilot_questionnaire, pilot_result), read-only from here.
+    MYSQL_DB_PILOT_DEPLOYMENT: str = _cfg("MYSQL_DB_PILOT_DEPLOYMENT", "pilot_deployment")
 
     @property
     def QC_DATABASE_URL(self) -> str:

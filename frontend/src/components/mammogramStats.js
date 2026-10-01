@@ -84,13 +84,26 @@ const CustomTooltip = ({ active, payload, label }) => {
             <span className="value">{row.state}</span>
           </div>
 
+          {row.is_pilot_study && (
+            <>
+              <div className="tooltip-item">
+                <span className="name">Pilot Study Submitted:</span>
+                <span className="value">{row.pilot_deployment_submitted}</span>
+              </div>
+              <div className="tooltip-item">
+                <span className="name">Total Data Collections:</span>
+                <span className="value">{row.total_data_collections}</span>
+              </div>
+            </>
+          )}
+
           <hr style={{ margin: "8px 0", border: "0", borderTop: "1px solid #e5e7eb" }} />
         </>
       )}
 
       {/* Show hospital list for the CR/DR breakdown pie chart */}
       {row.hospitals && (
-        <div style={{ maxHeight: 180, overflowY: 'auto', marginBottom: 6 }}>
+        <div style={{ marginBottom: 6 }}>
           {row.hospitals.map((h, i) => (
             <div key={i} className="tooltip-item" style={{ display: 'block' }}>
               <span className="value" style={{ fontWeight: 500 }}>{h.short_name || h.hospital_name}</span>
@@ -1019,8 +1032,22 @@ const MammogramStats = ({ imageRecords, imageStudies }) => {
   if (!data) return null;
 
   const byHospital = mergeDuplicateInstitutes(filterExcludedEntities(data.byHospital));
+  // For pilot-study institutes, split the "Total Subjects" bar into its two
+  // real sources: pilot_deployment_submitted (orange) and the ordinary
+  // subject_count via bcd_questionnaire (green). Non-pilot institutes are
+  // unaffected -- their orange value is just subject_count as before, and
+  // the green segment stays at 0.
+  const hospitalChartData = byHospital.map((h) => ({
+    ...h,
+    pilot_submitted_value: h.is_pilot_study ? (h.pilot_deployment_submitted || 0) : (h.subject_count || 0),
+    subject_submitted_value: h.is_pilot_study ? (h.subject_count || 0) : 0,
+  }));
   const byHospitalMax = byHospital.reduce(
-    (max, h) => Math.max(max, h.subject_count || 0, h.report_count || 0),
+    (max, h) => Math.max(
+      max,
+      h.is_pilot_study ? (h.pilot_deployment_submitted || 0) + (h.subject_count || 0) : (h.subject_count || 0),
+      h.report_count || 0
+    ),
     0
   );
   const byHospitalYMax = Math.max(300, Math.ceil(byHospitalMax / 50) * 50);
@@ -1071,7 +1098,7 @@ const MammogramStats = ({ imageRecords, imageStudies }) => {
             <div className="hospital-chart-inner">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={byHospital}
+                  data={hospitalChartData}
                   margin={{ top: 24, right: 30, left: 20, bottom: 80 }}
                   barCategoryGap="15%"
                   barGap={2}
@@ -1125,17 +1152,26 @@ const MammogramStats = ({ imageRecords, imageStudies }) => {
                   />
 
                   <Bar
-                    dataKey="subject_count"
+                    dataKey="pilot_submitted_value"
                     name="Total Subjects"
+                    stackId="subjects"
                     fill="#fb923c"
                     radius={[4, 4, 0, 0]}
                     maxBarSize={80}
                     minPointSize={3}
                   >
-                    {byHospital.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.subject_count === 0 ? '#d1d5db' : '#fb923c'} />
+                    {hospitalChartData.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.pilot_submitted_value === 0 ? '#d1d5db' : '#fb923c'} />
                     ))}
                   </Bar>
+
+                  <Bar
+                    dataKey="subject_submitted_value"
+                    name="Subject Submitted"
+                    stackId="subjects"
+                    fill="#6ee7b7"
+                    maxBarSize={80}
+                  />
 
                   <Bar
                     dataKey="report_count"
@@ -1145,7 +1181,7 @@ const MammogramStats = ({ imageRecords, imageStudies }) => {
                     maxBarSize={80}
                     minPointSize={3}
                   >
-                    {byHospital.map((entry, idx) => (
+                    {hospitalChartData.map((entry, idx) => (
                       <Cell key={idx} fill={entry.report_count === 0 ? '#d1d5db' : '#6ee7b7'} />
                     ))}
                   </Bar>

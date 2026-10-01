@@ -3,9 +3,10 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
-from ..db.session import get_db, get_questionnaire_db
+from ..db.session import get_db, get_questionnaire_db, get_pilot_deployment_db
 from ..models.models import DoctorAssessment, Attachment, Hospital
 from ..schemas.schemas import PatientSessionListItem, PatientSessionDetail
+from ..core.pilot_study import is_pilot_study_hospital
 from .auth import get_current_user
 from typing import Dict, List
 
@@ -47,8 +48,8 @@ TEST_HOSPITAL_VIEWERS = ('manisha.verma@tanuh.ai',)
 
 def _excluded_hospitals(current_user):
     if current_user.get("email", "").lower() in TEST_HOSPITAL_VIEWERS:
-        return ('Tanuh Foundation',)
-    return ('Test', 'Tanuh Foundation')
+        return ('Tanuh Foundation', 'Pilot Study -Test')
+    return ('Test', 'Tanuh Foundation', 'Pilot Study -Test')
 
 
 def _get_attachment_flags(assessment):
@@ -74,6 +75,58 @@ def _get_attachment_flags(assessment):
         "has_annotations": any(t.startswith('annot_') for t in att_types),
         "has_additional_docs": any(t.startswith('additional_') for t in att_types),
     }
+
+
+_PILOT_RISK_CATEGORY_LABELS = {
+    "LOW_RISK": "Low Risk",
+    "HIGH_RISK": "High Risk",
+}
+
+
+def _get_pilot_deployment_sessions(pilot_db: Session, institute_names: list) -> list:
+    """Subjects submitted for a pilot-study institute in the separate
+    pilot_deployment schema (subjects/patient_details/pilot_result) -- that
+    app has no clinical assessment/DICOM/report workflow of its own, so these
+    rows always come back with every has_* flag false. Only sessions with a
+    completed pilot_result count as submitted; an incomplete/abandoned
+    session with no result yet is excluded, matching
+    get_pilot_deployment_submission_counts."""
+    names = [n for n in institute_names if is_pilot_study_hospital(n)]
+    if not names:
+        return []
+    try:
+        rows = pilot_db.execute(text("""
+            SELECT pd.session_id, pd.institute, pd.subject_id, pd.created_at,
+                   pr.risk_class, pr.risk_score
+            FROM patient_details pd
+            JOIN pilot_result pr ON pr.session_id = pd.session_id
+            WHERE pd.institute IN :names
+        """), {"names": tuple(names)}).fetchall()
+    except Exception:
+        return []
+
+    result = []
+    for row in rows:
+        session_id, institute, subject_id, created_at, risk_class, risk_score = row
+        result.append({
+            "id": session_id,
+            "patient_id": subject_id or "",
+            "hospital_name": institute,
+            "consent_scanned_url": None,
+            "consent_timestamp": created_at,
+            "snehita_risk": str(risk_score) if risk_score is not None else None,
+            "risk_category": _PILOT_RISK_CATEGORY_LABELS.get(risk_class, risk_class or ""),
+            "data_source": "pilot_deployment",
+            "has_assessment": False,
+            "has_mammo_dicom": False,
+            "has_mammo_reading": "",
+            "has_us_video": "",
+            "has_us_reading": "",
+            "has_biopsy": False,
+            "has_annotations": False,
+            "has_additional_docs": False,
+        })
+    return result
 
 
 @router.get("/hospital-summary")
@@ -181,11 +234,13 @@ def get_patient_sessions(
     hospital_name: str = None,
     q_db: Session = Depends(get_questionnaire_db),
     app_db: Session = Depends(get_db),
+    pilot_db: Session = Depends(get_pilot_deployment_db),
     current_user: dict = Depends(get_current_user)
 ):
     is_super_viewer = current_user.get("is_super_viewer", False) or \
         current_user.get("email", "").lower().endswith("@tanuh.ai")
     order_clause = _build_order_clause(sort)
+    pilot_institute_names = []
 
     if is_super_viewer:
         if hospital_name:
@@ -199,6 +254,7 @@ def get_patient_sessions(
             ]
         if not valid_names:
             return []
+        pilot_institute_names = valid_names
 
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
@@ -235,6 +291,7 @@ def get_patient_sessions(
         hospital_name = _get_hospital_name(app_db, hospital_id)
         if not hospital_name:
             raise HTTPException(status_code=400, detail="Hospital not found")
+        pilot_institute_names = [hospital_name]
 
         rows = q_db.execute(text(f"""
             SELECT s.session_id, s.session_start_time, s.snehita_lifetime_risk,
@@ -282,6 +339,8 @@ def get_patient_sessions(
             "risk_category": row[4] or "",
             **flags,
         })
+
+    result.extend(_get_pilot_deployment_sessions(pilot_db, pilot_institute_names))
 
     if sort and "assessment" in sort:
         for part in sort.split(","):

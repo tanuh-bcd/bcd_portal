@@ -101,6 +101,10 @@ retrospective_engine = _build_engine(settings.MYSQL_DB_RETROSPECTIVE)
 RetrospectiveSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=retrospective_engine)
 RetrospectiveBase = declarative_base()
 
+# Pilot Deployment DB (subjects, patient_details, pilot_questionnaire, pilot_result)
+pilot_deployment_engine = _build_engine(settings.MYSQL_DB_PILOT_DEPLOYMENT)
+PilotDeploymentSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=pilot_deployment_engine)
+
 
 def get_db():
     db = SessionLocal()
@@ -119,6 +123,14 @@ def get_questionnaire_db():
 
 def get_retrospective_db():
     db = RetrospectiveSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_pilot_deployment_db():
+    db = PilotDeploymentSessionLocal()
     try:
         yield db
     finally:

@@ -171,6 +171,7 @@ class PatientSessionListItem(BaseModel):
     has_biopsy: bool = False
     has_annotations: bool = False
     has_additional_docs: bool = False
+    data_source: Optional[str] = None
 
     class Config:
         from_attributes = True

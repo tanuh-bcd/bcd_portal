@@ -37,6 +37,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       riskOrder.indexOf(a.name) - riskOrder.indexOf(b.name)
     );
     const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
+    const row = payload[0]?.payload || {};
     return (
       <div className="custom-tooltip">
         <p className="tooltip-title">{label}</p>
@@ -50,6 +51,22 @@ const CustomTooltip = ({ active, payload, label }) => {
           ))}
         </div>
         <div className="tooltip-total"><span>Total Collected:</span><span>{total}</span></div>
+        {row.is_pilot_study && (
+          <>
+            <div className="tooltip-item">
+              <span className="name">Pilot Study Submitted:</span>
+              <span className="value">{row.pilot_study_submitted}</span>
+            </div>
+            <div className="tooltip-item">
+              <span className="name">Total Assessments Submitted:</span>
+              <span className="value">{row.assessment_count}</span>
+            </div>
+            <div className="tooltip-item">
+              <span className="name">Total Data Collections:</span>
+              <span className="value">{row.total_data_collections}</span>
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -205,20 +222,25 @@ const Stats = () => {
 
         <div className="chart-card full-width">
           <h3>Institute Distribution</h3>
-          <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.hospitalBins} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#14868C" strokeOpacity={0.1} />
-                <XAxis dataKey="name" angle={0} textAnchor="middle" interval={0} height={60} tick={{ fontSize: 12, fill: '#14868C', fontFamily: 'Poppins', fontWeight: 500 }} />
-                <YAxis tick={{ fontSize: 12, fill: '#14868C', fontFamily: 'Poppins', fontWeight: 500 }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend verticalAlign="bottom" height={36} content={<CustomLegend />} />
-                <Bar dataKey="no_risk" name="Baseline Risk" stackId="a" fill="#6ee7b7" />
-                <Bar dataKey="low" name="Evident Risk" stackId="a" fill="#fde047" />
-                <Bar dataKey="moderate" name="Significant Risk" stackId="a" fill="#fb923c" />
-                <Bar dataKey="high" name="High Risk" stackId="a" fill="#fb7185" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div
+            className="chart-wrapper hospital-chart-scroll"
+            style={{ height: 380, '--hospital-count': (data.hospitalBins || []).length }}
+          >
+            <div className="hospital-chart-inner">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.hospitalBins} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#14868C" strokeOpacity={0.1} />
+                  <XAxis dataKey="name" angle={0} textAnchor="middle" interval={0} height={60} tick={{ fontSize: 12, fill: '#14868C', fontFamily: 'Poppins', fontWeight: 500 }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#14868C', fontFamily: 'Poppins', fontWeight: 500 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend verticalAlign="bottom" height={36} content={<CustomLegend />} />
+                  <Bar dataKey="no_risk" name="Baseline Risk" stackId="a" fill="#6ee7b7" />
+                  <Bar dataKey="low" name="Evident Risk" stackId="a" fill="#fde047" />
+                  <Bar dataKey="moderate" name="Significant Risk" stackId="a" fill="#fb923c" />
+                  <Bar dataKey="high" name="High Risk" stackId="a" fill="#fb7185" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
