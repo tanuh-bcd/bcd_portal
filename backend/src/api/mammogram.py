@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..db.session import get_db, get_questionnaire_db, get_retrospective_db
+from ..db.session import get_db, get_questionnaire_db, get_retrospective_db, get_pilot_deployment_db
 from ..mammogram_service import get_portal_mammogram_dashboard
 from ..models.retrospective_models import RetrospectiveCase
 from ..services.retrospective_processing import REPORT_ONLY_CASE
@@ -22,10 +22,15 @@ def get_mammogram_portal_stats(
     app_db: Session = Depends(get_db),
     questionnaire_db: Session = Depends(get_questionnaire_db),
     retro_db: Session = Depends(get_retrospective_db),
+    pilot_db: Session = Depends(get_pilot_deployment_db),
 ):
     retrospective_case_count = _get_retrospective_case_count(retro_db)
     try:
-        return get_portal_mammogram_dashboard(app_db, questionnaire_db, retrospective_case_count=retrospective_case_count)
+        return get_portal_mammogram_dashboard(
+            app_db, questionnaire_db,
+            retrospective_case_count=retrospective_case_count,
+            pilot_db=pilot_db,
+        )
     except Exception as e:
         logger.error(f"Error computing portal mammogram stats: {e}")
         return {
