@@ -1041,7 +1041,7 @@ const MammogramStats = ({ imageRecords, imageStudies }) => {
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><ScanLineIcon className="summary-icon" size={24} /><h3>Image Studies</h3></div>
-          <div className="big-number">{imageStudies ?? 0}</div>
+          <div className="big-number">{(imageStudies ?? 0).toLocaleString('en-IN')}</div>
         </div>
         {/* <div className="summary-card">
           <div className="card-header-with-icon"><FolderCheckIcon className="summary-icon" size={24} /><h3>Image Records</h3></div>

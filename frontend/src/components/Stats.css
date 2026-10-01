@@ -120,6 +120,22 @@
   }
 }
 
+.summary-section-quad {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 900px) {
+  .summary-section-quad {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .summary-section-quad {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Ensure all Recharts text is teal */
 .recharts-text,
 .recharts-legend-item-text,
@@ -134,7 +150,7 @@
 
 .summary-card {
   background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-  padding: clamp(1rem, 1.6vw, 2rem);
+  padding: clamp(0.7rem, 1.1vw, 1.4rem);
   border-radius: clamp(8px, 1vw, 12px);
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-top: 6px solid #14868C;
@@ -149,6 +165,12 @@
   margin: 0 0 0.5rem 0;
   text-transform: uppercase;
   letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.summary-card h3.title-compact {
+  font-size: clamp(0.6rem, 0.85vw, 1rem);
+  letter-spacing: 0.5px;
 }
 
 .card-header-with-icon {
@@ -164,7 +186,7 @@
 }
 
 .big-number {
-  font-size: clamp(2rem, 3.5vw, 4rem);
+  font-size: clamp(1.6rem, 2.8vw, 3.1rem);
   font-weight: 800;
   color: #14868C;
 }

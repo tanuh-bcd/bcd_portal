@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, Archive, Layers } from 'lucide-react';
+import { Users as UsersIcon, Archive, Layers, Database } from 'lucide-react';
 import {
   ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -9,23 +9,25 @@ import RiskTable from './RiskTable';
 import IndiaMap from './IndiaMap';
 import MammogramStats, { BiradsDensitySection, CrDrModalitySection, RiskPredictionSection } from './mammogramStats';
 
-const AnimatedCounter = ({ value, duration = 1500 }) => {
+const AnimatedCounter = ({ value, duration = 800 }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let start = 0;
     const end = parseInt(value) || 0;
     if (end === 0) { setCount(0); return; }
-    const incrementTime = Math.max(duration / end, 1);
+    const tickMs = 16;
+    const steps = Math.max(Math.round(duration / tickMs), 1);
+    const increment = Math.max(Math.ceil(end / steps), 1);
+    let current = 0;
     const timer = setInterval(() => {
-      start += 1;
-      setCount(start);
-      if (start >= end) clearInterval(timer);
-    }, incrementTime);
+      current = Math.min(current + increment, end);
+      setCount(current);
+      if (current >= end) clearInterval(timer);
+    }, tickMs);
     return () => clearInterval(timer);
   }, [value, duration]);
 
-  return <span>{count}</span>;
+  return <span>{count.toLocaleString('en-IN')}</span>;
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -77,6 +79,11 @@ const Stats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retrospectiveCaseCount, setRetrospectiveCaseCount] = useState(0);
+  const [assessmentUploadCounts, setAssessmentUploadCounts] = useState({
+    totalAssessments: 0,
+    dicomUploaded: 0,
+    reportUploaded: 0,
+  });
 
   const API_URL = process.env.REACT_APP_API_URL || '';
 
@@ -99,18 +106,28 @@ const Stats = () => {
     // Image Records, which moved down into the mammogram section below), so
     // it needs this count too. Best-effort: a failure here shouldn't block
     // the rest of the dashboard, so it just stays at 0.
-    const fetchRetrospectiveCount = async () => {
+    const fetchPortalStats = async () => {
       try {
         const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
         if (response.ok) {
           const json = await response.json();
           setRetrospectiveCaseCount(json.retrospectiveCaseCount ?? 0);
+          const dicomUploaded = (json.setCompleteness || [])
+            .filter((entry) => entry.name !== 'No mammogram')
+            .reduce((sum, entry) => sum + (entry.value || 0), 0);
+          const reportUploaded = (json.reportCompleteness || [])
+            .find((entry) => entry.name === 'Report Uploaded')?.value || 0;
+          setAssessmentUploadCounts({
+            totalAssessments: json.totalAssessments || 0,
+            dicomUploaded,
+            reportUploaded,
+          });
         }
       } catch {
         /* best-effort */
       }
     };
-    fetchRetrospectiveCount();
+    fetchPortalStats();
   }, [API_URL]);
 
   if (loading) return <div className="stats-loader">Loading Dashboard...</div>;
@@ -132,7 +149,21 @@ const Stats = () => {
         </div>
       </div>
 
-      <div className="summary-section">
+      <div className="summary-section summary-section-quad">
+        <div className="summary-card">
+          <div className="card-header-with-icon"><Database className="summary-icon" size={24} /><h3 className="title-compact">Total Data Collections</h3></div>
+          <div className="big-number">
+            <AnimatedCounter
+              value={
+                (data.totalSubjects || 0) +
+                assessmentUploadCounts.totalAssessments +
+                assessmentUploadCounts.dicomUploaded +
+                assessmentUploadCounts.reportUploaded +
+                retrospectiveCaseCount
+              }
+            />
+          </div>
+        </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><Layers className="summary-icon" size={24} /><h3>Total Participants</h3></div>
           <div className="big-number"><AnimatedCounter value={(data.totalSubjects || 0) + retrospectiveCaseCount} /></div>
