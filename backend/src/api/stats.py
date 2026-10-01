@@ -5,8 +5,16 @@ import json
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
-from ..db.session import get_questionnaire_db, get_db
+from ..db.session import get_questionnaire_db, get_db, get_pilot_deployment_db
 from ..models.models import Hospital, DoctorAssessment
+from ..core.pilot_study import is_pilot_study_hospital
+from ..mammogram_service import (
+    get_mammogram_by_hospital,
+    get_pilot_deployment_risk_counts,
+    get_pilot_deployment_submission_counts,
+    get_pilot_deployment_age_bins,
+    get_pilot_deployment_month_bins,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -83,14 +91,22 @@ RISK_CASE = """
 
 
 @router.get("/")
-def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Depends(get_db)):
-    EXCLUDED_NAMES = ('Test', 'Tanuh Foundation')
+def get_stats(
+    db: Session = Depends(get_questionnaire_db),
+    app_db: Session = Depends(get_db),
+    pilot_db: Session = Depends(get_pilot_deployment_db),
+):
+    EXCLUDED_NAMES = ('Test', 'Tanuh Foundation', 'Pilot Study -Test')
     hospital_rows = app_db.query(Hospital.id, Hospital.name, Hospital.short_name).filter(
         ~Hospital.name.in_(EXCLUDED_NAMES)
     ).all()
     valid_hospitals = [h.name for h in hospital_rows]
     valid_hospital_ids = [h.id for h in hospital_rows]
-    hospital_short_names = {h.name: h.short_name or h.name for h in hospital_rows}
+    hospital_base_short_names = {h.name: h.short_name or h.name for h in hospital_rows}
+    hospital_short_names = {
+        name: (f'PS-{short}' if is_pilot_study_hospital(name) else short)
+        for name, short in hospital_base_short_names.items()
+    }
     if not valid_hospitals:
         return {"totalSubjects": 0, "institutionsEmpanelled": 0, "statesCount": 0,
                 "imageStudies": 0, "imageRecords": 0,
@@ -130,10 +146,72 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
         GROUP BY sd_inst.answer
     """), params).fetchall()
 
-    hospital_bins = [
-        {"name": hospital_short_names.get(r[0], r[0] or "Unknown"), "no_risk": int(r[1] or 0), "low": int(r[2] or 0), "moderate": int(r[3] or 0), "high": int(r[4] or 0)}
-        for r in hosp_rows
-    ]
+    mammo_by_hospital_name = {
+        entry["hospital_name"]: entry for entry in get_mammogram_by_hospital(app_db, db, pilot_db)
+    }
+
+    hospital_bins_raw = []
+    for r in hosp_rows:
+        institute_name = r[0]
+        mammo_entry = mammo_by_hospital_name.get(institute_name, {})
+        hospital_bins_raw.append({
+            "name": hospital_short_names.get(institute_name, institute_name or "Unknown"),
+            "no_risk": int(r[1] or 0), "low": int(r[2] or 0), "moderate": int(r[3] or 0), "high": int(r[4] or 0),
+            "is_pilot_study": is_pilot_study_hospital(institute_name),
+            "pilot_study_submitted": mammo_entry.get("pilot_deployment_submitted", 0),
+            "assessment_count": mammo_entry.get("assessment_count", 0),
+            "total_data_collections": mammo_entry.get("total_data_collections", 0),
+            "_is_pilot": is_pilot_study_hospital(institute_name),
+            "_base_key": (hospital_base_short_names.get(institute_name, institute_name) or "").strip().lower(),
+        })
+
+    # Pilot-study institutes with no bcd_questionnaire session of their own
+    # (e.g. "Pilot Study - SMSIMSR") have no row above at all. Synthesize one
+    # from the pilot_deployment schema's own completed submissions so the
+    # institute still shows up here: LOW_RISK -> no_risk/Baseline, HIGH_RISK
+    # -> high. Submissions with no completed result yet don't count (they're
+    # not "submitted" for this purpose, matching pilot_study_submitted).
+    existing_institute_names = {r[0] for r in hosp_rows}
+    pilot_risk_counts = get_pilot_deployment_risk_counts(pilot_db)
+    for hospital_name in valid_hospitals:
+        if hospital_name in existing_institute_names or not is_pilot_study_hospital(hospital_name):
+            continue
+        risk = pilot_risk_counts.get(hospital_name)
+        if not risk or (risk["low_risk"] == 0 and risk["high_risk"] == 0):
+            continue
+        mammo_entry = mammo_by_hospital_name.get(hospital_name, {})
+        hospital_bins_raw.append({
+            "name": hospital_short_names.get(hospital_name, hospital_name),
+            "no_risk": risk["low_risk"], "low": 0, "moderate": 0, "high": risk["high_risk"],
+            "is_pilot_study": True,
+            "pilot_study_submitted": mammo_entry.get("pilot_deployment_submitted", 0),
+            "assessment_count": mammo_entry.get("assessment_count", 0),
+            "total_data_collections": mammo_entry.get("total_data_collections", 0),
+            "_is_pilot": True,
+            "_base_key": (hospital_base_short_names.get(hospital_name, hospital_name) or "").strip().lower(),
+        })
+
+    # Keep each pilot-study institute's bar immediately next to its real
+    # counterpart (same base short name) rather than wherever it happens to
+    # fall in query/group order.
+    pilot_by_base = {}
+    for entry in hospital_bins_raw:
+        if entry["_is_pilot"]:
+            pilot_by_base.setdefault(entry["_base_key"], []).append(entry)
+
+    hospital_bins = []
+    for entry in hospital_bins_raw:
+        if entry["_is_pilot"]:
+            continue
+        hospital_bins.append(entry)
+        for pilot_entry in pilot_by_base.pop(entry["_base_key"], []):
+            hospital_bins.append(pilot_entry)
+    for leftovers in pilot_by_base.values():
+        hospital_bins.extend(leftovers)
+
+    for entry in hospital_bins:
+        entry.pop("_is_pilot", None)
+        entry.pop("_base_key", None)
 
     age_rows = db.execute(text(f"""
         SELECT
@@ -168,6 +246,16 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
         for label in age_labels
     ]
 
+    # Fold in pilot_deployment's completed submissions (binary risk model:
+    # LOW_RISK -> no_risk, HIGH_RISK -> high) so pilot-study subjects count
+    # toward the same aggregate age distribution as everyone else.
+    pilot_age_bins = get_pilot_deployment_age_bins(pilot_db)
+    for bin_entry in age_bins:
+        pilot_bin = pilot_age_bins.get(bin_entry["name"])
+        if pilot_bin:
+            bin_entry["no_risk"] += pilot_bin["no_risk"]
+            bin_entry["high"] += pilot_bin["high"]
+
     month_rows = db.execute(text(f"""
         SELECT
             DATE_FORMAT(COALESCE(s.session_end_time, s.session_start_time), '%b %Y') as month_year,
@@ -182,18 +270,30 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
         ORDER BY sort_key ASC
     """), params).fetchall()
 
-    month_bins = [
-        {"name": r[0], "no_risk": int(r[2] or 0), "low": int(r[3] or 0), "moderate": int(r[4] or 0), "high": int(r[5] or 0)}
+    month_map = {
+        r[1]: {"name": r[0], "no_risk": int(r[2] or 0), "low": int(r[3] or 0), "moderate": int(r[4] or 0), "high": int(r[5] or 0)}
         for r in month_rows
-    ]
+    }
+
+    # Same fold-in for Month-wise Distribution; a month with pilot data but
+    # no bcd_questionnaire sessions yet gets its own new entry.
+    pilot_month_bins = get_pilot_deployment_month_bins(pilot_db)
+    for sort_key, pilot_bin in pilot_month_bins.items():
+        entry = month_map.setdefault(
+            sort_key, {"name": pilot_bin["name"], "no_risk": 0, "low": 0, "moderate": 0, "high": 0}
+        )
+        entry["no_risk"] += pilot_bin["no_risk"]
+        entry["high"] += pilot_bin["high"]
+
+    month_bins = [month_map[k] for k in sorted(month_map.keys())]
 
     inst_res = app_db.execute(text(
-        "SELECT COUNT(*) FROM hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation')"
+        "SELECT COUNT(*) FROM hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation', 'Pilot Study -Test')"
     )).fetchone()
     institutions_empanelled = inst_res[0] if inst_res else 0
 
     states_res = app_db.execute(text(
-        "SELECT COUNT(DISTINCT state) FROM hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation') AND state IS NOT NULL AND state != ''"
+        "SELECT COUNT(DISTINCT state) FROM hospitals WHERE name NOT IN ('Test', 'Tanuh Foundation', 'Pilot Study -Test') AND state IS NOT NULL AND state != ''"
     )).fetchone()
     states_count = states_res[0] if states_res else 0
 
@@ -221,8 +321,9 @@ def get_stats(db: Session = Depends(get_questionnaire_db), app_db: Session = Dep
 def get_hospital_locations(
     app_db: Session = Depends(get_db),
     db: Session = Depends(get_questionnaire_db),
+    pilot_db: Session = Depends(get_pilot_deployment_db),
 ):
-    EXCLUDED = ("Test", "Tanuh Foundation")
+    EXCLUDED = ("Test", "Tanuh Foundation", "Pilot Study -Test")
     hospitals = app_db.query(Hospital).filter(~Hospital.name.in_(EXCLUDED)).all()
     valid_names = [h.name for h in hospitals]
     if not valid_names:
@@ -238,21 +339,49 @@ def get_hospital_locations(
         GROUP BY sd.answer
     """), {"inst_questions": INSTITUTE_QUESTIONS, "valid_names": tuple(valid_names)}).fetchall()
     subject_counts = {r[0]: int(r[1]) for r in subject_rows}
+    pilot_submission_counts = get_pilot_deployment_submission_counts(pilot_db)
+
+    def _submitted(hospital_name: str) -> int:
+        return subject_counts.get(hospital_name, 0) + pilot_submission_counts.get(hospital_name, 0)
+
+    # A pilot-study hospital row (e.g. "Pilot Study - SMSIMSR") and its real
+    # counterpart ("Sri Madhusudan...") are the same physical institute, just
+    # two separate hospital records sharing one short_name -- group by that
+    # so the map shows one pin/institute, not two.
+    groups = {}
+    for h in hospitals:
+        key = (h.short_name or h.name or "").strip().lower()
+        groups.setdefault(key, []).append(h)
 
     locations = []
-    for h in hospitals:
-        result = _geocode_pincode(h.pincode or "", h.state or "")
+    for group in groups.values():
+        primary = next((h for h in group if not is_pilot_study_hospital(h.name)), group[0])
+        pilot_siblings = [h for h in group if h is not primary]
+
+        result = _geocode_pincode(primary.pincode or "", primary.state or "")
+        if not result:
+            for sibling in pilot_siblings:
+                result = _geocode_pincode(sibling.pincode or "", sibling.state or "")
+                if result:
+                    break
         if not result:
             continue
         city = result[2] if len(result) > 2 else ""
+
+        name = primary.name
+        subjects_total = _submitted(primary.name)
+        for sibling in pilot_siblings:
+            subjects_total += _submitted(sibling.name)
+            name = f"{name} (Pilot Study - {sibling.short_name or sibling.name})"
+
         locations.append({
-            "id": h.id,
-            "name": h.name,
-            "short_name": h.short_name or h.name,
+            "id": primary.id,
+            "name": name,
+            "short_name": primary.short_name or primary.name,
             "city": city,
-            "state": h.state or "",
+            "state": primary.state or "",
             "latitude": result[0],
             "longitude": result[1],
-            "subjects": subject_counts.get(h.name, 0),
+            "subjects": subjects_total,
         })
     return locations
