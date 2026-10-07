@@ -876,3 +876,44 @@
     flex-direction: column;
   }
 }
+
+/* The opening tour step uses the same consent layout as the questionnaire page. */
+.demo-content-card-consent {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.demo-step-box-consent {
+  padding: 0;
+}
+
+.demo-consent-container {
+  max-height: min(78vh, 760px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.demo-inline-explanation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 8px 11px;
+  margin: 0 0 12px;
+  border: 1px solid #b7dee0;
+  border-left: 3px solid var(--teal-primary);
+  border-radius: 7px;
+  background: #f0fafb;
+  color: #25585b;
+  font-size: clamp(0.78rem, 0.9vw, 0.9rem);
+  line-height: 1.4;
+}
+
+.demo-inline-explanation svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
