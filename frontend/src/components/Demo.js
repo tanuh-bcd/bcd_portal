@@ -124,7 +124,7 @@ const Demo = () => {
   useEffect(() => {
     if (demoPhase === 'simulating' && focusedQuestion) {
       const el = document.querySelector('.demo-question.focused');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [focusedQuestion, demoPhase]);
 
@@ -274,7 +274,7 @@ const Demo = () => {
         } else {
           await typeValue(qKey, targetVal, checkMounted);
         }
-        await sleep(1300);
+        await sleep(['hospital-select', 'select', 'compact_dropdown', 'repeat_select'].includes(qNode.type) ? 4500 : 1300);
       }
 
       if (!checkMounted()) return;
@@ -341,14 +341,30 @@ const Demo = () => {
 
     if (qNode.type === 'hospital-select' || ['select', 'compact_dropdown', 'repeat_select'].includes(qNode.type)) {
       const options = qNode.type === 'hospital-select'
-        ? ['TANUH Demo Clinic', 'Institute 1', 'Institute 2', 'Institute 3']
+        ? ['Institute 1', 'Institution', 'Institute 2', 'Institute 3']
         : answers;
+      const isFocused = focusedQuestion === qNode.key;
+      const displayValue = qNode.key === 'V2_Q18' ? value.split('—')[0].trim() : value;
       return (
-        <div className="mock-input-wrapper">
-          <select className={`mock-text-input ${value ? 'has-value' : ''}`} value={value} onChange={() => {}} aria-label={qData.question}>
-            <option value="">Select an option</option>
-            {options.map((answer, index) => <option key={index} value={answer}>{answer}</option>)}
-          </select>
+        <div className="mock-input-wrapper demo-dropdown-wrapper">
+          <div className={`mock-text-input demo-select-display ${value ? 'has-value' : ''}`} aria-label={qData.question}>
+            <span>{displayValue || 'Select an option'}</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </div>
+          {isFocused && (
+            <div className="demo-dropdown-options" role="listbox" aria-label={qData.question}>
+              {options.map((answer, index) => (
+                <div
+                  key={index}
+                  className={`demo-dropdown-option ${value === answer ? 'selected' : ''}`}
+                  role="option"
+                  aria-selected={value === answer}
+                >
+                  {answer}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
