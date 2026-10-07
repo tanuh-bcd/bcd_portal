@@ -4,6 +4,55 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle, Info } from 'lucide-react';
 import RiskTable from './RiskTable';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
+const buildDemoForm = (rows) => {
+  const questions = {};
+  const nodes = new Map();
+  rows.forEach(row => {
+    questions[row.question_key] = {
+      question: row.question_text,
+      answers: (row.options || []).map(option => option.option_label),
+    };
+    nodes.set(row.id, {
+      key: row.question_key,
+      type: row.input_type || (row.response_type === 'numbers_only' ? 'number' : 'text'),
+      min: row.min_value,
+      max: row.max_value,
+      parentId: row.parent_question_id,
+      triggerAnswer: row.trigger_answer,
+      section: row.section || 'Questionnaire',
+      subQuestions: [],
+    });
+  });
+  const sections = new Map();
+  rows.forEach(row => {
+    const node = nodes.get(row.id);
+    if (node.parentId && nodes.has(node.parentId)) {
+      const parent = nodes.get(node.parentId);
+      if (node.triggerAnswer) node.condition = { key: parent.key, value: node.triggerAnswer };
+      parent.subQuestions.push(node);
+    } else {
+      if (!sections.has(node.section)) sections.set(node.section, []);
+      sections.get(node.section).push(node);
+    }
+  });
+  return { formStructure: Array.from(sections, ([title, sectionQuestions]) => ({ title, questions: sectionQuestions })), questions };
+};
+
+const sampleAnswer = (node, questions) => {
+  const answers = questions[node.key]?.answers || [];
+  if (answers.length) return answers[0];
+  if (node.type === 'number' || node.type === 'number_or_unknown') {
+    const min = Number(node.min);
+    const max = Number(node.max);
+    return String(Number.isFinite(min) && Number.isFinite(max) ? Math.min(max, Math.max(min, 35)) : 35);
+  }
+  if (node.key === 'V2_Q01') return 'DEMO-001';
+  if (node.key === 'V2_Q02') return 'Demo Institution';
+  return 'Sample response';
+};
+
 const Demo = () => {
   const { t, ready } = useTranslation(['consent', 'questionnaire', 'thankyou', 'demo']);
   const { t: tThankYou } = useTranslation('thankyou');
@@ -17,6 +66,9 @@ const Demo = () => {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [simulationKey, setSimulationKey] = useState(0);
   const [demoContent, setDemoContent] = useState(null);
+  const [demoForm, setDemoForm] = useState(null);
+  const [demoError, setDemoError] = useState('');
+  const [databaseConsent, setDatabaseConsent] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +76,40 @@ const Demo = () => {
       .then(r => r.json())
       .then(setDemoContent)
       .catch(() => setDemoContent({ golden_path: {}, walkthrough: {} }));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/api/v1/patient/questions?lang=en&version=2`)
+      .then(response => {
+        if (!response.ok) throw new Error(`Questionnaire request failed (${response.status})`);
+        return response.json();
+      })
+      .catch(() => fetch('/demo_questionnaire_v2.json').then(response => {
+        if (!response.ok) throw new Error('Version 2 preview data is unavailable');
+        return response.json();
+      }))
+      .then(rows => {
+        if (!Array.isArray(rows) || !rows.some(row => row.question_key?.startsWith('V2_'))) {
+          throw new Error('Version 2 questionnaire is unavailable');
+        }
+        if (!cancelled) setDemoForm(buildDemoForm(rows));
+      })
+      .catch(error => { if (!cancelled) setDemoError(error.message); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/api/participant-information?lang=en&version=2`)
+      .then(response => {
+        if (!response.ok) throw new Error('Participant information unavailable');
+        return response.json();
+      })
+      .catch(() => fetch('/demo_consent_v2.json').then(response => response.json()))
+      .then(content => { if (!cancelled) setDatabaseConsent(content); })
+      .catch(error => { if (!cancelled) setDemoError(error.message); });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -47,24 +133,23 @@ const Demo = () => {
     return null;
   };
 
-  const goldenPath = demoContent?.golden_path || {};
   const highlights = demoContent?.walkthrough || {};
   const mockRiskResult = 82;
   const score = ready ? (mockRiskResult / 100).toFixed(2) : '0';
   const userRiskLevel = ready ? getRiskLevel(score, tThankYou) : null;
-
   const thankYouData = ready ? t('thankyou:interpretation.data', { returnObjects: true }) : [];
   const highlightedRow = Array.isArray(thankYouData) ? thankYouData.find(row => row.level === userRiskLevel) : null;
 
-  const formStructure = ready ? t('questionnaire:formStructure', { returnObjects: true }) : [];
-  const questionsDict = ready ? t('questionnaire:questions', { returnObjects: true }) : {};
-  const consentData = ready ? {
+  const formStructure = demoForm?.formStructure || [];
+  const questionsDict = demoForm?.questions || {};
+  const consentData = databaseConsent || (ready ? {
     title: t('consent:title'),
     header: t('consent:header', { returnObjects: true }),
+    headernames: t('consent:headernames', { returnObjects: true }),
     sections: t('consent:sections', { returnObjects: true }),
     checkboxLabel: t('consent:checkboxLabel'),
     buttonText: t('consent:buttonText')
-  } : {};
+  } : {});
 
   const totalSteps = (Array.isArray(formStructure) ? formStructure.length : 0) + 2;
 
@@ -84,7 +169,7 @@ const Demo = () => {
   };
 
   useEffect(() => {
-    if (!ready || !demoContent) return;
+    if (!ready || !demoContent || !demoForm || !databaseConsent) return;
 
     let isMounted = true;
     const checkMounted = () => isMounted;
@@ -112,7 +197,7 @@ const Demo = () => {
       if (el) {
         const distance = el.scrollHeight - el.clientHeight;
         const scrollSteps = 60;
-        const stepMs = 3000 / scrollSteps;
+        const stepMs = 8000 / scrollSteps;
         const stepAmt = distance / scrollSteps;
         for (let i = 0; i < scrollSteps; i++) {
           if (!checkMounted()) return;
@@ -135,7 +220,8 @@ const Demo = () => {
         const traverse = (questions) => {
           questions.forEach(q => {
             if (q.condition) {
-              const parentVal = goldenPath[q.condition.key];
+              const parent = visible.find(item => item.key === q.condition.key);
+              const parentVal = parent ? sampleAnswer(parent, questionsDict) : undefined;
               if (parentVal !== q.condition.value) return;
             }
             visible.push(q);
@@ -153,12 +239,13 @@ const Demo = () => {
         if (!checkMounted()) return;
         const qNode = visibleQueue[i];
         const qKey = qNode.key;
-        const targetVal = goldenPath[qKey];
+        const targetVal = sampleAnswer(qNode, questionsDict);
 
-        const sectionIdx = Array.isArray(formStructure) ? formStructure.findIndex(s =>
-          s.questions.some(sq => sq.key === qKey || (sq.subQuestions && sq.subQuestions.some(ssq => ssq.key === qKey)))
-        ) : 0;
-        setCurrentStep(sectionIdx + 1);
+        const containsQuestion = (nodes) => nodes.some(node =>
+          node.key === qKey || containsQuestion(node.subQuestions || [])
+        );
+        const sectionIdx = formStructure.findIndex(section => containsQuestion(section.questions));
+        setCurrentStep(Math.max(0, sectionIdx) + 1);
         setFocusedQuestion(qKey);
         setActiveHighlight(highlights[qKey] || null);
 
@@ -178,9 +265,10 @@ const Demo = () => {
     }
 
     return () => { isMounted = false; };
-  }, [ready, isAutoPlaying, simulationKey, demoContent]);
+  }, [ready, isAutoPlaying, simulationKey, demoContent, demoForm, databaseConsent]);
 
-  if (!ready || !demoContent) return <div className="demo-loading">Preparing Guided Tour...</div>;
+  if (demoError) return <div className="demo-loading" role="alert">Unable to load the Version 2 guided tour: {demoError}</div>;
+  if (!ready || !demoContent || !demoForm || !databaseConsent) return <div className="demo-loading">Preparing Version 2 Guided Tour...</div>;
 
   const renderTooltip = (key) => {
     if (focusedQuestion === key && activeHighlight) {
@@ -233,13 +321,13 @@ const Demo = () => {
         <div className="mock-input-wrapper">
           <select className={`mock-text-input ${value ? 'has-value' : ''}`} value={value || ''} readOnly>
             <option value="" disabled>Select an option</option>
-            {demoInstitutes.map((name, idx) => <option key={idx} value={name}>{name}</option>)}
+            {[value, ...demoInstitutes].filter(Boolean).filter((name, idx, all) => all.indexOf(name) === idx).map((name, idx) => <option key={idx} value={name}>{name}</option>)}
           </select>
         </div>
       );
     }
 
-    if ((qNode.type === 'radio' || qNode.type === 'select') && qData.answers) {
+    if (qData.answers?.length) {
       return (
         <div className="mock-options">
           {qData.answers.map((ans, idx) => {
@@ -250,10 +338,9 @@ const Demo = () => {
           })}
         </div>
       );
-    } else if (qNode.type === 'number' || qNode.type === 'text' || qNode.type === 'select-plus-text') {
+    } else {
       return <div className="mock-input-wrapper"><input type="text" className={`mock-text-input ${value ? 'has-value' : ''}`} value={value || ''} readOnly placeholder="Filling..." /></div>;
     }
-    return null;
   };
 
   const renderQuestion = (qNode, depth = 0) => {
@@ -316,15 +403,16 @@ const Demo = () => {
             {currentStep === 0 && (
               <div className="demo-step-content fade-in consent-demo-view">
                 <div className="demo-step-nav-header demo-step-nav-header-consent">
-                  <h2>AI enabled Breast Cancer Risk Prediction Tool</h2>
+                  <h2>{consentData.title}</h2>
                   <div className="demo-mock-lang" style={{ position: 'relative' }}>
                     <div className="lang-trigger">&#127760; {langSelected || 'Select Language...'}</div>
                   </div>
                 </div>
                 <div className="consent-scroll-container" ref={scrollRef}>
                   <div className="consent-header-info">
-                    <p><strong>Sponsor/Institution:</strong> {consentData.header?.sponsor}</p>
-                    <p><strong>IEC Approval No.:</strong> {consentData.header?.iecApproval}</p>
+                    <p><strong>{consentData.headernames?.studyTitle || 'Study Title'}:</strong> {consentData.header?.studyTitle}</p>
+                    <p><strong>{consentData.headernames?.sponsor || 'Organiser and Funder'}:</strong> {consentData.header?.sponsor}</p>
+                    <p><strong>{consentData.headernames?.iecApproval || 'Ethics Review'}:</strong> {consentData.header?.iecApproval}</p>
                   </div>
                   {consentData.sections?.map((section, idx) => (
                     <div key={idx} className={section.className || 'consent-section-demo'}>
@@ -334,6 +422,34 @@ const Demo = () => {
                       ))}
                     </div>
                   ))}
+                  {consentData.informedConsent && (
+                    <section className="informed-consent-demo">
+                      <h2>{consentData.informedConsent.title}</h2>
+                      <div className="consent-header-info">
+                        {Object.values(consentData.informedConsent.projectDetails || {}).map((detail, idx) => (
+                          <p key={idx}><strong>{detail.label}:</strong> {detail.value}</p>
+                        ))}
+                      </div>
+                      {consentData.informedConsent.sections?.map((section, idx) => (
+                        <div key={idx} className="consent-section-demo">
+                          <h3>{section.heading}</h3>
+                          {section.paragraphs?.map((paragraph, pIdx) => <p key={pIdx}>{paragraph.text}</p>)}
+                        </div>
+                      ))}
+                      <div className="consent-section-demo">
+                        <h3>{consentData.informedConsent.participantConsentHeading}</h3>
+                        <p>{consentData.informedConsent.declaration}</p>
+                        <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
+                          <input type="checkbox" checked={consentChecked} readOnly />
+                          <span>{consentData.informedConsent.ageCheckboxLabel}</span>
+                        </label>
+                        <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
+                          <input type="checkbox" checked={consentChecked} readOnly />
+                          <span>{consentData.informedConsent.voluntaryCheckboxLabel}</span>
+                        </label>
+                      </div>
+                    </section>
+                  )}
                 </div>
                 <div className="demo-consent-upload-mock fade-in">
                   <strong className="demo-consent-upload-title">Consent Upload</strong>
@@ -350,9 +466,11 @@ const Demo = () => {
                 </div>
 
                 <div className="demo-consent-bottom">
-                  <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
-                    <input type="checkbox" checked={consentChecked} readOnly /><span>{consentData.checkboxLabel}</span>
-                  </label>
+                  {!consentData.informedConsent && (
+                    <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
+                      <input type="checkbox" checked={consentChecked} readOnly /><span>{consentData.checkboxLabel}</span>
+                    </label>
+                  )}
                   <button className={`btn-premium ${demoPhase === 'button-blinking' ? 'pulse-teal' : ''}`} disabled={!consentChecked}>{consentData.buttonText}</button>
                 </div>
               </div>
@@ -362,7 +480,7 @@ const Demo = () => {
               <div className="demo-step-content fade-in">
                 <div className="demo-step-nav-header">
                   <h2>{formStructure[currentStep - 1].title}</h2>
-                  <span className="demo-badge">Guided Tour</span>
+                  <span className="demo-badge">Version 2 Guided Tour</span>
                 </div>
                 <div className="demo-questions-viewport">
                   {formStructure[currentStep - 1].questions.map(q => renderQuestion(q))}
