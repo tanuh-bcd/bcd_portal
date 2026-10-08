@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Demo.css';
+import './Consent.css';
+import './LanguageSwitcher.css';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, Info } from 'lucide-react';
+import { Camera, CheckCircle, ChevronDown, Globe, Info, Upload } from 'lucide-react';
 import RiskTable from './RiskTable';
+import demoTourContent from './demoTourContent.json';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
@@ -41,18 +44,24 @@ const buildDemoForm = (rows) => {
 };
 
 const sampleAnswer = (node, questions) => {
+  const selected = demoTourContent.answers[node.key];
   const answers = questions[node.key]?.answers || [];
-  if (answers.length) return answers[0];
-  if (node.type === 'number' || node.type === 'number_or_unknown') {
-    const min = Number(node.min);
-    const max = Number(node.max);
-    return String(Number.isFinite(min) && Number.isFinite(max) ? Math.min(max, Math.max(min, 35)) : 35);
+  if (node.type === 'group') return '';
+  if (selected !== undefined) {
+    const option = answers.find(answer => answer === selected || answer.startsWith(selected));
+    return option || selected;
   }
-  if (node.key === 'V2_Q01') return 'DEMO-001';
-  if (node.key === 'V2_Q02') return 'Demo Institution';
+  if (answers.length) {
+    const usable = answers.filter(answer => !/prefer not|don't know/i.test(answer));
+    const choices = usable.length ? usable : answers;
+    const index = [...node.key].reduce((sum, char) => sum + char.charCodeAt(0), 0) % choices.length;
+    return choices[index];
+  }
+  if (node.type === 'number' || node.type === 'number_or_unknown') {
+    return String(node.min == null ? 1 : Math.max(Number(node.min), 1));
+  }
   return 'Sample response';
 };
-
 const Demo = () => {
   const { t, ready } = useTranslation(['consent', 'questionnaire', 'thankyou', 'demo']);
   const { t: tThankYou } = useTranslation('thankyou');
@@ -115,7 +124,7 @@ const Demo = () => {
   useEffect(() => {
     if (demoPhase === 'simulating' && focusedQuestion) {
       const el = document.querySelector('.demo-question.focused');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [focusedQuestion, demoPhase]);
 
@@ -219,10 +228,20 @@ const Demo = () => {
         const visible = [];
         const traverse = (questions) => {
           questions.forEach(q => {
+            const parent = q.condition
+              ? visible.find(item => item.key === q.condition.key)
+              : null;
             if (q.condition) {
-              const parent = visible.find(item => item.key === q.condition.key);
               const parentVal = parent ? sampleAnswer(parent, questionsDict) : undefined;
-              if (parentVal !== q.condition.value) return;
+              const triggers = q.condition.value.split('|').map(value => value.trim());
+              if (!triggers.includes(parentVal)) return;
+            }
+            if (q.type === 'repeat_select') {
+              const count = Number(sampleAnswer(
+                visible.find(item => item.subQuestions?.includes(q)) || {},
+                questionsDict
+              ));
+              if (!Number.isFinite(count) || count < 1) return;
             }
             visible.push(q);
             if (q.subQuestions) traverse(q.subQuestions);
@@ -249,9 +268,13 @@ const Demo = () => {
         setFocusedQuestion(qKey);
         setActiveHighlight(highlights[qKey] || null);
 
-        await sleep(800);
-        await typeValue(qKey, targetVal, checkMounted);
-        await sleep(1000);
+        await sleep(900);
+        if (questionsDict[qKey]?.answers?.length || qNode.type === 'group') {
+          setTypedValues(prev => ({ ...prev, [qKey]: targetVal }));
+        } else {
+          await typeValue(qKey, targetVal, checkMounted);
+        }
+        await sleep(['hospital-select', 'select', 'compact_dropdown', 'repeat_select'].includes(qNode.type) ? 4500 : 1300);
       }
 
       if (!checkMounted()) return;
@@ -312,35 +335,79 @@ const Demo = () => {
 
   const renderMockInput = (qNode) => {
     const qData = questionsDict[qNode.key];
-    if (!qData) return null;
-    const value = typedValues[qNode.key];
+    if (!qData || qNode.type === 'group') return null;
+    const value = typedValues[qNode.key] || '';
+    const answers = qData.answers || [];
 
-    if (qNode.type === 'hospital-select') {
-      const demoInstitutes = ['Institute 1', 'Institute 2', 'Institute 3', 'Institute 4'];
+    if (qNode.type === 'hospital-select' || ['select', 'compact_dropdown', 'repeat_select'].includes(qNode.type)) {
+      const options = qNode.type === 'hospital-select'
+        ? ['Institute 1', 'Institution', 'Institute 2', 'Institute 3']
+        : answers;
+      const isFocused = focusedQuestion === qNode.key;
+      const displayValue = qNode.key === 'V2_Q18' ? value.split('—')[0].trim() : value;
       return (
-        <div className="mock-input-wrapper">
-          <select className={`mock-text-input ${value ? 'has-value' : ''}`} value={value || ''} readOnly>
-            <option value="" disabled>Select an option</option>
-            {[value, ...demoInstitutes].filter(Boolean).filter((name, idx, all) => all.indexOf(name) === idx).map((name, idx) => <option key={idx} value={name}>{name}</option>)}
-          </select>
+        <div className="mock-input-wrapper demo-dropdown-wrapper">
+          <div className={`mock-text-input demo-select-display ${value ? 'has-value' : ''}`} aria-label={qData.question}>
+            <span>{displayValue || 'Select an option'}</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </div>
+          {isFocused && (
+            <div className="demo-dropdown-options" role="listbox" aria-label={qData.question}>
+              {options.map((answer, index) => (
+                <div
+                  key={index}
+                  className={`demo-dropdown-option ${value === answer ? 'selected' : ''}`}
+                  role="option"
+                  aria-selected={value === answer}
+                >
+                  {answer}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
 
-    if (qData.answers?.length) {
+    if (qNode.type === 'number_or_unknown') {
+      return (
+        <div className="mock-input-wrapper">
+          <input type="text" className={`mock-text-input ${value ? 'has-value' : ''}`} value={value} readOnly placeholder="Filling..." />
+        </div>
+      );
+    }
+
+    if (qNode.type === 'checkbox') {
       return (
         <div className="mock-options">
-          {qData.answers.map((ans, idx) => {
-            const isSelected = value === ans;
-            if (ans === 'Yes') return <div key={idx} className={`binary-icon-box yes ${isSelected ? 'selected pulse-teal' : ''}`}><CheckCircle size={24} /><span>Yes</span></div>;
-            if (ans === 'No') return <div key={idx} className={`binary-icon-box no ${isSelected ? 'selected pulse-teal' : ''}`}><div className="close-icon-wrap">&#10005;</div><span>No</span></div>;
-            return <label key={idx} className={`mock-radio-label ${isSelected ? 'mock-selected pulse-teal' : ''}`}><input type="radio" checked={isSelected} readOnly /><span>{ans}</span></label>;
+          {answers.map((answer, index) => (
+            <label key={index} className={`mock-checkbox-label ${value === answer ? 'mock-selected pulse-teal' : ''}`}>
+              <input type="checkbox" checked={value === answer} readOnly />
+              <span>{answer}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    if (answers.length) {
+      return (
+        <div className="mock-options">
+          {answers.map((answer, index) => {
+            const selected = value === answer;
+            if (answer === 'Yes') return <div key={index} className={`binary-icon-box yes ${selected ? 'selected pulse-teal' : ''}`}><CheckCircle size={24} /><span>Yes</span></div>;
+            if (answer === 'No') return <div key={index} className={`binary-icon-box no ${selected ? 'selected pulse-teal' : ''}`}><div className="close-icon-wrap">&#10005;</div><span>No</span></div>;
+            return <label key={index} className={`mock-radio-label ${selected ? 'mock-selected pulse-teal' : ''}`}><input type="radio" checked={selected} readOnly /><span>{answer}</span></label>;
           })}
         </div>
       );
-    } else {
-      return <div className="mock-input-wrapper"><input type="text" className={`mock-text-input ${value ? 'has-value' : ''}`} value={value || ''} readOnly placeholder="Filling..." /></div>;
     }
+
+    return (
+      <div className="mock-input-wrapper">
+        <input type="text" className={`mock-text-input ${value ? 'has-value' : ''}`} value={value} readOnly placeholder="Filling..." />
+      </div>
+    );
   };
 
   const renderQuestion = (qNode, depth = 0) => {
@@ -353,6 +420,12 @@ const Demo = () => {
       <div key={qNode.key} className={`demo-question fade-in ${isFocused ? 'focused' : ''}`} style={{ marginLeft: `${depth * 20}px` }}>
         {isFocused && renderTooltip(qNode.key)}
         <div className="demo-question-text">{questionText}</div>
+        {isFocused && (
+          <div className="demo-inline-explanation" role="note">
+            <Info size={16} aria-hidden="true" />
+            <span>{demoTourContent.guidance[qNode.key] || 'Choose the answer that best fits your experience.'}</span>
+          </div>
+        )}
         <div className="demo-question-input">{renderMockInput(qNode)}</div>
         {qNode.subQuestions && qNode.subQuestions.length > 0 && (
           <div className="demo-subquestions">{qNode.subQuestions.map(subQ => renderQuestion(subQ, depth + 1))}</div>
@@ -364,6 +437,7 @@ const Demo = () => {
   const handleRestart = () => {
     setCurrentStep(0);
     setConsentChecked(false);
+    setLangSelected('');
     setTypedValues({});
     setFocusedQuestion(null);
     setActiveHighlight(null);
@@ -388,8 +462,8 @@ const Demo = () => {
       )}
 
       <div className="demo-main-single-column">
-        <div className="demo-content-card">
-          <div className="demo-card-header">
+        <div className={`demo-content-card ${currentStep === 0 ? 'demo-content-card-consent' : ''}`}>
+          {currentStep !== 0 && <div className="demo-card-header">
             <div className="demo-header-brands">
               <img src="/tanuh.png" alt="Tanuh" className="brand-logo logo-tanuh" />
               <div className="brand-divider"></div>
@@ -397,82 +471,94 @@ const Demo = () => {
               <div className="brand-divider"></div>
               <img src="/IISc_logo.png" alt="IISc" className="brand-logo logo-iisc" />
             </div>
-          </div>
+          </div>}
 
-          <div className="demo-step-box">
+          <div className={`demo-step-box ${currentStep === 0 ? 'demo-step-box-consent' : ''}`}>
             {currentStep === 0 && (
-              <div className="demo-step-content fade-in consent-demo-view">
-                <div className="demo-step-nav-header demo-step-nav-header-consent">
-                  <h2>{consentData.title}</h2>
-                  <div className="demo-mock-lang" style={{ position: 'relative' }}>
-                    <div className="lang-trigger">&#127760; {langSelected || 'Select Language...'}</div>
+              <div className="consent-container demo-consent-container" ref={scrollRef}>
+                <div className="logos-container" style={{ marginBottom: '1.5rem' }}>
+                  <img src="/tanuh.png" alt="TANUH Logo" className="logo-tanuh" />
+                  <img src="/MoE_Logo.svg" alt="MoE Logo" className="logo-moe" />
+                  <img src="/IISc_logo.png" alt="IISc Logo" className="logo-iisc" />
+                </div>
+                <div className="language-switcher-wrapper">
+                  <div className="language-switcher-container">
+                    <button type="button" className={`lang-select-button ${demoPhase === 'lang-dropdown-open' ? 'open' : ''}`} aria-label="Demo language selection">
+                      <span className="lang-button-left">
+                        <Globe size={16} className="globe-icon" />
+                        <span className="lang-button-text">Select Language <span className="current-lang-hint">- {langSelected || 'English'}</span></span>
+                      </span>
+                      <ChevronDown size={14} className="chevron-icon" />
+                    </button>
+                    {demoPhase === 'lang-dropdown-open' && (
+                      <ul className="lang-dropdown-menu" role="listbox">
+                        <li className="lang-option selected" role="option" aria-selected="true">English</li>
+                      </ul>
+                    )}
                   </div>
                 </div>
-                <div className="consent-scroll-container" ref={scrollRef}>
-                  <div className="consent-header-info">
-                    <p><strong>{consentData.headernames?.studyTitle || 'Study Title'}:</strong> {consentData.header?.studyTitle}</p>
-                    <p><strong>{consentData.headernames?.sponsor || 'Organiser and Funder'}:</strong> {consentData.header?.sponsor}</p>
-                    <p><strong>{consentData.headernames?.iecApproval || 'Ethics Review'}:</strong> {consentData.header?.iecApproval}</p>
+                <h2>{consentData.title}</h2>
+                <div className="consent-header">
+                  <p><strong>{consentData.headernames?.studyTitle || 'Study Title'} :</strong> {consentData.header?.studyTitle}</p>
+                  <p><strong>{consentData.headernames?.sponsor || 'Organiser and Funder'} :</strong> {consentData.header?.sponsor}</p>
+                  <p><strong>{consentData.headernames?.iecApproval || 'Ethics Review'} :</strong> {consentData.header?.iecApproval}</p>
+                </div>
+                {(consentData.sections || []).map((section, index) => (
+                  <div key={index} className={section.className || 'consent-section'}>
+                    <h3>{section.heading}</h3>
+                    {(section.paragraphs || []).map((paragraph, paragraphIndex) => (
+                      <p key={paragraphIndex} className={paragraph.className || undefined}>
+                        {paragraph.strong && <strong>{paragraph.strong} </strong>}{paragraph.text}
+                      </p>
+                    ))}
                   </div>
-                  {consentData.sections?.map((section, idx) => (
-                    <div key={idx} className={section.className || 'consent-section-demo'}>
-                      <h3>{section.heading}</h3>
-                      {section.paragraphs?.map((para, pIdx) => (
-                        <p key={pIdx} className={para.className || ''}>{para.strong && <strong>{para.strong} </strong>}{para.text}</p>
+                ))}
+                {consentData.informedConsent && (
+                  <section className="informed-consent">
+                    <h2>{consentData.informedConsent.title}</h2>
+                    <div className="consent-header">
+                      {Object.values(consentData.informedConsent.projectDetails || {}).map((detail, index) => (
+                        <p key={index}><strong>{detail.label} :</strong> {detail.value}</p>
                       ))}
                     </div>
-                  ))}
-                  {consentData.informedConsent && (
-                    <section className="informed-consent-demo">
-                      <h2>{consentData.informedConsent.title}</h2>
-                      <div className="consent-header-info">
-                        {Object.values(consentData.informedConsent.projectDetails || {}).map((detail, idx) => (
-                          <p key={idx}><strong>{detail.label}:</strong> {detail.value}</p>
+                    {(consentData.informedConsent.sections || []).map((section, index) => (
+                      <div key={index} className="consent-section">
+                        <h3>{section.heading}</h3>
+                        {(section.paragraphs || []).map((paragraph, paragraphIndex) => (
+                          <p key={paragraphIndex}>{paragraph.text}</p>
                         ))}
                       </div>
-                      {consentData.informedConsent.sections?.map((section, idx) => (
-                        <div key={idx} className="consent-section-demo">
-                          <h3>{section.heading}</h3>
-                          {section.paragraphs?.map((paragraph, pIdx) => <p key={pIdx}>{paragraph.text}</p>)}
-                        </div>
-                      ))}
-                      <div className="consent-section-demo">
-                        <h3>{consentData.informedConsent.participantConsentHeading}</h3>
-                        <p>{consentData.informedConsent.declaration}</p>
-                        <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
-                          <input type="checkbox" checked={consentChecked} readOnly />
-                          <span>{consentData.informedConsent.ageCheckboxLabel}</span>
-                        </label>
-                        <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
-                          <input type="checkbox" checked={consentChecked} readOnly />
-                          <span>{consentData.informedConsent.voluntaryCheckboxLabel}</span>
-                        </label>
+                    ))}
+                    <div className="participant-consent-block">
+                      <h3>{consentData.informedConsent.participantConsentHeading}</h3>
+                      <p>{consentData.informedConsent.declaration}</p>
+                      <div className={`consent-checkbox consent-confirmation ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
+                        <input type="checkbox" checked={consentChecked} readOnly />
+                        <label>{consentData.informedConsent.ageCheckboxLabel}</label>
                       </div>
-                    </section>
-                  )}
-                </div>
-                <div className="demo-consent-upload-mock fade-in">
-                  <strong className="demo-consent-upload-title">Consent Upload</strong>
-                  <div className="demo-upload-buttons">
-                    <div className="demo-upload-btn filled">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                      <span>Take Photo</span>
+                      <div className={`consent-checkbox consent-confirmation ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
+                        <input type="checkbox" checked={consentChecked} readOnly />
+                        <label>{consentData.informedConsent.voluntaryCheckboxLabel}</label>
+                      </div>
                     </div>
-                    <div className="demo-upload-btn outlined">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                      <span>Upload Image</span>
-                    </div>
+                  </section>
+                )}
+                <div className="consent-upload">
+                  <strong className="consent-upload-title">Consent Upload</strong>
+                  <div className="upload-options">
+                    <button type="button" className="action-button camera-btn"><Camera size={20} />Take Photo</button>
+                    <button type="button" className="action-button upload-btn"><Upload size={20} />Upload Image</button>
                   </div>
                 </div>
-
-                <div className="demo-consent-bottom">
-                  {!consentData.informedConsent && (
-                    <label className={`mock-check-lbl ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
-                      <input type="checkbox" checked={consentChecked} readOnly /><span>{consentData.checkboxLabel}</span>
-                    </label>
-                  )}
-                  <button className={`btn-premium ${demoPhase === 'button-blinking' ? 'pulse-teal' : ''}`} disabled={!consentChecked}>{consentData.buttonText}</button>
-                </div>
+                {!consentData.informedConsent && (
+                  <div className={`consent-checkbox ${demoPhase === 'checkbox-blinking' ? 'pulse-teal' : ''}`}>
+                    <input type="checkbox" checked={consentChecked} readOnly />
+                    <label>{consentData.checkboxLabel}</label>
+                  </div>
+                )}
+                <button type="button" className={demoPhase === 'button-blinking' ? 'pulse-teal' : ''} disabled={!consentChecked}>
+                  {consentData.buttonText}
+                </button>
               </div>
             )}
 
