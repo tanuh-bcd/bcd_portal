@@ -10,7 +10,7 @@ from sqlalchemy import bindparam, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from ..core.config import settings
-from ..core.email import send_template_email, resolve_portal_login_url
+from ..core.email import send_email, send_template_email, resolve_portal_login_url
 from .reminder_dashboard import hospital_document
 from ..models.models import (
     DoctorAssessment,
