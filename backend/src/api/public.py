@@ -2,13 +2,17 @@ import math
 import json
 import uuid
 import datetime
+import hashlib
+import threading
+import time
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..db.session import get_questionnaire_db, get_db
 from ..core.config import settings
-from ..models.models import ModelWeightsVersionControl, ModelWeights, RiskThresholdsVersionControl, RiskThresholds, Question, QuestionnaireVersion
+from .auth import get_current_user
+from ..models.models import ModelWeightsVersionControl, ModelWeights, RiskThresholdsVersionControl, RiskThresholds, Question, QuestionnaireVersion, Hospital
 from google.cloud import storage
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
@@ -219,6 +223,94 @@ class SubmitPayload(BaseModel):
     formDataEn: Dict[str, Any]
 
 
+def _subject_and_institute(form_data, version):
+    if version == 2:
+        return str(form_data.get("V2_Q01") or "").strip(), str(form_data.get("V2_Q02") or "").strip()
+    return str(form_data.get("Q44") or "").strip(), str(form_data.get("Q45") or "").strip()
+
+
+def _subject_exists(db, subject_id, institute, session_id):
+    return db.execute(text("""
+        SELECT 1 FROM session_data_table subject
+        JOIN session_data_table institution ON institution.session_id = subject.session_id
+        WHERE subject.session_id <> :sid
+          AND (subject.question_key IN ('V2_Q01', 'Q44')
+               OR subject.question IN ('Enter your Patient ID(if any, else leave):',
+                   'Enter your subject ID:', 'Enter Subject ID (if any, else leave)', 'Q44'))
+          AND (institution.question_key IN ('V2_Q02', 'Q45')
+               OR institution.question IN ('Institute Name', 'Institute Name:',
+                   'Enter the Hospital ID(If any, else leave):',
+                   'Enter the Institution Name (if any, else leave)',
+                   'Enter the Institution Name (If any, else leave)', 'Q45'))
+          AND LOWER(TRIM(subject.answer)) = LOWER(:subject_id)
+          AND LOWER(TRIM(institution.answer)) = LOWER(:institute)
+        LIMIT 1 FOR UPDATE
+    """), {"sid": session_id, "subject_id": subject_id, "institute": institute}).first() is not None
+
+
+@router.get("/subject-id/availability")
+def subject_id_availability(
+    subject_id: str,
+    db: Session = Depends(get_questionnaire_db),
+    app_db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    subject_id = subject_id.strip()
+    if not subject_id or len(subject_id) > 255:
+        raise HTTPException(status_code=400, detail="Enter a valid Subject ID.")
+    hospital_id = current_user.get("hospital_id")
+    hospital = app_db.query(Hospital).filter(Hospital.id == hospital_id).first()
+    if not hospital:
+        raise HTTPException(status_code=403, detail="Hospital not found for this user.")
+    return {"exists": _subject_exists(db, subject_id, hospital.name, "")}
+
+
+class PublicSubjectAvailabilityPayload(BaseModel):
+    sessionId: str
+    subjectId: str
+    institution: str
+
+
+_public_checks = {}
+_public_checks_lock = threading.Lock()
+
+
+@router.post("/subject-id/availability/public")
+def public_subject_id_availability(
+    payload: PublicSubjectAvailabilityPayload,
+    db: Session = Depends(get_questionnaire_db),
+    app_db: Session = Depends(get_db),
+):
+    subject_id = payload.subjectId.strip()
+    institution = payload.institution.strip()
+    if not subject_id or not institution or len(subject_id) > 255 or len(institution) > 255:
+        raise HTTPException(status_code=400, detail="Enter a valid Subject ID and institution.")
+    session = db.execute(text(
+        "SELECT session_end_time FROM session_table WHERE session_id = :sid "
+        "AND session_start_time > :cutoff"
+    ), {"sid": payload.sessionId,
+        "cutoff": datetime.datetime.utcnow() - datetime.timedelta(hours=24)}).first()
+    if not session or session[0] is not None:
+        raise HTTPException(status_code=404, detail="Active questionnaire session not found.")
+    hospital = app_db.query(Hospital).filter(Hospital.name == institution).first()
+    if not hospital:
+        raise HTTPException(status_code=400, detail="Select a valid institution.")
+    now = time.monotonic()
+    with _public_checks_lock:
+        # Limit a session to ten distinct IDs; avoid an unrestricted public lookup.
+        if len(_public_checks) > 10000:
+            _public_checks.clear()
+        expires, checked_ids = _public_checks.get(payload.sessionId, (0, set()))
+        if expires < now:
+            checked_ids = set()
+        identity = (hospital.id, subject_id.casefold())
+        if identity not in checked_ids and len(checked_ids) >= 10:
+            raise HTTPException(status_code=429, detail="Too many Subject ID checks for this questionnaire.")
+        checked_ids.add(identity)
+        _public_checks[payload.sessionId] = (now + 3600, checked_ids)
+    return {"exists": _subject_exists(db, subject_id, hospital.name, payload.sessionId)}
+
+
 @router.post("/submit")
 def submit_questionnaire(
     payload: SubmitPayload,
@@ -240,6 +332,20 @@ def submit_questionnaire(
 
     try:
         questionnaire_version = int(session_row[1] or 1)
+        subject_id, institute = _subject_and_institute(form_data_en, questionnaire_version)
+        lock_name = None
+        lock_connection = None
+        if subject_id and not institute:
+            raise HTTPException(status_code=400, detail="Please select an institution for this Subject ID.")
+        if subject_id and institute:
+            lock_name = "subject:" + hashlib.sha256(
+                f"{institute.casefold()}\0{subject_id.casefold()}".encode()
+            ).hexdigest()[:48]
+            lock_connection = db.get_bind().connect()
+            if lock_connection.execute(text("SELECT GET_LOCK(:name, 10)"), {"name": lock_name}).scalar() != 1:
+                raise HTTPException(status_code=503, detail="Could not check Subject ID. Please try again.")
+            if _subject_exists(db, subject_id, institute, session_id):
+                raise HTTPException(status_code=409, detail="Subject ID already exists for this institution. Please create a new Subject ID.")
         risk_percentage = None
         risk_cat = None
         weights = _get_active_weights(app_db)
@@ -291,6 +397,7 @@ def submit_questionnaire(
         }
 
     except HTTPException:
+        db.rollback()
         raise
     except Exception as e:
         db.rollback()
@@ -299,3 +406,10 @@ def submit_questionnaire(
             status_code=500,
             detail="Could not save your responses. Please try submitting again.",
         )
+    finally:
+        if 'lock_connection' in locals() and lock_connection is not None:
+            try:
+                if lock_name:
+                    lock_connection.execute(text("SELECT RELEASE_LOCK(:name)"), {"name": lock_name})
+            finally:
+                lock_connection.close()

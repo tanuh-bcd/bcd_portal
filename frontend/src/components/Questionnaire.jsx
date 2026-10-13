@@ -27,6 +27,7 @@ const conditionMatches = (condition, currentValue) => {
 
 // NEW: Accept formStructure and questionnaireData as props
 function Questionnaire({
+  sessionId,
   onSubmit,
   isSubmitting,
   formStructure,
@@ -51,6 +52,52 @@ function Questionnaire({
   const [q27VideoConfirmed, setQ27VideoConfirmed] = useState(false);
   const [randomPatientId, setRandomPatientId] = useState('');
   const [hospitals, setHospitals] = useState([]);
+  const [subjectCheck, setSubjectCheck] = useState(null);
+  const subjectKey = formDataEn.V2_Q01 !== undefined ? 'V2_Q01' : 'Q44';
+  const subjectId = String(formDataEn[subjectKey] || '').trim();
+  const institution = String(formDataEn.V2_Q02 || formDataEn.Q45 || lockedHospitalName || '').trim();
+  const duplicateSubject = Boolean(
+    subjectCheck?.exists && subjectCheck.subjectId === subjectId
+    && subjectCheck.institution === institution
+  );
+
+  useEffect(() => {
+    if (!subjectId || !institution || !sessionId) {
+      setSubjectCheck(null);
+      return;
+    }
+    const controller = new AbortController();
+    setSubjectCheck(null);
+    const timer = setTimeout(async () => {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || '';
+        const token = localStorage.getItem('token');
+        const useStaffCheck = Boolean(lockedHospitalName && token);
+        const response = await fetch(
+          useStaffCheck
+            ? `${apiUrl}/api/subject-id/availability?subject_id=${encodeURIComponent(subjectId)}`
+            : `${apiUrl}/api/subject-id/availability/public`,
+          useStaffCheck
+            ? { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+            : {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, subjectId, institution }),
+                signal: controller.signal,
+              }
+        );
+        if (!response.ok) return;
+        const result = await response.json();
+        setSubjectCheck({ subjectId, institution, exists: Boolean(result.exists) });
+      } catch (error) {
+        if (error.name !== 'AbortError') setSubjectCheck(null);
+      }
+    }, 600);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [subjectId, institution, lockedHospitalName, sessionId]);
   
   // Helper to get the translated value for a condition
   const getTranslatedConditionValue = useCallback((condition) => {
@@ -379,6 +426,11 @@ function Questionnaire({
     e.preventDefault();
     setValidationErrors([]);
 
+    if (duplicateSubject) {
+      document.querySelector(`[name="${subjectKey}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     const dataToSubmit = { ...formData };
     const dataToSubmitEn = { ...formDataEn };
 
@@ -623,6 +675,11 @@ function Questionnaire({
                     hospitals={hospitals}
                     lockedHospitalName={lockedHospitalName}
                   />
+                  {name === subjectKey && duplicateSubject && (
+                    <p role="alert" style={{ color: '#b42318', fontWeight: 600, marginTop: '0.4rem' }}>
+                      Subject ID already exists for this hospital. Please enter a new Subject ID.
+                    </p>
+                  )}
                   {hasValidChildren && (
                     <div className="sub-question-container visible">
                       {children}
