@@ -218,6 +218,7 @@ const PublicQuestionnairePage = ({ lockedHospitalName = '' }) => {
       {step === 'consent' && <Consent onAccept={handleConsentAccept} />}
       {step === 'questionnaire' && (
         <Questionnaire
+          sessionId={sessionId}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           formStructure={formStructure}
