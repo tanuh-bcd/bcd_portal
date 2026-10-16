@@ -1,20 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './IndiaMap.css';
 
-// A merged pilot-study institute's name ends with "(Pilot Study - X)" --
-// render that suffix a little bolder so the merge is visually clear.
-function renderInstituteName(name) {
-  const match = /^(.*?)(\s*\(Pilot Study[^)]*\))\s*$/.exec(name || '');
-  if (!match) return name;
-  const [, base, suffix] = match;
-  return (
-    <>
-      {base}
-      <span style={{ fontWeight: 700 }}>{suffix}</span>
-    </>
-  );
-}
-
 function projectCoordinate(projection, lng, lat) {
   if (!projection) return null;
   return [
@@ -268,7 +254,7 @@ const IndiaMap = () => {
             <ul>
               {tooltip.hospitals.map((h, i) => (
                 <li key={i}>
-                  <strong>{renderInstituteName(h.name)}</strong>
+                  <strong>{h.name}</strong>
                   <span className="map-tip-subjects">{h.subjects || 0} records</span>
                 </li>
               ))}
@@ -311,7 +297,7 @@ const IndiaMap = () => {
                 {selectedStateHospitals.map((h, i) => (
                   <li key={h.id ?? i} className="info-panel-hospital-item">
                     <span className="hospital-item-name">
-                      {renderInstituteName(h.name)}{h.city ? `, ${h.city}` : ''}
+                      {h.name}{h.city ? `, ${h.city}` : ''}
                     </span>
                   </li>
                 ))}
