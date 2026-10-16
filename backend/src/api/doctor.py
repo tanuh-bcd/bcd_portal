@@ -7,6 +7,7 @@ from ..db.session import get_db, get_questionnaire_db, get_pilot_deployment_db
 from ..models.models import DoctorAssessment, Attachment, Hospital
 from ..schemas.schemas import PatientSessionListItem, PatientSessionDetail
 from ..core.pilot_study import is_pilot_study_hospital
+from ..mammogram_service import get_pilot_deployment_submission_counts
 from .auth import get_current_user
 from typing import Dict, List
 
@@ -133,6 +134,7 @@ def _get_pilot_deployment_sessions(pilot_db: Session, institute_names: list) -> 
 def get_hospital_summary(
     q_db: Session = Depends(get_questionnaire_db),
     app_db: Session = Depends(get_db),
+    pilot_db: Session = Depends(get_pilot_deployment_db),
     current_user: dict = Depends(get_current_user)
 ):
     is_super_viewer = current_user.get("is_super_viewer", False) or \
@@ -184,14 +186,21 @@ def get_hospital_summary(
             if hname:
                 assessment_counts[hname] = assessment_counts.get(hname, 0) + 1
 
+    # The pilot_deployment app has no separate clinical-assessment phase --
+    # a completed submission there IS its "assessment". Fold its counts into
+    # both subject_count and assessment_count for pilot-study hospitals so
+    # they don't show a misleading "subjects submitted, 0 assessments" badge.
+    pilot_submission_counts = get_pilot_deployment_submission_counts(pilot_db)
+
     result = []
     for h in hospitals:
+        pilot_count = pilot_submission_counts.get(h.name, 0) if is_pilot_study_hospital(h.name) else 0
         result.append({
             "hospital_name": h.name,
             "short_name": h.short_name,
             "state": h.state,
-            "subject_count": subject_counts.get(h.name, 0),
-            "assessment_count": assessment_counts.get(h.name, 0),
+            "subject_count": subject_counts.get(h.name, 0) + pilot_count,
+            "assessment_count": assessment_counts.get(h.name, 0) + pilot_count,
         })
 
     return result

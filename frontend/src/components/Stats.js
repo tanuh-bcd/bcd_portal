@@ -37,7 +37,6 @@ const CustomTooltip = ({ active, payload, label }) => {
       riskOrder.indexOf(a.name) - riskOrder.indexOf(b.name)
     );
     const total = payload.reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
-    const row = payload[0]?.payload || {};
     return (
       <div className="custom-tooltip">
         <p className="tooltip-title">{label}</p>
@@ -51,22 +50,6 @@ const CustomTooltip = ({ active, payload, label }) => {
           ))}
         </div>
         <div className="tooltip-total"><span>Total Collected:</span><span>{total}</span></div>
-        {row.is_pilot_study && (
-          <>
-            <div className="tooltip-item">
-              <span className="name">Pilot Study Submitted:</span>
-              <span className="value">{row.pilot_study_submitted}</span>
-            </div>
-            <div className="tooltip-item">
-              <span className="name">Total Assessments Submitted:</span>
-              <span className="value">{row.assessment_count}</span>
-            </div>
-            <div className="tooltip-item">
-              <span className="name">Total Data Collections:</span>
-              <span className="value">{row.total_data_collections}</span>
-            </div>
-          </>
-        )}
       </div>
     );
   }
