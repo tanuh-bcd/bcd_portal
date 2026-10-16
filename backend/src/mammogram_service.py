@@ -32,6 +32,18 @@ INSTITUTE_QUESTIONS = (
 VALID_BIRADS = {'0', '1', '2', '3', '4', '5'}
 
 
+def excluded_hospital_names(db: Session) -> list:
+    """Hospitals kept out of every dashboard figure: the fixed test/internal
+    entries plus every pilot-study institute (pilot submissions are not part
+    of the BCD portal totals)."""
+    pilot_names = [name for (name,) in db.query(Hospital.name).all() if is_pilot_study_hospital(name)]
+    return list(EXCLUDED_HOSPITAL_NAMES) + pilot_names
+
+
+def _pilot_hospital_ids(db: Session) -> list:
+    return [hid for hid, name in db.query(Hospital.id, Hospital.name).all() if is_pilot_study_hospital(name)]
+
+
 def _get_institute_filter():
     return """
     JOIN (
@@ -45,9 +57,13 @@ def _get_institute_filter():
 
 def get_view_type_counts(db: Session) -> dict:
     view_counts = {}
+    pilot_ids = _pilot_hospital_ids(db)
     for view_type in MAMMOGRAM_VIEW_TYPES:
-        count = db.query(func.count(Attachment.id)).filter(
-            Attachment.file_type == view_type
+        count = db.query(func.count(Attachment.id)).join(
+            DoctorAssessment, Attachment.assessment_id == DoctorAssessment.id
+        ).filter(
+            Attachment.file_type == view_type,
+            DoctorAssessment.hospital_id.notin_(pilot_ids)
         ).scalar() or 0
         view_name = view_type.replace('mammo_', '').upper()
         view_counts[view_name] = count
@@ -57,7 +73,7 @@ def get_view_type_counts(db: Session) -> dict:
 
 def get_total_subjects_count(db: Session, questionnaire_db: Session) -> int:
     hospital_rows = db.query(Hospital.name).filter(
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).all()
     valid_hospitals = [h.name for h in hospital_rows]
     if not valid_hospitals:
@@ -86,7 +102,7 @@ def get_report_uploaded_count(db: Session) -> int:
         Hospital, DoctorAssessment.hospital_id == Hospital.id
     ).filter(
         Attachment.file_type.in_(REPORT_FILE_TYPES),
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).scalar() or 0
 
 
@@ -113,7 +129,8 @@ def _mammo_view_count_subquery(db: Session):
 def get_complete_sets_count(db: Session) -> int:
     subq = _mammo_view_count_subquery(db)
     complete = db.query(func.count(DoctorAssessment.id)).filter(
-        subq == len(MAMMOGRAM_VIEW_TYPES)
+        subq == len(MAMMOGRAM_VIEW_TYPES),
+        DoctorAssessment.hospital_id.notin_(_pilot_hospital_ids(db))
     ).scalar() or 0
 
     return complete
@@ -122,7 +139,8 @@ def get_complete_sets_count(db: Session) -> int:
 def get_partial_sets_count(db: Session) -> int:
     subq = _mammo_view_count_subquery(db)
     partial = db.query(func.count(DoctorAssessment.id)).filter(
-        subq.between(1, len(MAMMOGRAM_VIEW_TYPES) - 1)
+        subq.between(1, len(MAMMOGRAM_VIEW_TYPES) - 1),
+        DoctorAssessment.hospital_id.notin_(_pilot_hospital_ids(db))
     ).scalar() or 0
 
     return partial
@@ -148,7 +166,7 @@ def get_reports_by_hospital(db: Session) -> list:
         Hospital.short_name,
         report_count_subq.label('report_count'),
     ).filter(
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).order_by(
         report_count_subq.desc()
     ).all()
@@ -183,96 +201,10 @@ def get_pilot_deployment_submission_counts(pilot_db: Session) -> dict:
         return {}
 
 
-def get_pilot_deployment_risk_counts(pilot_db: Session) -> dict:
-    """Per-institute completed-result counts from the pilot_deployment
-    schema's own binary risk model. Used to synthesize an Institute
-    Distribution bar for institutes with no bcd_questionnaire session data of
-    their own; LOW_RISK -> the 'no_risk' (Baseline) bucket and HIGH_RISK ->
-    'high' (no equivalent of the 'low'/'moderate' intermediate categories).
-    Only completed results count -- matches get_pilot_deployment_submission_counts."""
-    try:
-        rows = pilot_db.execute(text("""
-            SELECT pd.institute AS institute,
-                SUM(CASE WHEN pr.risk_class = 'LOW_RISK' THEN 1 ELSE 0 END) AS low_risk,
-                SUM(CASE WHEN pr.risk_class = 'HIGH_RISK' THEN 1 ELSE 0 END) AS high_risk
-            FROM patient_details pd
-            JOIN pilot_result pr ON pr.session_id = pd.session_id
-            GROUP BY pd.institute
-        """)).fetchall()
-        return {
-            r[0]: {'low_risk': int(r[1] or 0), 'high_risk': int(r[2] or 0)}
-            for r in rows if r[0]
-        }
-    except Exception as e:
-        logger.warning(f"Could not compute pilot_deployment risk counts: {e}")
-        return {}
-
-
-_PILOT_DUMMY_INSTITUTE_FILTER = (
-    "LOWER(pd.institute) NOT LIKE '%test%' AND LOWER(pd.institute) NOT LIKE '%tanuh%'"
-)
-
-
-def get_pilot_deployment_age_bins(pilot_db: Session) -> dict:
-    """Age-bucketed LOW_RISK/HIGH_RISK completed-result counts across every
-    (non-dummy) institute in the pilot_deployment schema, for folding into
-    the aggregate Age Distribution chart alongside bcd_questionnaire data."""
-    try:
-        rows = pilot_db.execute(text(f"""
-            SELECT
-                CASE
-                    WHEN pd.age BETWEEN 18 AND 29 THEN '18-29'
-                    WHEN pd.age BETWEEN 30 AND 39 THEN '30-39'
-                    WHEN pd.age BETWEEN 40 AND 49 THEN '40-49'
-                    WHEN pd.age BETWEEN 50 AND 59 THEN '50-59'
-                    WHEN pd.age BETWEEN 60 AND 69 THEN '60-69'
-                    ELSE '70+'
-                END AS age_group,
-                SUM(CASE WHEN pr.risk_class = 'LOW_RISK' THEN 1 ELSE 0 END) AS no_risk,
-                SUM(CASE WHEN pr.risk_class = 'HIGH_RISK' THEN 1 ELSE 0 END) AS high
-            FROM patient_details pd
-            JOIN pilot_result pr ON pr.session_id = pd.session_id
-            WHERE {_PILOT_DUMMY_INSTITUTE_FILTER}
-            GROUP BY age_group
-        """)).fetchall()
-        return {r[0]: {'no_risk': int(r[1] or 0), 'high': int(r[2] or 0)} for r in rows}
-    except Exception as e:
-        logger.warning(f"Could not compute pilot_deployment age bins: {e}")
-        return {}
-
-
-def get_pilot_deployment_month_bins(pilot_db: Session) -> dict:
-    """Month-bucketed LOW_RISK/HIGH_RISK completed-result counts across every
-    (non-dummy) institute in the pilot_deployment schema, for folding into
-    the aggregate Month-wise Distribution chart. Keyed by the same 'sort_key'
-    (YYYY-MM) format used by the bcd_questionnaire month query."""
-    try:
-        rows = pilot_db.execute(text(f"""
-            SELECT
-                DATE_FORMAT(pd.created_at, '%b %Y') AS month_year,
-                DATE_FORMAT(pd.created_at, '%Y-%m') AS sort_key,
-                SUM(CASE WHEN pr.risk_class = 'LOW_RISK' THEN 1 ELSE 0 END) AS no_risk,
-                SUM(CASE WHEN pr.risk_class = 'HIGH_RISK' THEN 1 ELSE 0 END) AS high
-            FROM patient_details pd
-            JOIN pilot_result pr ON pr.session_id = pd.session_id
-            WHERE {_PILOT_DUMMY_INSTITUTE_FILTER}
-            GROUP BY month_year, sort_key
-        """)).fetchall()
-        return {
-            r[1]: {'name': r[0], 'no_risk': int(r[2] or 0), 'high': int(r[3] or 0)}
-            for r in rows
-        }
-    except Exception as e:
-        logger.warning(f"Could not compute pilot_deployment month bins: {e}")
-        return {}
-
-
-def get_mammogram_by_hospital(db: Session, questionnaire_db: Session, pilot_db: Session = None) -> list:
-    pilot_submission_counts = get_pilot_deployment_submission_counts(pilot_db) if pilot_db is not None else {}
-
+def get_mammogram_by_hospital(db: Session, questionnaire_db: Session) -> list:
     # --- subject counts from questionnaire_db, keyed by hospital name ---
     hospital_rows = db.query(Hospital.name).filter(
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).all()
     valid_hospitals = [h.name for h in hospital_rows]
 
@@ -345,7 +277,7 @@ def get_mammogram_by_hospital(db: Session, questionnaire_db: Session, pilot_db: 
         mammo_report_count_subq.label('mammo_report_count'),
         both_dicom_and_report_subq.label('both_dicom_and_report_count'),
     ).filter(
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).outerjoin(
         Machine, Machine.hospital_id == Hospital.id
     ).order_by(
@@ -354,15 +286,14 @@ def get_mammogram_by_hospital(db: Session, questionnaire_db: Session, pilot_db: 
 
     hospital_data = []
     for row in results:
-        base_short_name = row.short_name or row.name
-        is_pilot = is_pilot_study_hospital(row.name)
+        short_name = row.short_name or row.name
         subject_count = subject_counts_by_name.get(row.name, 0)
         assessment_count = row.assessment_count or 0
         dicom_count = row.dicom_count or 0
         report_count = row.report_count or 0
         hospital_data.append({
             'hospital_name': row.name,
-            'short_name': f'PS-{base_short_name}' if is_pilot else base_short_name,
+            'short_name': short_name,
             'state': row.state,
             'type': row.type,
             'machines': [{
@@ -376,34 +307,12 @@ def get_mammogram_by_hospital(db: Session, questionnaire_db: Session, pilot_db: 
             'dicom_count': dicom_count,
             'report_count': report_count,
             'both_dicom_and_report_count': row.both_dicom_and_report_count or 0,
-            'is_pilot_study': is_pilot,
-            'pilot_deployment_submitted': pilot_submission_counts.get(row.name, 0),
             'total_data_collections': subject_count + assessment_count + dicom_count + report_count,
-            '_base_key': base_short_name.strip().lower(),
         })
 
-    # Keep each pilot-study institute's bar immediately next to its real
-    # counterpart (same base short_name) instead of wherever the sort-by-
-    # assessment-count order happens to place it.
-    pilot_by_base = {}
-    for entry in hospital_data:
-        if entry['is_pilot_study']:
-            pilot_by_base.setdefault(entry['_base_key'], []).append(entry)
+    return hospital_data
 
-    ordered = []
-    for entry in hospital_data:
-        if entry['is_pilot_study']:
-            continue
-        ordered.append(entry)
-        for pilot_entry in pilot_by_base.pop(entry['_base_key'], []):
-            ordered.append(pilot_entry)
-    for leftovers in pilot_by_base.values():
-        ordered.extend(leftovers)
 
-    for entry in ordered:
-        entry.pop('_base_key', None)
-
-    return ordered
 def get_hospital_type_breakdown(db: Session) -> list:
     rows = db.query(
         Hospital.id,
@@ -412,7 +321,7 @@ def get_hospital_type_breakdown(db: Session) -> list:
         Hospital.state,
         Hospital.type,
     ).filter(
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).all()
 
     groups = {'cr': [], 'dr': [], 'unassigned': []}
@@ -445,7 +354,7 @@ def get_total_assessments_count(db: Session) -> int:
     return db.query(func.count(DoctorAssessment.id)).join(
         Hospital, DoctorAssessment.hospital_id == Hospital.id
     ).filter(
-        ~Hospital.name.in_(list(EXCLUDED_HOSPITAL_NAMES))
+        ~Hospital.name.in_(excluded_hospital_names(db))
     ).scalar() or 0
 
 
@@ -474,6 +383,8 @@ def get_birads_by_institute_and_side(db: Session) -> dict:
             partition_by=DoctorAssessment.patient_session_id,
             order_by=DoctorAssessment.created_at.desc()
         ).label('rn')
+    ).filter(
+        DoctorAssessment.hospital_id.notin_(_pilot_hospital_ids(db))
     ).subquery()
 
     image_count_subq = db.query(func.count(Attachment.id)).filter(
@@ -526,7 +437,6 @@ def get_portal_mammogram_dashboard(
     db: Session,
     questionnaire_db: Session,
     retrospective_case_count: int = 0,
-    pilot_db: Session = None,
 ) -> dict:
     total_assessments = get_total_assessments_count(db)
     complete_sets = get_complete_sets_count(db)
@@ -536,7 +446,7 @@ def get_portal_mammogram_dashboard(
     report_missing = max(total_assessments - report_uploaded, 0)
     view_counts = get_view_type_counts(db)
     totals = get_total_mammogram_stats(db, questionnaire_db, report_uploaded_count=report_uploaded)
-    by_hospital = get_mammogram_by_hospital(db, questionnaire_db, pilot_db)
+    by_hospital = get_mammogram_by_hospital(db, questionnaire_db)
     hospital_type_breakdown = get_hospital_type_breakdown(db)
     reports_by_hospital = get_reports_by_hospital(db)
     birads_stats = get_birads_by_institute_and_side(db)
