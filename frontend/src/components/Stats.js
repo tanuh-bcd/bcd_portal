@@ -8,27 +8,9 @@ import './Stats.css';
 import RiskTable from './RiskTable';
 import IndiaMap from './IndiaMap';
 import MammogramStats, { BiradsDensitySection, CrDrModalitySection, RiskPredictionSection } from './mammogramStats';
+import { cachedFetch } from '../utils/cachedFetch';
 
-const AnimatedCounter = ({ value, duration = 800 }) => {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const end = parseInt(value) || 0;
-    if (end === 0) { setCount(0); return; }
-    const tickMs = 16;
-    const steps = Math.max(Math.round(duration / tickMs), 1);
-    const increment = Math.max(Math.ceil(end / steps), 1);
-    let current = 0;
-    const timer = setInterval(() => {
-      current = Math.min(current + increment, end);
-      setCount(current);
-      if (current >= end) clearInterval(timer);
-    }, tickMs);
-    return () => clearInterval(timer);
-  }, [value, duration]);
-
-  return <span>{count.toLocaleString('en-IN')}</span>;
-};
+const formatCount = (value) => (parseInt(value) || 0).toLocaleString('en-IN');
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -90,7 +72,7 @@ const Stats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/stats/`);
+        const response = await cachedFetch(`${API_URL}/api/v1/stats/`);
         if (!response.ok) throw new Error('Failed to load stats');
         const json = await response.json();
         setData(json);
@@ -108,7 +90,7 @@ const Stats = () => {
     // the rest of the dashboard, so it just stays at 0.
     const fetchPortalStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        const response = await cachedFetch(`${API_URL}/api/v1/mammogram/portal-stats`);
         if (response.ok) {
           const json = await response.json();
           setRetrospectiveCaseCount(json.retrospectiveCaseCount ?? 0);
@@ -153,28 +135,26 @@ const Stats = () => {
         <div className="summary-card">
           <div className="card-header-with-icon"><Database className="summary-icon" size={24} /><h3 className="title-compact">Total Data Collections</h3></div>
           <div className="big-number">
-            <AnimatedCounter
-              value={
-                (data.totalSubjects || 0) +
-                assessmentUploadCounts.totalAssessments +
-                assessmentUploadCounts.dicomUploaded +
-                assessmentUploadCounts.reportUploaded +
-                retrospectiveCaseCount
-              }
-            />
+            {formatCount(
+              (data.totalSubjects || 0) +
+              assessmentUploadCounts.totalAssessments +
+              assessmentUploadCounts.dicomUploaded +
+              assessmentUploadCounts.reportUploaded +
+              retrospectiveCaseCount
+            )}
           </div>
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><Layers className="summary-icon" size={24} /><h3>Total Participants</h3></div>
-          <div className="big-number"><AnimatedCounter value={(data.totalSubjects || 0) + retrospectiveCaseCount} /></div>
+          <div className="big-number">{formatCount((data.totalSubjects || 0) + retrospectiveCaseCount)}</div>
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><UsersIcon className="summary-icon" size={24} /><h3>Prospective</h3></div>
-          <div className="big-number"><AnimatedCounter value={data.totalSubjects} /></div>
+          <div className="big-number">{formatCount(data.totalSubjects)}</div>
         </div>
         <div className="summary-card">
           <div className="card-header-with-icon"><Archive className="summary-icon" size={24} /><h3>Reterospective</h3></div>
-          <div className="big-number"><AnimatedCounter value={retrospectiveCaseCount} /></div>
+          <div className="big-number">{formatCount(retrospectiveCaseCount)}</div>
         </div>
       </div>
 
