@@ -1,13 +1,22 @@
 import logging
+import re
 import urllib.request
 import json
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import text
+from sqlalchemy.orm import Session
+from sqlalchemy import case, func, or_, text
+from ..core.cache import cached
 from ..db.session import get_questionnaire_db, get_db
-from ..models.models import Hospital, DoctorAssessment
-from ..mammogram_service import get_mammogram_by_hospital, excluded_hospital_names
+from ..models.models import Hospital, DoctorAssessment, Attachment
+from ..mammogram_service import (
+    INSTITUTE_QUESTIONS,
+    MAMMOGRAM_VIEW_TYPES,
+    REPORT_FILE_TYPES,
+    excluded_hospital_names,
+    get_mammogram_by_hospital,
+    get_scored_sessions,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -46,41 +55,36 @@ def _geocode_pincode(pincode, state=""):
         logger.warning("Geocode failed for pincode %s: %s", pincode, e)
     return None
 
-INSTITUTE_QUESTIONS = (
-    'Institute Name',
-    'Institute Name:',
-    'Enter the Hospital ID(If any, else leave):',
-    'Enter the Institution Name (if any, else leave)',
-    'Enter the Institution Name (If any, else leave)',
-    'Q45',
-)
 AGE_QUESTIONS = ('What is your current age? (Please enter a number - years)', 'Q1')
+AGE_BANDS = [
+    (18, 29, '18-29'), (30, 39, '30-39'), (40, 49, '40-49'),
+    (50, 59, '50-59'), (60, 69, '60-69'), (0, float("inf"), '70+'),
+]
+RISK_NAMES = ("Baseline Risk", "Evident Risk", "Significant Risk", "High Risk")
+MONTH_ABBR = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+QUALIFYING_DICOM_TYPES = MAMMOGRAM_VIEW_TYPES
 
 
-def _get_institute_filter(valid_names):
-    return f"""
-    JOIN (
-        SELECT session_id, MAX(answer) as answer
-        FROM session_data_table
-        WHERE question IN :inst_questions
-          AND answer IN :valid_names
-        GROUP BY session_id
-    ) sd_inst ON s.session_id = sd_inst.session_id
-    """
+def _age_group(answer) -> str:
+    """Age band of a questionnaire answer, reading it the way MySQL's
+    CAST(... AS UNSIGNED) does: leading digits, anything else counts as 0."""
+    match = re.match(r"\s*([+-]?\d+)", answer or "")
+    age = int(match.group(1)) if match else 0
+    if age < 0:
+        age = float("inf")  # MySQL turns a negative into a huge unsigned number
+    for low, high, label in AGE_BANDS:
+        if low <= age <= high:
+            return label
+    return AGE_BANDS[-1][2]
 
-QUALIFYING_DICOM_TYPES = ('mammo_cc_left', 'mammo_cc_right', 'mammo_mlo_left', 'mammo_mlo_right')
 
-def _has_qualifying_images(assessment):
-    att_types = {att.file_type for att in assessment.attachments}
-    all_4_dicom = all(t in att_types for t in QUALIFYING_DICOM_TYPES)
-    return all_4_dicom or 'mammo_reading' in att_types or 'us_reading' in att_types
-
-RISK_CASE = """
-    SUM(CASE WHEN s.snehita_lifetime_risk < 0.4004 THEN 1 ELSE 0 END) as no_risk,
-    SUM(CASE WHEN s.snehita_lifetime_risk >= 0.4004 AND s.snehita_lifetime_risk < 0.574 THEN 1 ELSE 0 END) as low_risk,
-    SUM(CASE WHEN s.snehita_lifetime_risk >= 0.574 AND s.snehita_lifetime_risk < 0.795 THEN 1 ELSE 0 END) as moderate_risk,
-    SUM(CASE WHEN s.snehita_lifetime_risk >= 0.795 THEN 1 ELSE 0 END) as high_risk
-"""
+def _bucket_counts(rows, key) -> dict:
+    """Count scored sessions per key(row), split by risk bucket."""
+    counts = {}
+    for row in rows:
+        entry = counts.setdefault(key(row), [0, 0, 0, 0])
+        entry[row[5]] += 1
+    return counts
 
 
 @router.get("/")
@@ -88,6 +92,10 @@ def get_stats(
     db: Session = Depends(get_questionnaire_db),
     app_db: Session = Depends(get_db),
 ):
+    return cached("stats", lambda: _compute_stats(db, app_db))
+
+
+def _compute_stats(db: Session, app_db: Session):
     hospital_rows = app_db.query(Hospital.id, Hospital.name, Hospital.short_name, Hospital.state).filter(
         ~Hospital.name.in_(excluded_hospital_names(app_db))
     ).all()
@@ -99,124 +107,89 @@ def get_stats(
                 "imageStudies": 0, "imageRecords": 0,
                 "riskBins": [], "hospitalBins": [], "ageBins": [], "monthBins": []}
 
-    inst_filter = _get_institute_filter(valid_hospitals)
-    params = {"inst_questions": INSTITUTE_QUESTIONS, "valid_names": tuple(valid_hospitals)}
+    # Every figure below comes from this one pass over the scored sessions.
+    # Session-id order keeps the hospital bars in the order they have always had
+    # (each hospital's first appearance in the session table).
+    session_rows = sorted(get_scored_sessions(db, valid_hospitals), key=lambda r: r[0])
+    total_subjects = len(session_rows)
 
-    total_res = db.execute(text(f"""
-        SELECT COUNT(DISTINCT s.session_id) as total
-        FROM session_table s {inst_filter}
-        WHERE s.snehita_lifetime_risk IS NOT NULL
-    """), params).fetchone()
-    total_subjects = total_res[0] if total_res else 0
+    risk_totals = [0, 0, 0, 0]
+    for row in session_rows:
+        risk_totals[row[5]] += 1
+    risk_bins = [{"name": name, "value": risk_totals[i]} for i, name in enumerate(RISK_NAMES)]
 
-    risk_res = db.execute(text(f"""
-        SELECT {RISK_CASE}
-        FROM session_table s {inst_filter}
-        WHERE s.snehita_lifetime_risk IS NOT NULL
-    """), params).fetchone()
-
-    risk_bins = [
-        {"name": "Baseline Risk", "value": int(risk_res[0] or 0)},
-        {"name": "Evident Risk", "value": int(risk_res[1] or 0)},
-        {"name": "Significant Risk", "value": int(risk_res[2] or 0)},
-        {"name": "High Risk", "value": int(risk_res[3] or 0)},
-    ] if risk_res else []
-
-    hosp_rows = db.execute(text(f"""
-        SELECT sd_inst.answer as institute,
-            SUM(CASE WHEN s.snehita_lifetime_risk < 0.4004 THEN 1 ELSE 0 END) as no_risk,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.4004 AND s.snehita_lifetime_risk < 0.574 THEN 1 ELSE 0 END) as low,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.574 AND s.snehita_lifetime_risk < 0.795 THEN 1 ELSE 0 END) as moderate,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.795 THEN 1 ELSE 0 END) as high
-        FROM session_table s {inst_filter}
-        WHERE s.snehita_lifetime_risk IS NOT NULL
-        GROUP BY sd_inst.answer
-    """), params).fetchall()
-
+    by_institute = _bucket_counts(session_rows, key=lambda r: r[4])
     mammo_by_hospital_name = {
-        entry["hospital_name"]: entry for entry in get_mammogram_by_hospital(app_db, db)
+        entry["hospital_name"]: entry
+        for entry in get_mammogram_by_hospital(
+            app_db, db, {institute: sum(counts) for institute, counts in by_institute.items()}
+        )
     }
 
     hospital_bins = []
-    for r in hosp_rows:
-        institute_name = r[0]
+    for institute_name, counts in by_institute.items():
         mammo_entry = mammo_by_hospital_name.get(institute_name, {})
         hospital_bins.append({
             "name": hospital_short_names.get(institute_name, institute_name or "Unknown"),
-            "no_risk": int(r[1] or 0), "low": int(r[2] or 0), "moderate": int(r[3] or 0), "high": int(r[4] or 0),
+            "no_risk": counts[0], "low": counts[1], "moderate": counts[2], "high": counts[3],
             "assessment_count": mammo_entry.get("assessment_count", 0),
             "total_data_collections": mammo_entry.get("total_data_collections", 0),
         })
 
-    age_rows = db.execute(text(f"""
-        SELECT
-            CASE
-                WHEN CAST(sd_age.answer AS UNSIGNED) BETWEEN 18 AND 29 THEN '18-29'
-                WHEN CAST(sd_age.answer AS UNSIGNED) BETWEEN 30 AND 39 THEN '30-39'
-                WHEN CAST(sd_age.answer AS UNSIGNED) BETWEEN 40 AND 49 THEN '40-49'
-                WHEN CAST(sd_age.answer AS UNSIGNED) BETWEEN 50 AND 59 THEN '50-59'
-                WHEN CAST(sd_age.answer AS UNSIGNED) BETWEEN 60 AND 69 THEN '60-69'
-                ELSE '70+'
-            END as age_group,
-            SUM(CASE WHEN s.snehita_lifetime_risk < 0.4004 THEN 1 ELSE 0 END) as no_risk,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.4004 AND s.snehita_lifetime_risk < 0.574 THEN 1 ELSE 0 END) as low,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.574 AND s.snehita_lifetime_risk < 0.795 THEN 1 ELSE 0 END) as moderate,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.795 THEN 1 ELSE 0 END) as high
-        FROM session_table s
-        JOIN session_data_table sd_age ON s.session_id = sd_age.session_id
-        {inst_filter}
-        WHERE s.snehita_lifetime_risk IS NOT NULL
-          AND sd_age.question IN :age_questions
-        GROUP BY age_group
-        ORDER BY age_group ASC
-    """), {**params, "age_questions": AGE_QUESTIONS}).fetchall()
-
-    age_labels = ['18-29', '30-39', '40-49', '50-59', '60-69', '70+']
-    age_map = {r[0]: r for r in age_rows}
+    bucket_by_session = {row[0]: row[5] for row in session_rows}
+    age_counts = {label: [0, 0, 0, 0] for _, _, label in AGE_BANDS}
+    age_answers = db.execute(text(
+        "SELECT session_id, answer FROM session_data_table WHERE question IN :age_questions"
+    ), {"age_questions": AGE_QUESTIONS}).fetchall()
+    for session_id, answer in age_answers:
+        if session_id in bucket_by_session:
+            age_counts[_age_group(answer)][bucket_by_session[session_id]] += 1
     age_bins = [
-        {"name": label, "no_risk": int(age_map[label][1] or 0) if label in age_map else 0,
-         "low": int(age_map[label][2] or 0) if label in age_map else 0,
-         "moderate": int(age_map[label][3] or 0) if label in age_map else 0,
-         "high": int(age_map[label][4] or 0) if label in age_map else 0}
-        for label in age_labels
+        {"name": label, "no_risk": c[0], "low": c[1], "moderate": c[2], "high": c[3]}
+        for label, c in age_counts.items()
     ]
 
-    month_rows = db.execute(text(f"""
-        SELECT
-            DATE_FORMAT(COALESCE(s.session_end_time, s.session_start_time), '%b %Y') as month_year,
-            DATE_FORMAT(COALESCE(s.session_end_time, s.session_start_time), '%Y-%m') as sort_key,
-            SUM(CASE WHEN s.snehita_lifetime_risk < 0.4004 THEN 1 ELSE 0 END) as no_risk,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.4004 AND s.snehita_lifetime_risk < 0.574 THEN 1 ELSE 0 END) as low,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.574 AND s.snehita_lifetime_risk < 0.795 THEN 1 ELSE 0 END) as moderate,
-            SUM(CASE WHEN s.snehita_lifetime_risk >= 0.795 THEN 1 ELSE 0 END) as high
-        FROM session_table s {inst_filter}
-        WHERE s.snehita_lifetime_risk IS NOT NULL
-        GROUP BY month_year, sort_key
-        ORDER BY sort_key ASC
-    """), params).fetchall()
-
-    month_map = {
-        r[1]: {"name": r[0], "no_risk": int(r[2] or 0), "low": int(r[3] or 0), "moderate": int(r[4] or 0), "high": int(r[5] or 0)}
-        for r in month_rows
-    }
-    month_bins = [month_map[k] for k in sorted(month_map.keys())]
+    month_names = {}
+    month_counts = {}
+    for row in session_rows:
+        moment = row[3] or row[2]
+        if moment is None:
+            continue
+        sort_key = moment.strftime("%Y-%m")
+        month_names[sort_key] = f"{MONTH_ABBR[moment.month - 1]} {moment.year}"
+        month_counts.setdefault(sort_key, [0, 0, 0, 0])[row[5]] += 1
+    month_bins = [
+        {"name": month_names[k], "no_risk": c[0], "low": c[1], "moderate": c[2], "high": c[3]}
+        for k, c in sorted(month_counts.items())
+    ]
 
     institutions_empanelled = len(hospital_rows)
     states_count = len({h.state for h in hospital_rows if h.state})
 
-    assessments = app_db.query(DoctorAssessment).filter(
+    # Per assessment: it qualifies when it has all four mammogram views or any report.
+    per_assessment = app_db.query(
+        DoctorAssessment.patient_session_id.label("session_id"),
+        func.count(func.distinct(case((Attachment.file_type.in_(QUALIFYING_DICOM_TYPES), Attachment.file_type)))).label("views"),
+        func.max(case((Attachment.file_type.in_(REPORT_FILE_TYPES), 1), else_=0)).label("has_report"),
+    ).outerjoin(
+        Attachment, Attachment.assessment_id == DoctorAssessment.id
+    ).filter(
         DoctorAssessment.hospital_id.in_(valid_hospital_ids)
-    ).options(joinedload(DoctorAssessment.attachments)).all()
-
-    image_studies = len({a.patient_session_id for a in assessments})
-    image_records = len({a.patient_session_id for a in assessments if _has_qualifying_images(a)})
+    ).group_by(DoctorAssessment.id, DoctorAssessment.patient_session_id).subquery()
+    image_studies, image_records = app_db.query(
+        func.count(func.distinct(per_assessment.c.session_id)),
+        func.count(func.distinct(case(
+            (or_(per_assessment.c.views == len(QUALIFYING_DICOM_TYPES), per_assessment.c.has_report == 1),
+             per_assessment.c.session_id)
+        ))),
+    ).one()
 
     return {
         "totalSubjects": total_subjects,
         "institutionsEmpanelled": institutions_empanelled,
         "statesCount": states_count,
-        "imageStudies": image_studies,
-        "imageRecords": image_records,
+        "imageStudies": int(image_studies or 0),
+        "imageRecords": int(image_records or 0),
         "riskBins": risk_bins,
         "hospitalBins": hospital_bins,
         "ageBins": age_bins,
@@ -229,6 +202,10 @@ def get_hospital_locations(
     app_db: Session = Depends(get_db),
     db: Session = Depends(get_questionnaire_db),
 ):
+    return cached("hospital-locations", lambda: _compute_hospital_locations(app_db, db))
+
+
+def _compute_hospital_locations(app_db: Session, db: Session):
     hospitals = app_db.query(Hospital).filter(~Hospital.name.in_(excluded_hospital_names(app_db))).all()
     valid_names = [h.name for h in hospitals]
     if not valid_names:
