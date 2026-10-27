@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { FolderCheck as FolderCheckIcon, Building2, MapPin, ScanLine as ScanLineIcon } from 'lucide-react';
 import './Stats.css';
+import { cachedFetch } from '../utils/cachedFetch';
 
 const COLORS = ['#6ee7b7', '#fde047', '#fb923c', '#fb7185', '#14868C'];
 const CR_DR_LABELS = {
@@ -793,7 +794,7 @@ export const BiradsDensitySection = () => {
   useEffect(() => {
     const fetchMammoStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        const response = await cachedFetch(`${API_URL}/api/v1/mammogram/portal-stats`);
         if (!response.ok) throw new Error('Failed to load mammogram stats');
         const json = await response.json();
         setData(json);
@@ -862,7 +863,7 @@ export const CrDrModalitySection = () => {
   useEffect(() => {
     const fetchMammoStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/mammogram/portal-stats`);
+        const response = await cachedFetch(`${API_URL}/api/v1/mammogram/portal-stats`);
         if (!response.ok) throw new Error('Failed to load mammogram stats');
         const json = await response.json();
         setData(json);
@@ -928,7 +929,7 @@ export const RiskPredictionSection = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/stats/`);
+        const response = await cachedFetch(`${API_URL}/api/v1/stats/`);
         if (!response.ok) throw new Error('Failed to load stats');
         const json = await response.json();
         setData(json);
@@ -991,8 +992,8 @@ const MammogramStats = ({ imageRecords, imageStudies }) => {
     const fetchMammoStats = async () => {
       try {
         const [response, locationsResponse] = await Promise.all([
-          fetch(`${API_URL}/api/v1/mammogram/portal-stats`),
-          fetch(`${API_URL}/api/v1/stats/hospital-locations`),
+          cachedFetch(`${API_URL}/api/v1/mammogram/portal-stats`),
+          cachedFetch(`${API_URL}/api/v1/stats/hospital-locations`),
         ]);
         if (!response.ok) throw new Error('Failed to load mammogram stats');
         const json = await response.json();
