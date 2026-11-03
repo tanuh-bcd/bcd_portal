@@ -31,11 +31,11 @@ from ..services.retrospective_processing import (
 from ..services.retrospective_storage import (
     RetrospectivePathError,
     build_retrospective_blob_path,
+    delete_case_objects,
     sanitize_file_name,
 )
 from .admin import check_super_admin
 from google.cloud import storage
-from google.api_core.exceptions import NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -253,26 +253,22 @@ def delete_batch(
         .all()
     )
     files = [f for c in cases for f in c.files]
-    uploaded_paths = [f.gcp_path for f in files if f.gcp_path and f.upload_status == "UPLOADED"]
     gcs_deleted = 0
-    if uploaded_paths and settings.GCP_STORAGE_BUCKET:
-        client = _get_storage_client()
-        bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
-        failures = []
-        for path in uploaded_paths:
-            try:
-                bucket.blob(path).delete()
-                gcs_deleted += 1
-            except NotFound:
-                gcs_deleted += 1
-            except Exception as e:
-                logger.warning("Failed to delete retrospective GCS object %s: %s", path, e)
-                failures.append(path)
+    if cases and settings.GCP_STORAGE_BUCKET:
+        try:
+            gcs_deleted, failures = delete_case_objects(
+                _get_storage_client().bucket(settings.GCP_STORAGE_BUCKET),
+                [c.retrospective_case_id for c in cases],
+                [f.gcp_path for f in files],
+            )
+        except Exception as e:
+            logger.warning("Could not clear retrospective GCS objects for batch %s: %s", upload_batch_id, e)
+            failures = [str(e)]
         if failures:
             raise HTTPException(
                 status_code=502,
                 detail=(
-                    f"Failed to delete {len(failures)} of {len(uploaded_paths)} stored file(s); "
+                    f"Failed to delete {len(failures)} stored file(s) from storage; "
                     "the folder was NOT deleted so nothing is left inconsistent. Please retry."
                 ),
             )
@@ -351,25 +347,21 @@ def delete_case(
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    uploaded_paths = [f.gcp_path for f in case.files if f.gcp_path and f.upload_status == "UPLOADED"]
-
-    if uploaded_paths and settings.GCP_STORAGE_BUCKET:
-        client = _get_storage_client()
-        bucket = client.bucket(settings.GCP_STORAGE_BUCKET)
-        failures = []
-        for path in uploaded_paths:
-            try:
-                bucket.blob(path).delete()
-            except NotFound:
-                pass
-            except Exception as e:
-                logger.warning("Failed to delete retrospective GCS object %s: %s", path, e)
-                failures.append(path)
+    if settings.GCP_STORAGE_BUCKET:
+        try:
+            _, failures = delete_case_objects(
+                _get_storage_client().bucket(settings.GCP_STORAGE_BUCKET),
+                [case.retrospective_case_id],
+                [f.gcp_path for f in case.files],
+            )
+        except Exception as e:
+            logger.warning("Could not clear retrospective GCS objects for case %s: %s", retrospective_case_id, e)
+            failures = [str(e)]
         if failures:
             raise HTTPException(
                 status_code=502,
                 detail=(
-                    f"Failed to delete {len(failures)} of {len(uploaded_paths)} stored file(s) for this case; "
+                    f"Failed to delete {len(failures)} stored file(s) for this case from storage; "
                     "it was NOT deleted so nothing is left inconsistent. Please retry."
                 ),
             )

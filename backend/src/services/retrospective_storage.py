@@ -1,12 +1,21 @@
+import logging
 import os
 import re
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 
 from ..core.config import settings
 
+logger = logging.getLogger(__name__)
+
 RETRO_GCS_PREFIX = settings.RETROSPECTIVE_GCS_PREFIX or "retrospective"
+# Up to this many cases are looked up by their own folder; beyond it the whole
+# retrospective prefix is listed once, which is fewer calls for a big batch.
+_LIST_PER_CASE_LIMIT = 25
+_DELETE_WORKERS = 16
 
 _SAFE_SEGMENT_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
 
@@ -90,3 +99,42 @@ def upload_retrospective_file(file_content: bytes, blob_path: str, content_type:
     blob = bucket.blob(blob_path)
     blob.upload_from_string(file_content, content_type=content_type)
     return f"gs://{settings.GCP_STORAGE_BUCKET}/{blob_path}"
+
+
+def delete_case_objects(bucket, case_ids, known_paths=()):
+    """Delete everything stored in the bucket for these cases, whatever upload
+    status the database holds for it. A file can be in the bucket while the
+    database says PENDING or FAILED (the browser never reported completion),
+    so the case's folder is listed instead of trusting the status.
+
+    known_paths (paths recorded in the database) are deleted too. Only objects
+    under the retrospective prefix are ever touched. Returns
+    (objects_deleted, failed_paths)."""
+    root = f"{RETRO_GCS_PREFIX}/"
+    prefixes = tuple(f"{build_retrospective_case_prefix(case_id)}/" for case_id in case_ids)
+
+    names = {path for path in known_paths if path and path.startswith(root)}
+    if len(prefixes) <= _LIST_PER_CASE_LIMIT:
+        for prefix in prefixes:
+            names.update(blob.name for blob in bucket.list_blobs(prefix=prefix))
+    else:
+        names.update(blob.name for blob in bucket.list_blobs(prefix=root) if blob.name.startswith(prefixes))
+
+    def _delete(name):
+        try:
+            bucket.blob(name).delete()
+            return name, True, None
+        except NotFound:
+            return name, False, None
+        except Exception as e:
+            return name, False, e
+
+    deleted, failures = 0, []
+    with ThreadPoolExecutor(max_workers=_DELETE_WORKERS) as pool:
+        for name, was_deleted, error in pool.map(_delete, sorted(names)):
+            if was_deleted:
+                deleted += 1
+            elif error is not None:
+                logger.warning("Failed to delete retrospective GCS object %s: %s", name, error)
+                failures.append(name)
+    return deleted, failures
