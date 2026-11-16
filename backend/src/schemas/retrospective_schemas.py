@@ -138,6 +138,17 @@ class RetrospectiveBatchManifestResponse(BaseModel):
     cases: List[RetrospectiveCaseManifestResult]
 
 
+class RetrospectiveSourceInstituteCount(BaseModel):
+    institute_code: str
+    case_count: int
+
+
+class RetrospectiveSourceBucketCountResponse(BaseModel):
+    source_bucket: str
+    institutes: List[RetrospectiveSourceInstituteCount]
+    total_case_count: int
+
+
 class RetrospectiveUploadUrlResponse(BaseModel):
     upload_url: str
     gcs_url: str

@@ -21,6 +21,8 @@ from ..schemas.retrospective_schemas import (
     RetrospectiveRetryFileItem,
     RetrospectiveDashboardCount,
     RetrospectiveBatchDeleteResponse,
+    RetrospectiveSourceBucketCountResponse,
+    RetrospectiveSourceInstituteCount,
 )
 from ..services.retrospective_ids import generate_batch_id, generate_case_ids
 from ..services.retrospective_processing import (
@@ -32,6 +34,7 @@ from ..services.retrospective_storage import (
     RetrospectivePathError,
     build_retrospective_blob_path,
     sanitize_file_name,
+    count_source_bucket_cases,
 )
 from .admin import check_super_admin
 from google.cloud import storage
@@ -57,6 +60,33 @@ def _case_to_manifest_result(case: RetrospectiveCase, files) -> RetrospectiveCas
             )
             for f in files
         ],
+    )
+
+
+@router.get("/source-bucket/count", response_model=RetrospectiveSourceBucketCountResponse)
+def get_source_bucket_count(
+    current_user: dict = Depends(check_super_admin),
+):
+    """
+    Read-only: counts retrospective cases sitting under incoming/th-bcd/ in
+    RETROSPECTIVE_SOURCE_BUCKET (e.g. breast-cancer-image-dataset-anonymized),
+    grouped by institute. One case == one REPORT file, regardless of folder
+    depth. Does not write to GCS or the DB.
+    """
+    if not settings.RETROSPECTIVE_SOURCE_BUCKET:
+        raise HTTPException(status_code=500, detail="RETROSPECTIVE_SOURCE_BUCKET not configured")
+
+    try:
+        result = count_source_bucket_cases(settings.RETROSPECTIVE_SOURCE_BUCKET)
+    except NotFound:
+        raise HTTPException(status_code=404, detail="Source bucket not found")
+
+    return RetrospectiveSourceBucketCountResponse(
+        source_bucket=settings.RETROSPECTIVE_SOURCE_BUCKET,
+        institutes=[
+            RetrospectiveSourceInstituteCount(**i) for i in result["institutes"]
+        ],
+        total_case_count=result["total_case_count"],
     )
 
 
