@@ -80,6 +80,46 @@ def _get_storage_client():
     return storage.Client()
 
 
+SOURCE_INCOMING_PREFIX = "incoming/th-bcd/"
+REPORT_FOLDER_SEGMENT = "REPORT"
+
+
+def count_source_bucket_cases(source_bucket: str, source_prefix: str = SOURCE_INCOMING_PREFIX) -> dict:
+    """
+    Read-only: counts retrospective cases sitting under `source_prefix` in
+    `source_bucket`. One case == one file under a `REPORT/` folder; this is
+    depth-agnostic because institute folders aren't all laid out the same way
+    (some have a BIRADS_<class>/ level between institute and subject, some
+    don't), but every case consistently has exactly one REPORT/<file> per
+    case regardless of depth. Grouped by institute (the path segment right
+    after `source_prefix`). Makes no writes to GCS or the DB.
+    """
+    if not source_bucket:
+        raise Exception("Source bucket not configured")
+
+    client = _get_storage_client()
+    blobs = client.list_blobs(source_bucket, prefix=source_prefix)
+
+    institute_counts: dict[str, int] = {}
+    for blob in blobs:
+        if blob.name.endswith("/"):
+            continue
+        remainder = blob.name[len(source_prefix):].split("/")
+        if len(remainder) < 2:
+            continue
+        if REPORT_FOLDER_SEGMENT not in remainder[:-1]:
+            continue
+        institute = remainder[0]
+        institute_counts[institute] = institute_counts.get(institute, 0) + 1
+
+    institutes = [
+        {"institute_code": name, "case_count": count}
+        for name, count in sorted(institute_counts.items())
+    ]
+    total = sum(institute_counts.values())
+    return {"institutes": institutes, "total_case_count": total}
+
+
 def upload_retrospective_file(file_content: bytes, blob_path: str, content_type: str = "application/octet-stream") -> str:
     if not settings.GCP_STORAGE_BUCKET:
         raise Exception("GCP_STORAGE_BUCKET not configured")

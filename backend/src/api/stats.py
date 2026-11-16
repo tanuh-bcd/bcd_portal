@@ -7,8 +7,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import case, func, or_, text
 from ..core.cache import cached
+from ..core.config import settings
 from ..db.session import get_questionnaire_db, get_db
 from ..models.models import Hospital, DoctorAssessment, Attachment
+from ..services.retrospective_storage import count_source_bucket_cases
 from ..mammogram_service import (
     INSTITUTE_QUESTIONS,
     MAMMOGRAM_VIEW_TYPES,
@@ -194,7 +196,19 @@ def _compute_stats(db: Session, app_db: Session):
         "hospitalBins": hospital_bins,
         "ageBins": age_bins,
         "monthBins": month_bins,
+        "retrospectiveCaseCount": _get_retrospective_case_count(),
     }
+
+
+def _get_retrospective_case_count() -> int:
+    if not settings.RETROSPECTIVE_SOURCE_BUCKET:
+        return 0
+    try:
+        result = count_source_bucket_cases(settings.RETROSPECTIVE_SOURCE_BUCKET)
+        return int(result.get("total_case_count") or 0)
+    except Exception:
+        logger.exception("Failed to count retrospective cases from source bucket")
+        return 0
 
 
 @router.get("/hospital-locations")
