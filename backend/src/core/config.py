@@ -7,8 +7,7 @@ load_dotenv()
 
 
 def _cfg(name: str, default: str = "") -> str:
-    # return os.getenv(name) or get_secret(name, default)
-    return os.getenv(name, default)
+    return os.getenv(name) or get_secret(name, default)
 
 
 class Settings:
@@ -76,7 +75,10 @@ class Settings:
     )
     REMINDER_CC_EMAILS: str = _cfg(
         "REMINDER_CC_EMAILS",
-        "bcs@tanuh.ai",
+        (
+            "ashwin.rajkumar@tanuh.ai,phaneendra.yalavarthy@tanuh.ai,"
+            "vaishnavi.joshi@tanuh.ai,meghna.manoj@tanuh.ai,palivela.sanjana@tanuh.ai"
+        ),
     )
     REMINDER_AGGREGATE_RECIPIENTS: str = _cfg(
         "REMINDER_AGGREGATE_RECIPIENTS",
